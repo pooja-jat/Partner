@@ -38,7 +38,7 @@ const AVAILABLE_CATEGORIES = [
 ];
 
 export default function SelectServicesModal() {
-  useAndroidBack(() => router.replace('/(tabs)'));
+  useAndroidBack();
   const router = useSafeRouter();
   const { addService } = useServicesStore();
   
@@ -74,8 +74,13 @@ export default function SelectServicesModal() {
           dateAdded: 'Oct 14, 2023', // hardcoded mock date
           subServices: subs
         });
-        StorageService.updateMandatoryFlowStep('partnerServiceSelection', 'reviewing').then(() => {
-          router.replace('/(tabs)');
+        StorageService.updateMandatoryFlowStep('partnerServiceSelection', 'reviewing').then(async () => {
+          const session = await StorageService.getUserSession();
+          if (session?.isApproved) {
+            router.back();
+          } else {
+            router.replace('/(tabs)/services/list');
+          }
         });
       }
     }
@@ -84,12 +89,12 @@ export default function SelectServicesModal() {
   return (
     <GradientBackground style={styles.modalOverlay}>
       <SafeAreaView style={styles.safeArea}>
-        <TouchableOpacity style={styles.modalBackdrop} activeOpacity={1} onPress={() => router.replace('/(tabs)')} />
+        <TouchableOpacity style={styles.modalBackdrop} activeOpacity={1} onPress={() => router.back()} />
         
         <View style={styles.modalContent}>
           <View style={styles.modalWhiteBg}>
             {Platform.OS !== 'web' && <View style={styles.dragHandle} />}
-            <TouchableOpacity style={styles.closeButton} onPress={() => router.replace('/(tabs)')}>
+            <TouchableOpacity style={styles.closeButton} onPress={() => router.back()}>
               <CloseIcon size={24} color="#64748B" />
             </TouchableOpacity>
             <View style={styles.header}>

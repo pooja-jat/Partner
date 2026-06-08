@@ -10,19 +10,35 @@ import { Button } from '@/components/ui/Button';
 import { useAndroidBack } from '@/hooks/useAndroidBack';
 import { RoleAccessGuard } from '@/components/common/RoleAccessGuard';
 import { completeStepAndNavigate } from '@/utils/onboarding';
+import { StorageService } from '@/services/storage.service';
 
 export default function BranchListScreen() {
-  useAndroidBack(() => router.replace('/(tabs)'));
   const router = useSafeRouter();
   const { branches, initialize, updateBranch, addBranch } = useBranchStore();
   const [filter, setFilter] = useState<'All' | 'Active' | 'Inactive'>('All');
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [modalMode, setModalMode] = useState<'create' | 'update'>('create');
   const [selectedBranch, setSelectedBranch] = useState<any>(null);
+  const [isApproved, setIsApproved] = useState(false);
 
   useEffect(() => {
     initialize();
+    const checkApproval = async () => {
+      const session = await StorageService.getUserSession();
+      if (session?.isApproved) {
+        setIsApproved(true);
+      }
+    };
+    checkApproval();
   }, []);
+
+  useAndroidBack(() => {
+    if (isApproved) {
+      router.back();
+    } else {
+      router.replace('/(tabs)');
+    }
+  });
 
   const filteredBranches = branches.filter(b => {
     if (filter === 'Active') return b.isActive;
@@ -65,7 +81,13 @@ export default function BranchListScreen() {
       <SafeAreaView style={styles.safeArea}>
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.replace('/(tabs)')} style={styles.backButton}>
+          <TouchableOpacity onPress={() => {
+            if (isApproved) {
+              router.back();
+            } else {
+              router.replace('/(tabs)');
+            }
+          }} style={styles.backButton}>
             <BackArrowIcon size={24} color="#0F172A" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>List of parter services</Text>
@@ -119,16 +141,18 @@ export default function BranchListScreen() {
               setSelectedBranch(null);
               setIsModalVisible(true);
             }} 
-            variant="outline" 
-            style={{ marginBottom: 12 }}
+            variant={isApproved ? "primary" : "outline"}
+            style={isApproved ? undefined : { marginBottom: 12 }}
           />
-          <Button 
-            title="Continue" 
-            onPress={async () => {
-              await completeStepAndNavigate('branchCreation', router, 'completed');
-            }} 
-            variant="primary" 
-          />
+          {!isApproved && (
+            <Button 
+              title="Continue" 
+              onPress={async () => {
+                await completeStepAndNavigate('branchCreation', router, 'completed');
+              }} 
+              variant="primary" 
+            />
+          )}
         </View>
       </SafeAreaView>
 

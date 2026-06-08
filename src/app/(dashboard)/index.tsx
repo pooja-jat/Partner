@@ -2,11 +2,13 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, Image, BackHandler } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSafeRouter } from '@/hooks/useSafeRouter';
-import { 
-  MenuIcon, BellIcon, RibbonIcon, FilterSettingsIcon, 
-  LocationPinIcon, ListIcon, CalendarIcon, WalletTabIcon
+import {
+  MenuIcon, BellIcon, RibbonIcon, FilterSettingsIcon,
+  LocationPinIcon, ListIcon, CalendarIcon, WalletTabIcon,
+  ServiceIcon, BookingsTabIcon, ClockCircleIcon, ReceiptIcon, DocumentIcon, InfoCircleIcon as InfoIcon,
+  TrendingUpIcon, BranchIcon, EmployeeIcon, UserGroupIcon, BuildingIcon,
 } from '@/components/ui/Icons';
-import Svg, { Path, Circle } from 'react-native-svg';
+import Svg, { Path, Circle, Rect } from 'react-native-svg';
 import { GradientBackground } from '@/components/ui/GradientBackground';
 import { useAndroidBack } from '@/hooks/useAndroidBack';
 import { useAuthStore } from '@/store/authStore';
@@ -18,6 +20,66 @@ const InfoCircleIcon = ({ size = 16, color = '#3B82F6' }) => (
   </Svg>
 );
 
+const MappingIcon = ({ size = 24, color = '#3B82F6' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M3 7L9 4L15 7L21 4V17L15 20L9 17L3 20V7Z" stroke={color} strokeWidth="1.5" strokeLinejoin="round" />
+    <Path d="M9 4V17M15 7V20" stroke={color} strokeWidth="1.5" />
+  </Svg>
+);
+
+const HistoryIcon = ({ size = 24, color = '#3B82F6' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M12 8V12L14 14" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+    <Path d="M3.05 11A9 9 0 1 0 4 7.4" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+    <Path d="M3 4V8H7" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+);
+
+const FEATURE_COLOR = '#3B82F6';
+
+// ISP role features (original set)
+const ISP_FEATURES = [
+  { label: 'Performance',      icon: TrendingUpIcon,  color: FEATURE_COLOR, route: '/(dashboard)/performance' },
+  { label: 'Services',         icon: ServiceIcon,     color: FEATURE_COLOR, route: '/(tabs)/services' },
+  { label: 'Service Area',     icon: LocationPinIcon, color: FEATURE_COLOR, route: '/(tabs)/service-area' },
+  { label: 'Live Bookings',    icon: BookingsTabIcon, color: FEATURE_COLOR, route: '/(dashboard)/bookings' },
+  { label: 'Instructions',     icon: InfoIcon,        color: FEATURE_COLOR, route: '/(dashboard)/instructions' },
+  { label: 'Booking Earnings', icon: ReceiptIcon,     color: FEATURE_COLOR, route: '/(dashboard)/earnings' },
+];
+
+// BS role features — 13 items, 4 per row
+const BS_FEATURES = [
+  { label: 'Performance',               icon: TrendingUpIcon,  color: FEATURE_COLOR, route: '/(dashboard)/performance' },
+  { label: 'Business',                  icon: BuildingIcon,    color: FEATURE_COLOR, route: '/(tabs)/business' },
+  { label: 'Branch',                    icon: BranchIcon,      color: FEATURE_COLOR, route: '/(tabs)/branch' },
+  { label: 'Employees',                 icon: EmployeeIcon,    color: FEATURE_COLOR, route: '/(tabs)/employee' },
+  { label: 'Services',                  icon: ServiceIcon,     color: FEATURE_COLOR, route: '/(tabs)/services' },
+  { label: 'Service Area',              icon: LocationPinIcon, color: FEATURE_COLOR, route: '/(tabs)/service-area' },
+  { label: 'Live Quotations',           icon: RibbonIcon,      color: FEATURE_COLOR, route: '/(dashboard)/seller/quotation-requests' },
+  { label: 'Live Orders',               icon: BookingsTabIcon, color: FEATURE_COLOR, route: '/(dashboard)/orders-list' },
+  { label: 'Instructions',              icon: InfoIcon,        color: FEATURE_COLOR, route: '/(dashboard)/instructions' },
+  { label: 'Branch & Service\nMapping', icon: MappingIcon,    color: FEATURE_COLOR, route: '/(tabs)/mapping' },
+  { label: 'Order Earnings',            icon: ReceiptIcon,     color: FEATURE_COLOR, route: '/(dashboard)/booking-earnings' },
+  { label: 'Order History',             icon: ReceiptIcon,     color: FEATURE_COLOR, route: '/(dashboard)/order-history' },
+  { label: 'Quotation\nHistory',        icon: DocumentIcon,    color: FEATURE_COLOR, route: '/(dashboard)/quotation-history' },
+];
+
+// BSP role features — 13 items, 4 per row
+const BSP_FEATURES = [
+  { label: 'Performance',       icon: TrendingUpIcon,  color: FEATURE_COLOR, route: '/(dashboard)/performance' },
+  { label: 'Business',          icon: BuildingIcon,    color: FEATURE_COLOR, route: '/(tabs)/business' },
+  { label: 'Branch',            icon: BranchIcon,      color: FEATURE_COLOR, route: '/(tabs)/branch' },
+  { label: 'Employees',         icon: EmployeeIcon,    color: FEATURE_COLOR, route: '/(tabs)/employee' },
+  { label: 'Services',          icon: ServiceIcon,     color: FEATURE_COLOR, route: '/(tabs)/services' },
+  { label: 'Service Area',      icon: LocationPinIcon, color: FEATURE_COLOR, route: '/(tabs)/service-area' },
+  { label: 'Live Bookings',     icon: BookingsTabIcon, color: FEATURE_COLOR, route: '/(dashboard)/bookings' },
+  { label: 'Instructions',      icon: InfoIcon,        color: FEATURE_COLOR, route: '/(dashboard)/instructions' },
+  { label: 'Employee Assign',   icon: UserGroupIcon,   color: FEATURE_COLOR, route: '/(tabs)/add-employee' },
+  { label: 'Branch & Service\nMapping', icon: MappingIcon, color: FEATURE_COLOR, route: '/(tabs)/mapping' },
+  { label: 'Booking Earnings',  icon: ReceiptIcon,     color: FEATURE_COLOR, route: '/(dashboard)/booking-earnings' },
+  { label: 'Booking History',   icon: HistoryIcon,     color: FEATURE_COLOR, route: '/(dashboard)/booking-history' },
+];
+
 export default function HomeScreen() {
   useAndroidBack(() => {
     BackHandler.exitApp();
@@ -25,6 +87,14 @@ export default function HomeScreen() {
   const router = useSafeRouter();
   const [isOffDuty, setIsOffDuty] = useState(true);
   const role = useAuthStore(state => state.role);
+
+  const FEATURES = role === 'BSP' ? BSP_FEATURES : role === 'BS' ? BS_FEATURES : ISP_FEATURES;
+
+  // Split features into rows of 4
+  const featureRows: typeof FEATURES[] = [];
+  for (let i = 0; i < FEATURES.length; i += 4) {
+    featureRows.push(FEATURES.slice(i, i + 4));
+  }
 
   return (
     <GradientBackground style={styles.container}>
@@ -36,7 +106,7 @@ export default function HomeScreen() {
             <MenuIcon size={24} color="#0F172A" />
           </TouchableOpacity>
           
-          <TouchableOpacity style={styles.profileSection} onPress={() => router.push('/(tabs)')}>
+          <TouchableOpacity style={styles.profileSection} onPress={() => router.push('/(dashboard)/profile')}>
             <Image 
               source={{ uri: 'https://i.pravatar.cc/150?img=12' }} 
               style={styles.avatarImage} 
@@ -74,73 +144,47 @@ export default function HomeScreen() {
 
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
           <View style={styles.mainContent}>
-          {/* Quick Actions Row */}
+          {/* Quick Actions Grid */}
           <View style={styles.quickActionsContainer}>
-            <View style={styles.actionItem}>
-              <TouchableOpacity 
-                style={[styles.actionCircle, { borderColor: '#DBEAFE' }]}
-                onPress={() => router.push('/(dashboard)/performance')}
+            {featureRows.map((row, rowIndex) => (
+              <View
+                key={rowIndex}
+                style={[
+                  styles.quickActionsRow,
+                  row.length < 4 && styles.quickActionsRowStart,
+                ]}
               >
-                <RibbonIcon size={24} color="#3B82F6" />
-              </TouchableOpacity>
-              <Text style={styles.actionText}>Performance</Text>
-            </View>
-            <View style={styles.actionItem}>
-              <TouchableOpacity 
-                style={[styles.actionCircle, { borderColor: '#FEE2E2' }]}
-                onPress={() => router.push('/(dashboard)/location')}
-              >
-                <LocationPinIcon size={24} color="#EF4444" />
-              </TouchableOpacity>
-              <Text style={styles.actionText}>Map</Text>
-            </View>
-            <View style={styles.actionItem}>
-              <TouchableOpacity 
-                style={[styles.actionCircle, { borderColor: '#FFEDD5' }]}
-                onPress={() => router.push('/(dashboard)/bookings')}
-              >
-                <ListIcon size={24} color="#F97316" />
-              </TouchableOpacity>
-              <Text style={styles.actionText}>Bookings</Text>
-            </View>
-            {(role === 'BSP' || role === 'BS') && (
-              <>
-                <View style={styles.actionItem}>
-                  <TouchableOpacity 
-                    style={[styles.actionCircle, { borderColor: '#FCE7F3' }]}
-                    onPress={() => router.push('/(tabs)/employee')}
-                  >
-                    <FilterSettingsIcon size={24} color="#EC4899" />
-                  </TouchableOpacity>
-                  <Text style={styles.actionText}>Team</Text>
-                </View>
-                <View style={styles.actionItem}>
-                  <TouchableOpacity 
-                    style={[styles.actionCircle, { borderColor: '#E0E7FF' }]}
-                    onPress={() => router.push('/(dashboard)/seller/quotation-requests')}
-                  >
-                    <ListIcon size={24} color="#4F46E5" />
-                  </TouchableOpacity>
-                  <Text style={styles.actionText}>Quotes</Text>
-                </View>
-              </>
-            )}
+                {row.map((feature) => {
+                  const IconComponent = feature.icon;
+                  return (
+                    <View key={feature.label} style={styles.actionItem}>
+                      <TouchableOpacity
+                        style={styles.actionCircle}
+                        onPress={() => router.push(feature.route as any)}
+                      >
+                        <IconComponent size={30} color={feature.color} />
+                      </TouchableOpacity>
+                      <Text style={styles.actionText}>{feature.label}</Text>
+                    </View>
+                  );
+                })}
+              </View>
+            ))}
           </View>
 
           {/* Cards */}
           <View style={styles.cardsContainer}>
-            
-            <View style={styles.card}>
+            <TouchableOpacity style={styles.card} onPress={() => router.push('/(dashboard)/wallet')}>
               <View style={styles.cardHeader}>
-                <WalletTabIcon size={14} color="#64748B" />
+                <WalletTabIcon size={12} color="#64748B" />
                 <Text style={styles.cardTitle}>Wallet Balance</Text>
               </View>
               <Text style={styles.cardAmount}>₹0</Text>
-            </View>
+            </TouchableOpacity>
 
-            <TouchableOpacity style={styles.card} onPress={() => router.push('/(dashboard)/bookings')}>
+            <TouchableOpacity style={styles.card} onPress={() => router.push('/(dashboard)/earnings')}>
               <View style={styles.cardHeader}>
-                <WalletTabIcon size={14} color="#64748B" />
+                <WalletTabIcon size={12} color="#64748B" />
                 <Text style={styles.cardTitle}>Today's Earnings</Text>
               </View>
               <Text style={styles.cardAmount}>₹0</Text>
@@ -148,12 +192,11 @@ export default function HomeScreen() {
 
             <View style={styles.card}>
               <View style={styles.cardHeader}>
-                <WalletTabIcon size={14} color="#64748B" />
-                <Text style={styles.cardTitle}>Today's Earnings</Text>
+                <WalletTabIcon size={12} color="#64748B" />
+                <Text style={styles.cardTitle}>Total Earnings</Text>
               </View>
               <Text style={styles.cardAmount}>₹0</Text>
             </View>
-
           </View>
           </View>
 
@@ -175,6 +218,7 @@ export default function HomeScreen() {
           </View>
         </ScrollView>
       </SafeAreaView>
+
     </GradientBackground>
   );
 }
@@ -210,34 +254,41 @@ const styles = StyleSheet.create({
   },
   badgeText: { color: '#FFFFFF', fontSize: 8, fontWeight: '700' },
 
-  scrollContent: { flexGrow: 1, paddingBottom: 120 },
+  scrollContent: { flexGrow: 1, paddingBottom: 16 },
   mainContent: { flex: 1 },
-  bottomSection: { alignItems: 'center', paddingBottom: 20 },
+  bottomSection: { alignItems: 'center', paddingBottom: 0 },
 
-  quickActionsContainer: { 
-    flexDirection: 'row', justifyContent: 'space-between', 
-    paddingHorizontal: 24, marginTop: 24, marginBottom: 32 
+  quickActionsContainer: {
+    paddingHorizontal: 16, marginTop: 24, marginBottom: 32, gap: 20,
   },
-  actionItem: { alignItems: 'center' },
-  actionCircle: { 
-    width: 64, height: 64, borderRadius: 32, backgroundColor: '#FFFFFF', 
-    borderWidth: 1.5, justifyContent: 'center', alignItems: 'center', marginBottom: 8,
+  quickActionsRow: {
+    flexDirection: 'row', justifyContent: 'space-between',
   },
-  actionText: { fontSize: 10, color: '#64748B', fontWeight: '500' },
+  quickActionsRowStart: {
+    flexDirection: 'row', justifyContent: 'flex-start', gap: 0,
+  },
+  actionItem: { alignItems: 'center', width: '25%' },
+  actionCircle: {
+    width: 60, height: 60, borderRadius: 30, backgroundColor: '#FFFFFF',
+    borderWidth: 2, borderColor: 'rgba(26, 15, 163, 1.00)',
+    justifyContent: 'center', alignItems: 'center', marginBottom: 6,
+  },
+  actionText: { fontSize: 10, color: '#64748B', fontWeight: '500', textAlign: 'center' },
 
-  cardsContainer: { paddingHorizontal: 20 },
-  card: { 
-    backgroundColor: '#FFFFFF', borderRadius: 24, padding: 20, marginBottom: 16,
+  cardsContainer: { paddingHorizontal: 12, flexDirection: 'row', gap: 8 },
+  card: {
+    flex: 1, backgroundColor: '#FFFFFF', borderRadius: 16, paddingVertical: 10, paddingHorizontal: 10,
     borderWidth: 1, borderColor: '#F1F5F9',
   },
-  cardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 12, gap: 8 },
-  cardTitle: { fontSize: 11, color: '#94A3B8', fontWeight: '500' },
-  cardAmount: { fontSize: 24, fontWeight: '800', color: '#0F172A' },
+  cardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 6, gap: 4 },
+  cardTitle: { fontSize: 9, color: '#94A3B8', fontWeight: '500', flex: 1 },
+  cardAmount: { fontSize: 18, fontWeight: '800', color: '#0F172A' },
 
-  rateCardContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 16, marginBottom: 40 },
+  rateCardContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 16, marginBottom: 12 },
   rateCardText: { fontSize: 12, color: '#3B82F6', fontWeight: '600' },
 
   footerContainer: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginTop: 20 },
   footerText: { fontSize: 10, color: '#94A3B8' },
   footerTextBold: { fontSize: 10, color: '#0F172A', fontWeight: '700' },
+
 });

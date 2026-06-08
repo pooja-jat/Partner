@@ -4,25 +4,38 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSafeRouter } from '@/hooks/useSafeRouter';
 import { GradientBackground } from '@/components/ui/GradientBackground';
 import { Button } from '@/components/ui/Button';
-import { BackArrowIcon, LocationPinIcon, OutlineStarIcon } from '@/components/ui/Icons';
+import { BackArrowIcon, EmployeeIcon, OutlineStarIcon } from '@/components/ui/Icons';
 import { EmployeeModal } from '@/components/common/EmployeeModal';
 import { useEmployeeStore } from '@/store/employeeStore';
 import { useAndroidBack } from '@/hooks/useAndroidBack';
 import { RoleAccessGuard } from '@/components/common/RoleAccessGuard';
 import { completeStepAndNavigate } from '@/utils/onboarding';
+import { StorageService } from '@/services/storage.service';
 
 export default function EmployeeEmptyScreen() {
   const router = useSafeRouter();
   const [isModalVisible, setIsModalVisible] = useState(false);
   const { employees, initialize, addEmployee } = useEmployeeStore();
+  const [isApproved, setIsApproved] = useState(false);
 
   const handleBack = () => {
-    router.replace('/(tabs)');
+    if (isApproved) {
+      router.back();
+    } else {
+      router.replace('/(tabs)');
+    }
   };
 
   useAndroidBack(handleBack);
   useEffect(() => {
     initialize();
+    const checkApproval = async () => {
+      const session = await StorageService.getUserSession();
+      if (session?.isApproved) {
+        setIsApproved(true);
+      }
+    };
+    checkApproval();
   }, []);
 
   useEffect(() => {
@@ -32,7 +45,7 @@ export default function EmployeeEmptyScreen() {
   }, [employees]);
 
   return (
-    <RoleAccessGuard allowedRoles={['BSP']}>
+    <RoleAccessGuard allowedRoles={['BSP', 'BS']}>
       <GradientBackground style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
@@ -45,7 +58,7 @@ export default function EmployeeEmptyScreen() {
         <View style={styles.content}>
           <View style={styles.iconContainer}>
             <View style={styles.largeCircle}>
-              <LocationPinIcon size={48} color="#3B82F6" />
+              <EmployeeIcon size={48} color="#3B82F6" />
             </View>
             <View style={styles.smallCircle}>
               <OutlineStarIcon size={20} color="#3B82F6" />
@@ -54,7 +67,7 @@ export default function EmployeeEmptyScreen() {
 
           <Text style={styles.title}>No Employee Added Yet</Text>
           <Text style={styles.subtitle}>
-            Add locations that you frequently{'\n'}visit for quick access
+            Add your team members to manage{'\n'}bookings and assignments
           </Text>
         </View>
 
@@ -63,15 +76,17 @@ export default function EmployeeEmptyScreen() {
             title="+ Add Employee" 
             onPress={() => setIsModalVisible(true)} 
             variant="primary" 
-            style={{ marginBottom: 12 }}
+            style={isApproved ? undefined : { marginBottom: 12 }}
           />
-          <Button 
-            title="Skip / Continue" 
-            onPress={async () => {
-              await completeStepAndNavigate('branchEmployeeMapping', router, 'completed');
-            }} 
-            variant="outline" 
-          />
+          {!isApproved && (
+            <Button 
+              title="Skip / Continue" 
+              onPress={async () => {
+                await completeStepAndNavigate('branchEmployeeMapping', router, 'completed');
+              }} 
+              variant="outline" 
+            />
+          )}
         </View>
       </SafeAreaView>
 

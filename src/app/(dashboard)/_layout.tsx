@@ -17,7 +17,7 @@ export default function DashboardLayout() {
           borderTopColor: '#E2E8F0',
           height: Platform.OS === 'ios' ? 64 + insets.bottom : 60 + insets.bottom,
           paddingBottom: insets.bottom > 0 ? insets.bottom : 12,
-          paddingTop: 12,
+          padding: 12,
           display: ['index', 'bookings', 'wallet', 'profile'].includes(route.name) ? 'flex' : 'none',
         },
         tabBarActiveTintColor: 'rgba(26, 15, 163, 1.00)',
@@ -287,6 +287,18 @@ export default function DashboardLayout() {
         }}
       />
       <Tabs.Screen
+        name="instructions"
+        options={{ href: null }}
+      />
+      <Tabs.Screen
+        name="booking-earnings"
+        options={{ href: null }}
+      />
+      <Tabs.Screen
+        name="booking-history"
+        options={{ href: null }}
+      />
+      <Tabs.Screen
         name="coming-soon"
         options={{ href: null }}
       />
@@ -316,6 +328,8 @@ export default function DashboardLayout() {
       <Tabs.Screen name="quotation-submitted" options={{ href: null }} />
       <Tabs.Screen name="quotation-summary" options={{ href: null }} />
       <Tabs.Screen name="approved-quotation" options={{ href: null }} />
+      <Tabs.Screen name="order-history" options={{ href: null }} />
+      <Tabs.Screen name="quotation-history" options={{ href: null }} />
     </Tabs>
   );
 }

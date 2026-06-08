@@ -15,6 +15,7 @@ import { BackArrowIcon, RightArrowIcon, MessageIcon, WhatsAppIcon } from '@/comp
 import { COLORS } from '@/constants';
 import { useAndroidBack } from '@/hooks/useAndroidBack';
 import { StorageService } from '@/services/storage.service';
+import { ROLE_STEPS } from '@/utils/onboarding';
 
 export default function OtpScreen() {
   useAndroidBack();
@@ -33,14 +34,21 @@ export default function OtpScreen() {
     }
     const success = await verifyOtp(otp);
     if (success) {
-      const flowState = await StorageService.getMandatoryFlow();
-      const isProfileDone = flowState.partnerProfile === 'completed' || flowState.partnerProfile === 'verified' || flowState.partnerProfile === 'reviewing';
-      const isKycDone = flowState.kycUpload === 'completed' || flowState.kycUpload === 'verified' || flowState.kycUpload === 'reviewing';
-      
       const existingSession = await StorageService.getUserSession();
+      const flowState = await StorageService.getMandatoryFlow();
       
-      if (isProfileDone && isKycDone) {
-        // If profile and KYC are completed, go directly to Dashboard
+      let isAllStepsCompleted = false;
+      const userRole = existingSession?.role;
+      if (userRole) {
+        const steps = ROLE_STEPS[userRole as keyof typeof ROLE_STEPS] || [];
+        isAllStepsCompleted = steps.length > 0 && steps.every((step: string) => {
+          const status = flowState[step as keyof typeof flowState];
+          return status === 'completed' || status === 'verified' || status === 'reviewing';
+        });
+      }
+
+      if (existingSession?.isApproved || isAllStepsCompleted) {
+        // If approved or all steps are completed, go directly to Dashboard
         await StorageService.updateUserSession({
           phone: mobileNumber,
           isLoggedIn: true,
@@ -52,6 +60,7 @@ export default function OtpScreen() {
         await StorageService.updateUserSession({
           phone: mobileNumber,
           isLoggedIn: true,
+          isApproved: false,
         });
         router.replace('/(tabs)');
       } else {

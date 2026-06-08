@@ -69,7 +69,7 @@ export default function ProfileScreen() {
   const getMenuItems = () => {
     let items = [
       { id: 'dev', title: 'Developer Tools (Mock)', icon: <SettingsSlidersIcon color="#EF4444" />, route: '/(dashboard)/developer-tools' },
-      { id: 'status', title: 'Partner Approval Status', icon: <CardIcon />, route: '/(tabs)' },
+      { id: 'status', title: 'Partner Approval Status', icon: <CardIcon />, route: '/(dashboard)/application-status' },
       { id: 'help', title: 'Help', icon: <HelpOutlineIcon />, route: '/(dashboard)/help-advanced' },
       { id: 'payment', title: 'Payment', icon: <CardIcon />, route: '/(dashboard)/payment-method' },
       { id: 'bookings', title: 'My Bookings', icon: <ListIcon />, route: '/(dashboard)/bookings' },
@@ -84,12 +84,12 @@ export default function ProfileScreen() {
     ];
 
     if (role === 'ISP' || role === 'BSP') {
-      items.push({ id: 'services', title: 'Partner Service', icon: <BellIcon size={20} color="#64748B" />, route: '/(dashboard)/services/add-partner-services' });
+      items.push({ id: 'services', title: 'Partner Service', icon: <BellIcon size={20} color="#64748B" />, route: '/(tabs)/services' });
       items.push({ id: 'servicearea', title: 'Partner Service Area', icon: <LocationPinIcon size={20} color="#64748B" />, route: '/(tabs)/service-area' });
     }
     
     if (role === 'BS') {
-      items.push({ id: 'sellerservices', title: 'Seller Services', icon: <BellIcon size={20} color="#64748B" />, route: '/(dashboard)/services/add-partner-services' });
+      items.push({ id: 'sellerservices', title: 'Seller Services', icon: <BellIcon size={20} color="#64748B" />, route: '/(tabs)/services' });
       items.push({ id: 'servicearea', title: 'Service Area', icon: <LocationPinIcon size={20} color="#64748B" />, route: '/(tabs)/service-area' });
     }
 

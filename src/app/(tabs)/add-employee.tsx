@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSafeRouter } from '@/hooks/useSafeRouter';
@@ -12,13 +12,35 @@ import { RoleAccessGuard } from '@/components/common/RoleAccessGuard';
 import { completeStepAndNavigate } from '@/utils/onboarding';
 
 export default function AddEmployeeScreen() {
-  useAndroidBack(() => router.replace('/(tabs)'));
   const router = useSafeRouter();
   const { addEmployee } = useEmployeeStore();
+  const [isApproved, setIsApproved] = useState(false);
+
+  useEffect(() => {
+    const checkApproval = async () => {
+      const session = await StorageService.getUserSession();
+      if (session?.isApproved) {
+        setIsApproved(true);
+      }
+    };
+    checkApproval();
+  }, []);
+
+  useAndroidBack(() => {
+    if (isApproved) {
+      router.back();
+    } else {
+      router.replace('/(tabs)');
+    }
+  });
 
   const handleSubmit = async (data: any) => {
     addEmployee(data);
-    await completeStepAndNavigate('addingEmployee', router, 'reviewing');
+    if (isApproved) {
+      router.back();
+    } else {
+      await completeStepAndNavigate('addingEmployee', router, 'reviewing');
+    }
   };
 
   const handleSkip = async () => {
@@ -31,17 +53,25 @@ export default function AddEmployeeScreen() {
         <SafeAreaView style={styles.safeArea}>
           <View style={styles.header}>
             <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-              <TouchableOpacity onPress={() => router.replace('/(tabs)')} style={styles.backButton}>
+              <TouchableOpacity onPress={() => {
+                if (isApproved) {
+                  router.back();
+                } else {
+                  router.replace('/(tabs)');
+                }
+              }} style={styles.backButton}>
                 <BackArrowIcon size={24} color="#0F172A" />
               </TouchableOpacity>
               <Text style={styles.headerTitle}>Add Employee</Text>
             </View>
-            <TouchableOpacity 
-              onPress={handleSkip} 
-              style={{ paddingHorizontal: 16, paddingVertical: 6, borderRadius: 20, borderWidth: 1, borderColor: '#CBD5E1' }}
-            >
-              <Text style={{ fontSize: 13, fontWeight: '600', color: '#64748B' }}>Skip</Text>
-            </TouchableOpacity>
+            {!isApproved && (
+              <TouchableOpacity 
+                onPress={handleSkip} 
+                style={{ paddingHorizontal: 16, paddingVertical: 6, borderRadius: 20, borderWidth: 1, borderColor: '#CBD5E1' }}
+              >
+                <Text style={{ fontSize: 13, fontWeight: '600', color: '#64748B' }}>Skip</Text>
+              </TouchableOpacity>
+            )}
           </View>
 
           <View style={styles.card}>

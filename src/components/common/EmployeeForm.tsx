@@ -142,7 +142,7 @@ export function EmployeeForm({ mode, initialData, onSubmit }: EmployeeFormProps)
         Enter details to add a new employee to your branch.
       </Text>
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+      <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         
         <Input
           label="Employee Name"

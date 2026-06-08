@@ -235,7 +235,7 @@ export function EmployeeBookingsModal({ visible, onClose, employee }: EmployeeBo
       onRequestClose={handleClose}
     >
       <View style={styles.overlay}>
-        <Pressable onPress={handleClose}>
+        <Pressable onPress={handleClose} style={StyleSheet.absoluteFill}>
           <View style={StyleSheet.absoluteFill} />
         </Pressable>
         

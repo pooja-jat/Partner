@@ -14,21 +14,22 @@ import { useAndroidBack } from '@/hooks/useAndroidBack';
 import { StorageService } from '@/services/storage.service';
 import { Booking, UserSession } from '@/types/storage.types';
 import { useEmployeeStore } from '@/store/employeeStore';
+import { useAuthStore } from '@/store/authStore';
 
 // Custom high-fidelity inline SVG icons
-const PhoneIcon = ({ color = '#4F46E5', size = 20 }) => (
+const PhoneIcon = ({ color = 'rgba(26, 15, 163, 1.00)', size = 20 }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path d="M3 5.5C3 14.0604 9.93959 21 18.5 21C18.8862 21 19.2691 20.9859 19.6483 20.9581C20.0834 20.9262 20.3009 20.9103 20.493 20.7963C20.763 20.6361 20.9759 20.3606 21.0598 20.0607C21.1192 19.8487 21.0456 19.6277 20.8983 19.1856L19.5103 15.021C19.3879 14.6539 19.3267 14.4703 19.2135 14.3312C19.1136 14.2084 18.9806 14.1166 18.8285 14.0655C18.656 14.0076 18.4624 14.027 18.0751 14.0657L15.3582 14.3374C14.8697 14.3862 14.3822 14.1205 14.1122 13.6828L10.3172 7.53323C10.0472 7.09553 10.1118 6.54144 10.48 6.13643L12.5186 3.89412C12.7844 3.6017 12.8361 3.41162 12.8306 3.23896C12.8257 3.08643 12.7766 2.94052 12.6896 2.81765C12.5912 2.67858 12.4343 2.58444 12.1206 2.39616L8.43501 0.184852C8.03362 -0.0560156 7.83292 -0.17645 7.61803 -0.160161C7.31557 -0.137233 7.03185 0.0469446 6.84542 0.300185C6.71286 0.479261 6.6433 0.68792 6.50417 1.10524L5.61909 3.76044C5.16335 5.12769 5.09919 5.48512 5.03157 5.8694C4.94584 6.35677 4.90807 6.85244 4.9189 7.34861C4.93339 8.01248 5.03352 8.70034 5.23377 10.076Z" fill={color} />
   </Svg>
 );
 
-const MessageIcon = ({ color = '#4F46E5', size = 20 }) => (
+const MessageIcon = ({ color = 'rgba(26, 15, 163, 1.00)', size = 20 }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path d="M21 11.5C21.0034 12.8199 20.6951 14.1219 20.1 15.3C19.3944 16.7118 18.3098 17.8992 16.9674 18.7293C15.6251 19.5594 14.0782 19.9994 12.5 20C11.1801 20.0035 9.87812 19.6951 8.7 19.1L3 21L4.9 15.3C4.30493 14.1219 3.99656 12.8199 4 11.5C4.00061 9.92179 4.44061 8.37488 5.27072 7.03258C6.10083 5.69028 7.28825 4.6056 8.7 3.90003C9.87812 3.30496 11.1801 2.99659 12.5 3.00003H13C15.0843 3.11502 17.053 3.99479 18.5291 5.47089C20.0052 6.94699 20.885 8.91568 21 11V11.5Z" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
   </Svg>
 );
 
-const MapPinIcon = ({ color = '#4F46E5', size = 20 }) => (
+const MapPinIcon = ({ color = 'rgba(26, 15, 163, 1.00)', size = 20 }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path d="M21 10C21 17 12 23 12 23C12 23 3 17 3 10C3 7.61305 3.94821 5.32387 5.63604 3.63604C7.32387 1.94821 9.61305 1 12 1C14.3869 1 16.6761 1.94821 18.364 3.63604C20.0518 5.32387 21 7.61305 21 10Z" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     <Circle cx="12" cy="10" r="3" stroke={color} strokeWidth="2" />
@@ -37,7 +38,7 @@ const MapPinIcon = ({ color = '#4F46E5', size = 20 }) => (
 
 const VerifiedBadgeIcon = ({ size = 16 }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" fill="#4F46E5" />
+    <Path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" fill="rgba(26, 15, 163, 1.00)" />
   </Svg>
 );
 
@@ -115,7 +116,9 @@ export default function BookingDetailsScreen() {
   const [profAccepted, setProfAccepted] = useState(false);
   const [materialRequest, setMaterialRequest] = useState<any>(null);
   const { employees } = useEmployeeStore();
+  const storeRole = useAuthStore(state => state.role);
   const assignedEmployeeName = employees.find(e => e.id === booking?.employeeId)?.name || booking?.employeeId || 'Professional';
+  const role = session?.role || storeRole;
 
   useFocusEffect(
     useCallback(() => {
@@ -129,7 +132,13 @@ export default function BookingDetailsScreen() {
     const bks = await StorageService.getBookings();
     const bk = bks.find(b => b.bookingId.replace('#', '') === id || b.bookingId === id);
     if (bk) {
-      setBooking(bk);
+      let currentBk = bk;
+      // Auto-reset BK123456 to pending if it was completed/closed to allow testing acceptance flow
+      if (currentBk.bookingId.includes('123456') && currentBk.status !== 'pending') {
+        currentBk = { ...currentBk, status: 'pending' as const, employeeId: undefined, profAccepted: undefined };
+        await StorageService.saveBooking(currentBk);
+      }
+      setBooking(currentBk);
       setProfAccepted(!!bk.profAccepted);
       const reqs = await StorageService.getMaterialRequests();
       const activeReq = reqs.find(r => r.bookingId === bk.bookingId);
@@ -352,9 +361,9 @@ export default function BookingDetailsScreen() {
 
   // Determine timeline progress indicators
   const stepAccepted = booking.status !== 'pending';
-  const stepOnWay = booking.status === 'accepted' || booking.status === 'checked_in' || booking.status === 'closed' || booking.status === 'completed';
-  const stepArrived = booking.status === 'checked_in' || booking.status === 'closed' || booking.status === 'completed';
-  const stepStartWork = booking.status === 'checked_in' && booking.paymentStatus === 'paid'; // hypothetical work check
+  const stepOnWay = booking.status === 'accepted' || booking.status === 'checked_in' || booking.status === 'started' || booking.status === 'closed' || booking.status === 'completed';
+  const stepArrived = booking.status === 'checked_in' || booking.status === 'started' || booking.status === 'closed' || booking.status === 'completed';
+  const stepStartWork = booking.status === 'started' || booking.status === 'closed' || booking.status === 'completed';
   const stepCompleted = booking.status === 'closed' || booking.status === 'completed';
 
   return (
@@ -437,9 +446,6 @@ export default function BookingDetailsScreen() {
                   <TouchableOpacity style={styles.actionCircleBtn} onPress={() => router.push(`/(dashboard)/chat`)}>
                     <MessageIcon size={16} />
                   </TouchableOpacity>
-                  <TouchableOpacity style={styles.actionCircleBtn} onPress={() => setMapModalVisible(true)}>
-                    <MapPinIcon size={16} />
-                  </TouchableOpacity>
                 </View>
               </View>
 
@@ -488,64 +494,65 @@ export default function BookingDetailsScreen() {
               )}
             </View>
 
-            {/* Current Status Checklist Timeline */}
-            <View style={styles.card}>
+            {/* Current Status Checklist Timeline — BSP and ISP */}
+            {(role === 'BSP' || role === 'ISP') && <View style={styles.card}>
               <Text style={styles.sectionHeading}>CURRENT STATUS</Text>
               
-              {/* Custom Timeline visual */}
+              {/* Custom Timeline visual — matches image */}
               <View style={styles.timelineVisualContainer}>
-                
-                {/* Horizontal progress dots and connection line */}
-                <View style={styles.progressLineWrapper}>
-                  <View style={styles.progressBaseLine} />
-                  <View style={[styles.progressActiveLine, { width: stepCompleted ? '100%' : stepArrived ? '75%' : stepOnWay ? '25%' : '0%' }]} />
-                  
-                  {/* Step dots */}
-                  <View style={styles.progressDotsRow}>
-                    <View style={[styles.progressDotCircle, stepAccepted ? styles.dotCircleActive : styles.dotCircleInactive]}>
-                      {stepAccepted && <Text style={styles.dotCheckmarkText}>✓</Text>}
-                    </View>
-                    <View style={[styles.progressDotCircle, stepOnWay ? styles.dotCircleActive : styles.dotCircleInactive]}>
-                      {stepOnWay && <MotorbikeIcon size={12} color="#FFFFFF" />}
-                    </View>
-                    <View style={[styles.progressDotCircle, stepArrived ? styles.dotCircleActive : styles.dotCircleInactive]}>
-                      {stepArrived && <View style={styles.innerDotIndicator} />}
-                    </View>
-                    <View style={[styles.progressDotCircle, stepStartWork ? styles.dotCircleActive : styles.dotCircleInactive]} />
-                    <View style={[styles.progressDotCircle, stepCompleted ? styles.dotCircleActive : styles.dotCircleInactive]} />
-                  </View>
+                {/* Line + dots layer */}
+                <View style={styles.tlRow}>
+                  {/* Full-width base line behind dots */}
+                  <View style={styles.tlBaseLine} />
+                  {/* 5 dots evenly spaced */}
+                  {(role === 'BSP' ? [
+                    { active: false },
+                    { active: false },
+                    { active: false },
+                    { active: false },
+                    { active: false },
+                  ] : [
+                    { active: stepAccepted },
+                    { active: stepOnWay },
+                    { active: stepArrived },
+                    { active: stepStartWork },
+                    { active: stepCompleted },
+                  ]).map((step, idx) => (
+                    <View key={idx} style={[styles.tlDot, step.active && styles.tlDotActive]} />
+                  ))}
                 </View>
-
-                {/* Step labels underneath */}
-                <View style={styles.timelineLabelsRow}>
-                  <Text style={[styles.timelineLabelText, stepAccepted && styles.timelineLabelActive]}>Accepted</Text>
-                  <Text style={[styles.timelineLabelText, stepOnWay && styles.timelineLabelActive]}>On the way</Text>
-                  <Text style={[styles.timelineLabelText, stepArrived && styles.timelineLabelActive]}>Arrived</Text>
-                  <Text style={[styles.timelineLabelText, stepStartWork && styles.timelineLabelActive]}>Start Work</Text>
-                  <Text style={[styles.timelineLabelText, stepCompleted && styles.timelineLabelActive]}>Completed</Text>
+                {/* Labels row */}
+                <View style={styles.tlLabelsRow}>
+                  {['Accepted', 'On the way', 'Arrived', 'Start Work', 'Completed'].map((lbl, idx) => (
+                    <Text key={idx} style={styles.tlLabel}>{lbl}</Text>
+                  ))}
                 </View>
               </View>
 
               {/* Context Action Area inside Status card */}
               <View style={styles.timelineContentArea}>
-                <View style={styles.etaAlertBox}>
-                  <MotorbikeIcon size={22} color="#2563EB" />
+                <View style={styles.statusInfoBox}>
+                  <MotorbikeIcon size={22} color="rgba(26, 15, 163, 1.00)" />
                   <View style={styles.etaAlertTextCol}>
                     <Text style={styles.statusDescriptionTitle}>
-                      {booking.status === 'pending' ? 'Pending Acceptance' : booking.status === 'accepted' ? 'You are on the way' : 'Arrived at location'}
+                      {booking.status === 'pending' ? 'Pending Acceptance' : booking.status === 'accepted' ? 'You are on the way' : booking.status === 'checked_in' ? 'Arrived at location' : 'Job Completed'}
                     </Text>
                     <Text style={styles.statusDescriptionText}>
-                      {booking.status === 'pending' ? 'Please review quotation and accept.' : booking.status === 'accepted' ? 'Please reach customer location and mark as arrived.' : 'Perform service check and begin work.'}
+                      {booking.status === 'pending' ? 'Please review quotation and accept.' : booking.status === 'accepted' ? 'Please reach customer location and mark as arrived.' : booking.status === 'checked_in' ? 'Perform service check and begin work.' : 'The booking has been completed.'}
                     </Text>
                   </View>
                 </View>
                 
-                <Text style={styles.nextStepTextLabel}>NEXT STEP</Text>
-                <Text style={styles.nextStepActionTitle}>
-                  {booking.status === 'pending' ? 'Accept Booking' : booking.status === 'accepted' ? 'Mark as Arrived' : 'Complete Job'}
-                </Text>
+                {role !== 'ISP' && (
+                  <>
+                    <Text style={styles.nextStepTextLabel}>NEXT STEP</Text>
+                    <Text style={styles.nextStepActionTitle}>
+                      {booking.status === 'pending' ? 'Accept Booking' : booking.status === 'accepted' ? 'Mark as Arrived' : 'Complete Job'}
+                    </Text>
+                  </>
+                )}
 
-                {booking.status === 'pending' && (
+                {booking.status === 'pending' && role !== 'ISP' && (
                   <View style={styles.actionBtnGroupInline}>
                     <TouchableOpacity style={styles.primaryActionButton} onPress={handleAccept}>
                       <Text style={styles.primaryActionButtonText}>Accept Booking</Text>
@@ -556,21 +563,27 @@ export default function BookingDetailsScreen() {
                   </View>
                 )}
 
-                {booking.status === 'accepted' && (
+                {booking.status === 'accepted' && role !== 'ISP' && (
                   <>
-                    {session?.role === 'BSP' ? (
+                    {role === 'BSP' ? (
                       !booking.employeeId ? (
                         <TouchableOpacity style={[styles.primaryActionButton, { flex: 0, width: '100%' }]} onPress={handleAssignPress}>
                           <Text style={styles.primaryActionButtonText}>Assign Professional</Text>
                         </TouchableOpacity>
                       ) : (
-                        <View style={styles.etaAlertBox}>
-                          <Text style={styles.statusDescriptionText}>
-                            Assigned to: <Text style={{ fontWeight: '700' }}>{assignedEmployeeName}</Text>
-                          </Text>
-                        </View>
+                        <>
+                          <View style={styles.etaAlertBox}>
+                            <Text style={styles.statusDescriptionText}>
+                              Assigned to: <Text style={{ fontWeight: '700' }}>{assignedEmployeeName}</Text>
+                            </Text>
+                          </View>
+                          <TouchableOpacity style={[styles.primaryActionButton, { flex: 0, width: '100%', marginTop: 8 }]} onPress={handleCheckIn}>
+                            <MapPinIcon color="#FFFFFF" size={16} />
+                            <Text style={styles.primaryActionButtonText}>Mark Arrived</Text>
+                          </TouchableOpacity>
+                        </>
                       )
-                    ) : session?.role === 'Professional' ? (
+                    ) : role === 'Professional' ? (
                       !profAccepted ? (
                         <View style={styles.actionBtnGroupInline}>
                           <TouchableOpacity style={styles.primaryActionButton} onPress={handleAcceptAssignment}>
@@ -595,7 +608,7 @@ export default function BookingDetailsScreen() {
                   </>
                 )}
 
-                {booking.status === 'checked_in' && (
+                {booking.status === 'checked_in' && role !== 'ISP' && (
                   <View style={{ gap: 10, width: '100%', marginTop: 8 }}>
                     {materialRequest ? (
                       <View style={[styles.etaAlertBox, { flexDirection: 'column', alignItems: 'stretch', gap: 12, backgroundColor: '#FFFBEB', borderColor: '#F59E0B', borderWidth: 1, padding: 12, borderRadius: 12 }]}>
@@ -666,19 +679,19 @@ export default function BookingDetailsScreen() {
 
                     {!materialRequest && (
                       <TouchableOpacity 
-                        style={[styles.outlinedCardButton, { marginTop: 0, width: '100%', borderColor: '#4F46E5' }]} 
+                        style={[styles.outlinedCardButton, { marginTop: 0, width: '100%', borderColor: 'rgba(26, 15, 163, 1.00)' }]} 
                         onPress={() => router.push({
                           pathname: '/(dashboard)/material-provider',
                           params: { bookingId: booking.bookingId }
                         })}
                       >
-                        <Text style={[styles.outlinedCardButtonText, { color: '#4F46E5', fontSize: 13 }]}>Raise Material Request</Text>
+                        <Text style={[styles.outlinedCardButtonText, { color: 'rgba(26, 15, 163, 1.00)', fontSize: 13 }]}>Raise Material Request</Text>
                       </TouchableOpacity>
                     )}
                   </View>
                 )}
               </View>
-            </View>
+            </View>}
 
             {/* Quotation Details (QR101) Card */}
             <View style={styles.card}>
@@ -927,20 +940,27 @@ export default function BookingDetailsScreen() {
               <Text style={styles.footerOutlinedBtnText}>CHAT</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.footerOutlinedBtn} onPress={() => alert('Updating ETA...')}>
-              <Text style={styles.footerOutlinedBtnText}>UPDATE ETA</Text>
-            </TouchableOpacity>
+            {role === 'BSP' && (
+              <TouchableOpacity style={styles.footerOutlinedBtn} onPress={() => alert('Update ETA')}>
+                <Text style={styles.footerOutlinedBtnText}>UPDATE ETA</Text>
+              </TouchableOpacity>
+            )}
           </View>
 
-          {booking.status === 'accepted' && (
+          {booking.status === 'accepted' && role !== 'ISP' && (
             <>
-              {session?.role === 'BSP' ? (
+              {role === 'BSP' ? (
                 !booking.employeeId ? (
                   <TouchableOpacity style={styles.footerPrimaryBtn} onPress={handleAssignPress}>
                     <Text style={styles.footerPrimaryBtnText}>Assign Professional</Text>
                   </TouchableOpacity>
-                ) : null
-              ) : session?.role === 'Professional' ? (
+                ) : (
+                  <TouchableOpacity style={styles.footerPrimaryBtn} onPress={handleCheckIn}>
+                    <MapPinIcon color="#FFFFFF" size={16} />
+                    <Text style={styles.footerPrimaryBtnText}>Mark Arrived</Text>
+                  </TouchableOpacity>
+                )
+              ) : role === 'Professional' ? (
                 !profAccepted ? (
                   <View style={styles.actionBtnGroupInline}>
                     <TouchableOpacity style={styles.primaryActionButton} onPress={handleAcceptAssignment}>
@@ -965,13 +985,13 @@ export default function BookingDetailsScreen() {
             </>
           )}
 
-          {booking.status === 'checked_in' && (
+          {booking.status === 'checked_in' && role !== 'ISP' && (
             <TouchableOpacity style={styles.footerPrimaryBtn} onPress={handleComplete}>
               <Text style={styles.footerPrimaryBtnText}>Complete Service</Text>
             </TouchableOpacity>
           )}
 
-          {booking.status === 'pending' && (
+          {booking.status === 'pending' && role !== 'ISP' && role !== 'BSP' && (
             <TouchableOpacity style={styles.footerPrimaryBtn} onPress={handleAccept}>
               <Text style={styles.footerPrimaryBtnText}>Accept Booking</Text>
             </TouchableOpacity>
@@ -1234,7 +1254,7 @@ const styles = StyleSheet.create({
   mapLinkText: { fontSize: 9, color: 'rgba(26, 15, 163, 1.00)', fontWeight: '700' },
   addressDetailsText: { fontSize: 12, color: '#475569', lineHeight: 18 },
 
-  etaAlertBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#EFF6FF', borderRadius: 12, padding: 12, marginTop: 12, gap: 12 },
+  etaAlertBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#EFF6FF', borderRadius: 12, padding: 12, marginTop: 8, gap: 12 },
   etaAlertTextCol: { flex: 1 },
   etaAlertTitle: { fontSize: 12, fontWeight: '700', color: '#1E40AF' },
   etaAlertSub: { fontSize: 10, color: '#3B82F6', marginTop: 2 },
@@ -1243,35 +1263,52 @@ const styles = StyleSheet.create({
 
   // Current Status Checklist Timeline
   sectionHeading: { fontSize: 10, color: '#94A3B8', fontWeight: '700', marginBottom: 16, letterSpacing: 0.5 },
-  timelineVisualContainer: { paddingVertical: 12 },
-  progressLineWrapper: { height: 24, justifyContent: 'center', position: 'relative', marginHorizontal: 20 },
-  progressBaseLine: { position: 'absolute', left: 0, right: 0, height: 3, backgroundColor: '#E2E8F0' },
-  progressActiveLine: { position: 'absolute', left: 0, height: 3, backgroundColor: '#22C55E' },
-  progressDotsRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', position: 'absolute', left: 0, right: 0 },
-  progressDotCircle: { width: 20, height: 20, borderRadius: 10, backgroundColor: '#FFFFFF', borderWidth: 2, borderColor: '#CBD5E1', justifyContent: 'center', alignItems: 'center' },
-  dotCircleActive: { borderColor: '#22C55E', backgroundColor: '#22C55E' },
-  dotCircleInactive: { borderColor: '#CBD5E1', backgroundColor: '#FFFFFF' },
-  dotCheckmarkText: { color: '#FFFFFF', fontSize: 10, fontWeight: '700' },
-  innerDotIndicator: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#FFFFFF' },
-  
-  timelineLabelsRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 },
-  timelineLabelText: { fontSize: 9, color: '#94A3B8', fontWeight: '600', textAlign: 'center', width: 60 },
-  timelineLabelActive: { color: '#0F172A', fontWeight: '700' },
+  timelineVisualContainer: { paddingVertical: 4, paddingHorizontal: 4 },
+
+  /* Timeline row: line behind, dots on top */
+  tlRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    position: 'relative',
+    marginBottom: 10,
+  },
+  tlBaseLine: {
+    position: 'absolute',
+    left: 11, right: 11,
+    height: 1,
+    backgroundColor: '#CBD5E1',
+    top: 11,
+  },
+  tlDot: {
+    width: 22, height: 22, borderRadius: 11,
+    borderWidth: 1, borderColor: '#94A3B8',
+    backgroundColor: '#FFFFFF',
+    zIndex: 1,
+  },
+  tlDotActive: { borderColor: 'rgba(26, 15, 163, 1.00)', backgroundColor: 'rgba(26, 15, 163, 1.00)' },
+  tlLabelsRow: { flexDirection: 'row', justifyContent: 'space-between' },
+  tlLabel: { fontSize: 9, color: '#64748B', fontWeight: '400', textAlign: 'center', flex: 1 },
 
   timelineContentArea: { marginTop: 16 },
-  statusDescriptionTitle: { fontSize: 12, fontWeight: '700', color: '#1E3A8A' },
-  statusDescriptionText: { fontSize: 10, color: '#3B82F6', marginTop: 2 },
+  statusInfoBox: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    backgroundColor: '#EEF2FF', borderRadius: 14, padding: 14, marginBottom: 2,
+    borderWidth: 1, borderColor: '#C7D2FE',
+  },
+  statusDescriptionTitle: { fontSize: 13, fontWeight: '700', color: '#1E3A8A' },
+  statusDescriptionText: { fontSize: 11, color: '#6366F1', marginTop: 2 },
   nextStepTextLabel: { fontSize: 9, color: '#94A3B8', fontWeight: '700', marginTop: 16 },
   nextStepActionTitle: { fontSize: 14, fontWeight: '800', color: '#0F172A', marginTop: 4, marginBottom: 12 },
 
   actionBtnGroupInline: { flexDirection: 'row', gap: 12, marginTop: 8 },
-  primaryActionButton: { flex: 1, height: 48, borderRadius: 12, backgroundColor: '#4F46E5', justifyContent: 'center', alignItems: 'center', flexDirection: 'row', gap: 8 },
+  primaryActionButton: { flex: 1, height: 48, borderRadius: 16, backgroundColor: 'rgba(26, 15, 163, 1.00)', justifyContent: 'center', alignItems: 'center', flexDirection: 'row', gap: 8 },
   primaryActionButtonText: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
-  secondaryActionButton: { width: 100, height: 48, borderRadius: 12, borderWidth: 1, borderColor: '#EF4444', backgroundColor: '#FFFFFF', justifyContent: 'center', alignItems: 'center' },
+  secondaryActionButton: { width: 100, height: 48, borderRadius: 16, borderWidth: 1.5, borderColor: '#EF4444', backgroundColor: '#FFFFFF', justifyContent: 'center', alignItems: 'center' },
   secondaryActionButtonText: { color: '#EF4444', fontSize: 15, fontWeight: '700' },
 
-  outlinedCardButton: { height: 44, borderRadius: 12, borderWidth: 1, borderColor: '#4F46E5', justifyContent: 'center', alignItems: 'center', marginTop: 16 },
-  outlinedCardButtonText: { color: '#4F46E5', fontSize: 13, fontWeight: '700' },
+  outlinedCardButton: { height: 44, borderRadius: 16, borderWidth: 1.5, borderColor: 'rgba(26, 15, 163, 1.00)', justifyContent: 'center', alignItems: 'center', marginTop: 16 },
+  outlinedCardButtonText: { color: 'rgba(26, 15, 163, 1.00)', fontSize: 13, fontWeight: '700' },
 
   // Key Value Info layouts
   keyValueRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginVertical: 6 },
@@ -1357,8 +1394,8 @@ const styles = StyleSheet.create({
   },
   footerRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
   footerOutlinedBtn: { flex: 1, height: 40, borderRadius: 8, borderWidth: 1, borderColor: '#CBD5E1', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
-  footerOutlinedBtnText: { fontSize: 10, fontWeight: '700', color: '#4F46E5' },
-  footerPrimaryBtn: { height: 48, borderRadius: 12, backgroundColor: '#4F46E5', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
+  footerOutlinedBtnText: { fontSize: 10, fontWeight: '700', color: 'rgba(26, 15, 163, 1.00)' },
+  footerPrimaryBtn: { height: 48, borderRadius: 16, backgroundColor: 'rgba(26, 15, 163, 1.00)', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 },
   footerPrimaryBtnText: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
 
   // Detail Popups Modals styles
@@ -1368,19 +1405,19 @@ const styles = StyleSheet.create({
   modalTitle: { fontSize: 16, fontWeight: '800', color: '#0F172A' },
   modalDivider: { height: 1, backgroundColor: '#E2E8F0', marginVertical: 12 },
   modalScroll: { flexGrow: 0 },
-  modalSectionTitle: { fontSize: 10, color: '#94A3B8', fontWeight: '700', marginBottom: 8, letterSpacing: 0.5 },
+  modalSectionTitle: { fontSize: 10, color: '#94A3B8', fontWeight: '700', marginBottom: 12, letterSpacing: 0.5 },
   modalLineItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginVertical: 6 },
   modalItemName: { fontSize: 13, fontWeight: '700', color: '#0F172A' },
   modalItemQty: { fontSize: 11, color: '#64748B', marginTop: 2 },
   modalItemPrice: { fontSize: 13, fontWeight: '700', color: '#0F172A' },
   modalTotalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginVertical: 4 },
   modalTotalLabel: { fontSize: 14, fontWeight: '800', color: '#0F172A' },
-  modalTotalValue: { fontSize: 16, fontWeight: '800', color: '#4F46E5' },
-  modalInfoRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginVertical: 4 },
-  modalInfoLabel: { fontSize: 11, color: '#64748B', fontWeight: '500' },
-  modalInfoValue: { fontSize: 11, color: '#0F172A', fontWeight: '600' },
+  modalTotalValue: { fontSize: 16, fontWeight: '800', color: 'rgba(26, 15, 163, 1.00)' },
+  modalInfoRow: { flexDirection: 'row', justifyContent: 'space-between', marginVertical: 6 },
+  modalInfoLabel: { fontSize: 12, color: '#64748B' },
+  modalInfoValue: { fontSize: 12, color: '#0F172A', fontWeight: '600' },
   modalVendorName: { fontSize: 14, fontWeight: '700', color: '#0F172A' },
   modalVendorAddress: { fontSize: 12, color: '#64748B', marginTop: 2 },
-  modalCloseBtnFull: { backgroundColor: '#4F46E5', width: '100%', paddingVertical: 14, borderRadius: 12, alignItems: 'center', marginTop: 16 },
+  modalCloseBtnFull: { backgroundColor: 'rgba(26, 15, 163, 1.00)', width: '100%', paddingVertical: 14, borderRadius: 16, alignItems: 'center', marginTop: 16 },
   modalCloseBtnText: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' }
 });

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, Platform, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSafeRouter } from '@/hooks/useSafeRouter';
@@ -24,8 +24,32 @@ const DOCUMENT_TYPES = [
 ];
 
 export default function UploadKycDocument() {
-  useAndroidBack(() => router.replace('/(tabs)'));
   const router = useSafeRouter();
+  const [isApproved, setIsApproved] = useState(false);
+
+  useEffect(() => {
+    const loadData = async () => {
+      const session = await StorageService.getUserSession();
+      if (session?.isApproved) {
+        setIsApproved(true);
+      }
+      const kyc = await StorageService.getKycStatus();
+      if (kyc && kyc.documents && kyc.documents.length > 0) {
+        setDocType(kyc.documents[0].type || 'National ID Card');
+        setDocNumber(kyc.documents[0].number || '');
+      }
+    };
+    loadData();
+  }, []);
+
+  useAndroidBack(() => {
+    if (isApproved) {
+      router.back();
+    } else {
+      router.replace('/(tabs)');
+    }
+  });
+
   const [docType, setDocType] = useState('National ID Card');
   const [docNumber, setDocNumber] = useState('');
   const [docModalVisible, setDocModalVisible] = useState(false);
@@ -34,20 +58,34 @@ export default function UploadKycDocument() {
   const role = useAuthStore(state => state.role);
 
   const handleSubmit = async () => {
-    setIsLoading(true);
-    await StorageService.setKycStatus({ status: 'reviewing', documents: [{ type: docType, number: docNumber }] });
-    
-    setTimeout(async () => {
-      setIsLoading(false);
-      await completeStepAndNavigate('kycUpload', router, 'reviewing');
-    }, 1500);
+    if (isApproved) {
+      setIsLoading(true);
+      await StorageService.setKycStatus({ status: 'verified', documents: [{ type: docType, number: docNumber }] });
+      setTimeout(() => {
+        setIsLoading(false);
+        router.back();
+      }, 1000);
+    } else {
+      setIsLoading(true);
+      await StorageService.setKycStatus({ status: 'reviewing', documents: [{ type: docType, number: docNumber }] });
+      setTimeout(async () => {
+        setIsLoading(false);
+        await completeStepAndNavigate('kycUpload', router, 'reviewing');
+      }, 1500);
+    }
   };
 
   return (
     <GradientBackground style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.replace('/(tabs)')} style={styles.backButton}>
+          <TouchableOpacity onPress={() => {
+            if (isApproved) {
+              router.back();
+            } else {
+              router.replace('/(tabs)');
+            }
+          }} style={styles.backButton}>
             <BackArrowIcon size={24} color="#0F172A" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Verify Document</Text>
@@ -127,7 +165,7 @@ export default function UploadKycDocument() {
           />
 
           <Button 
-            title="Submit for Verification" 
+            title={isApproved ? "Save Changes" : "Submit for Verification"} 
             onPress={handleSubmit} 
             isLoading={isLoading}
             variant="primary" 

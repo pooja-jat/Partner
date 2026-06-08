@@ -57,7 +57,7 @@ export interface Booking {
   branchId?: string;
   employeeId?: string;
   profAccepted?: boolean;
-  status: "pending" | "accepted" | "denied" | "checked_in" | "completed" | "closed";
+  status: "pending" | "accepted" | "denied" | "checked_in" | "started" | "completed" | "closed";
   paymentStatus: "paid" | "unpaid";
   paymentMethod: "online" | "cash" | null;
   paymentLinkGenerated: boolean;

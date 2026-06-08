@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSafeRouter } from '@/hooks/useSafeRouter';
 import { GradientBackground } from '@/components/ui/GradientBackground';
 import { Button } from '@/components/ui/Button';
-import { BackArrowIcon, LocationPinIcon, OutlineStarIcon } from '@/components/ui/Icons';
+import { BackArrowIcon, BranchIcon, OutlineStarIcon } from '@/components/ui/Icons';
 import { BranchModal } from '@/components/common/BranchModal';
 import { useBranchStore } from '@/store/branchStore';
 import { useAndroidBack } from '@/hooks/useAndroidBack';
@@ -13,16 +13,31 @@ import { RoleAccessGuard } from '@/components/common/RoleAccessGuard';
 import { completeStepAndNavigate } from '@/utils/onboarding';
 
 export default function BranchEmptyScreen() {
-  useAndroidBack(() => router.replace('/(tabs)'));
   const router = useSafeRouter();
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isApproved, setIsApproved] = useState(false);
   const addBranch = useBranchStore((state) => state.addBranch);
   const branches = useBranchStore((state) => state.branches);
   const initialize = useBranchStore((state) => state.initialize);
 
   useEffect(() => {
     initialize();
+    const checkApproval = async () => {
+      const session = await StorageService.getUserSession();
+      if (session?.isApproved) {
+        setIsApproved(true);
+      }
+    };
+    checkApproval();
   }, []);
+
+  useAndroidBack(() => {
+    if (isApproved) {
+      router.back();
+    } else {
+      router.replace('/(tabs)');
+    }
+  });
 
   useEffect(() => {
     if (branches.length > 0) {
@@ -35,7 +50,13 @@ export default function BranchEmptyScreen() {
       <GradientBackground style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.replace('/(tabs)')} style={styles.backButton}>
+          <TouchableOpacity onPress={() => {
+            if (isApproved) {
+              router.back();
+            } else {
+              router.replace('/(tabs)');
+            }
+          }} style={styles.backButton}>
             <BackArrowIcon size={24} color="#0F172A" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Add Branch</Text>
@@ -44,7 +65,7 @@ export default function BranchEmptyScreen() {
         <View style={styles.content}>
           <View style={styles.iconContainer}>
             <View style={styles.largeCircle}>
-              <LocationPinIcon size={48} color="#3B82F6" />
+              <BranchIcon size={48} color="#3B82F6" />
             </View>
             <View style={styles.smallCircle}>
               <OutlineStarIcon size={20} color="#3B82F6" />
@@ -53,7 +74,7 @@ export default function BranchEmptyScreen() {
 
           <Text style={styles.title}>No Branch Added Yet</Text>
           <Text style={styles.subtitle}>
-            Add locations that you frequently{'\n'}visit for quick access
+            Add your business branches to manage{'\n'}them from one place
           </Text>
         </View>
 
@@ -62,15 +83,17 @@ export default function BranchEmptyScreen() {
             title="+ Add Branch" 
             onPress={() => setIsModalVisible(true)} 
             variant="primary" 
-            style={{ marginBottom: 12 }}
+            style={isApproved ? undefined : { marginBottom: 12 }}
           />
-          <Button 
-            title="Skip / Continue" 
-            onPress={async () => {
-              await completeStepAndNavigate('branchCreation', router, 'completed');
-            }} 
-            variant="outline" 
-          />
+          {!isApproved && (
+            <Button 
+              title="Skip / Continue" 
+              onPress={async () => {
+                await completeStepAndNavigate('branchCreation', router, 'completed');
+              }} 
+              variant="outline" 
+            />
+          )}
         </View>
       </SafeAreaView>
 

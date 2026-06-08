@@ -72,21 +72,6 @@ export async function completeStepAndNavigate(
     const role = session?.role || 'ISP';
     const nextRoute = await getNextStepRoute(currentStepKey, role as any);
     
-    // Check if everything is complete when navigating back to (tabs)
-    if (nextRoute === '/(tabs)') {
-      const flowState = await StorageService.getMandatoryFlow();
-      const steps = ROLE_STEPS[role as keyof typeof ROLE_STEPS] || [];
-      const isAllDone = steps.every(step => {
-        const s = flowState[step as keyof MandatoryFlow];
-        return s === 'completed' || s === 'verified' || s === 'reviewing';
-      });
-      if (isAllDone) {
-        await StorageService.updateUserSession({ isApproved: true });
-        router.replace('/(dashboard)');
-        return;
-      }
-    }
-    
     router.replace(nextRoute as any);
   } catch (error) {
     console.error('Error in completeStepAndNavigate:', error);

@@ -9,12 +9,32 @@ import { useServicesStore } from '@/store/servicesStore';
 import { useAndroidBack } from '@/hooks/useAndroidBack';
 import { RoleAccessGuard } from '@/components/common/RoleAccessGuard';
 import { completeStepAndNavigate } from '@/utils/onboarding';
+import { StorageService } from '@/services/storage.service';
+import { useEffect } from 'react';
 
 export default function ServicesListScreen() {
-  useAndroidBack(() => router.replace('/(tabs)'));
   const router = useSafeRouter();
   const { services } = useServicesStore();
   const [filter, setFilter] = useState<'All' | 'Active' | 'Inactive'>('All');
+  const [isApproved, setIsApproved] = useState(false);
+
+  useEffect(() => {
+    const checkApproval = async () => {
+      const session = await StorageService.getUserSession();
+      if (session?.isApproved) {
+        setIsApproved(true);
+      }
+    };
+    checkApproval();
+  }, []);
+
+  useAndroidBack(() => {
+    if (isApproved) {
+      router.back();
+    } else {
+      router.replace('/(tabs)');
+    }
+  });
 
   const filteredServices = services.filter(s => {
     if (filter === 'Active') return s.active;
@@ -27,12 +47,18 @@ export default function ServicesListScreen() {
   };
 
   return (
-    <RoleAccessGuard allowedRoles={['BSP', 'ISP']}>
+    <RoleAccessGuard allowedRoles={['BSP', 'ISP', 'BS']}>
       <GradientBackground style={{ flex: 1 }}>
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <TouchableOpacity onPress={() => router.replace('/(tabs)')} style={styles.backButton}>
+            <TouchableOpacity onPress={() => {
+              if (isApproved) {
+                router.back();
+              } else {
+                router.replace('/(tabs)');
+              }
+            }} style={styles.backButton}>
               <BackArrowIcon size={24} color="#0F172A" />
             </TouchableOpacity>
             <Text style={styles.headerTitle}>List of parter services</Text>
@@ -115,16 +141,18 @@ export default function ServicesListScreen() {
           <Button 
             title="+ Add Services" 
             onPress={() => router.push('/(tabs)/services/select')} 
-            variant="outline" 
-            style={{ marginBottom: 12 }}
+            variant={isApproved ? "primary" : "outline"}
+            style={isApproved ? undefined : { marginBottom: 12 }}
           />
-          <Button 
-            title="Continue" 
-            onPress={async () => {
-              await completeStepAndNavigate('partnerServiceSelection', router, 'completed');
-            }} 
-            variant="primary" 
-          />
+          {!isApproved && (
+            <Button 
+              title="Continue" 
+              onPress={async () => {
+                await completeStepAndNavigate('partnerServiceSelection', router, 'completed');
+              }} 
+              variant="primary" 
+            />
+          )}
         </View>
       </SafeAreaView>
     </GradientBackground>

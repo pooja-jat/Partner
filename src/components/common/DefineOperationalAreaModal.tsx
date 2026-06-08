@@ -13,7 +13,7 @@ interface DefineOperationalAreaModalProps {
 }
 
 export const DefineOperationalAreaModal: React.FC<DefineOperationalAreaModalProps> = ({ visible, onClose, mode, initialData, onSubmit }) => {
-  const [branch, setBranch] = useState(initialData?.branch || 'Downtown Branch');
+  const [branch, setBranch] = useState(initialData?.branch || '');
   const [radius, setRadius] = useState(initialData?.radius || 15);
   const [locationType, setLocationType] = useState<'Urban' | 'Rural'>(initialData?.locationType || 'Urban');
   const [isActive, setIsActive] = useState<boolean>(initialData ? initialData.status === 'Active' : true);
@@ -31,20 +31,23 @@ export const DefineOperationalAreaModal: React.FC<DefineOperationalAreaModalProp
             
             <View style={styles.header}>
               <View style={styles.headerTopRow}>
-                <Text style={styles.title}>Define Operational Area</Text>
+                <Text style={styles.title}>Define Service Area</Text>
                 <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
                   <CloseIcon size={16} color="#64748B" />
                 </TouchableOpacity>
               </View>
-              <Text style={styles.subtitle}>Set the locations and radius where this branch provides services.</Text>
+              <Text style={styles.subtitle}>Set the locations and radius where you provide services.</Text>
             </View>
 
             <View style={styles.section}>
-              <Text style={styles.label}>Branch Name</Text>
-              <TouchableOpacity style={styles.dropdownBox}>
-                <Text style={styles.dropdownText}>{branch}</Text>
-                <ChevronDownIcon size={20} color="#64748B" />
-              </TouchableOpacity>
+              <Text style={styles.label}>Service Provider Name</Text>
+              <TextInput
+                style={styles.inputBox}
+                value={branch}
+                onChangeText={setBranch}
+                placeholder="Enter service provider name"
+                placeholderTextColor="#94A3B8"
+              />
             </View>
 
             <View style={styles.section}>
@@ -173,6 +176,7 @@ const styles = StyleSheet.create({
   label: { fontSize: 12, fontWeight: '500', color: '#0F172A', marginBottom: 8 },
   labelDisabled: { fontSize: 12, fontWeight: '500', color: '#94A3B8', marginBottom: 8 },
   
+  inputBox: { borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 8, paddingHorizontal: 12, height: 44, backgroundColor: '#FFFFFF', fontSize: 13, color: '#0F172A' },
   dropdownBox: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 8, paddingHorizontal: 12, height: 44, backgroundColor: '#FFFFFF' },
   dropdownActive: { borderColor: '#4338CA' },
   dropdownDisabled: { backgroundColor: '#F8FAFC', borderColor: '#F1F5F9' },

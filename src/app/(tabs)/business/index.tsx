@@ -1,73 +1,95 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Platform, TouchableOpacity } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useSafeRouter } from '@/hooks/useSafeRouter';
-import { GradientBackground } from '@/components/ui/GradientBackground';
-import { Card } from '@/components/ui/Card';
-import { Input } from '@/components/ui/Input';
-import { SelectInput } from '@/components/ui/SelectInput';
-import { PhoneInput } from '@/components/ui/PhoneInput';
-import { Button } from '@/components/ui/Button';
-import { BackArrowIcon, BuildingIcon, PhoneIcon, ShieldCheckIcon } from '@/components/ui/Icons';
-import { InfoAlert } from '@/components/ui/InfoAlert';
-import { useLocalSearchParams } from 'expo-router';
-import { useAndroidBack } from '@/hooks/useAndroidBack';
-import { SelectOptionsModal } from '@/components/common/SelectOptionsModal';
-import { RoleAccessGuard } from '@/components/common/RoleAccessGuard';
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Platform,
+  TouchableOpacity,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useSafeRouter } from "@/hooks/useSafeRouter";
+import { GradientBackground } from "@/components/ui/GradientBackground";
+import { Card } from "@/components/ui/Card";
+import { Input } from "@/components/ui/Input";
+import { SelectInput } from "@/components/ui/SelectInput";
+import { PhoneInput } from "@/components/ui/PhoneInput";
+import { Button } from "@/components/ui/Button";
+import {
+  BackArrowIcon,
+  BuildingIcon,
+  PhoneIcon,
+  ShieldCheckIcon,
+} from "@/components/ui/Icons";
+import { InfoAlert } from "@/components/ui/InfoAlert";
+import { useLocalSearchParams } from "expo-router";
+import { useAndroidBack } from "@/hooks/useAndroidBack";
+import { SelectOptionsModal } from "@/components/common/SelectOptionsModal";
+import { RoleAccessGuard } from "@/components/common/RoleAccessGuard";
 
 const BUSINESS_TYPES = [
-  { label: 'Sole Proprietorship', value: 'Sole Proprietorship' },
-  { label: 'Partnership', value: 'Partnership' },
-  { label: 'Limited Liability Company (LLC)', value: 'Limited Liability Company (LLC)' },
-  { label: 'Corporation', value: 'Corporation' }
+  { label: "Sole Proprietorship", value: "Sole Proprietorship" },
+  { label: "Partnership", value: "Partnership" },
+  {
+    label: "Limited Liability Company (LLC)",
+    value: "Limited Liability Company (LLC)",
+  },
+  { label: "Corporation", value: "Corporation" },
 ];
 
-function SectionHeader({ icon, title }: { icon: React.ReactNode, title: string }) {
+function SectionHeader({
+  icon,
+  title,
+}: {
+  icon: React.ReactNode;
+  title: string;
+}) {
   return (
     <View style={styles.sectionHeader}>
-      <View style={styles.sectionIconWrapper}>
-        {icon}
-      </View>
+      <View style={styles.sectionIconWrapper}>{icon}</View>
       <Text style={styles.sectionTitle}>{title}</Text>
     </View>
   );
 }
 
 export default function BusinessSetupScreen() {
-  useAndroidBack(() => router.replace('/(tabs)'));
+  useAndroidBack(() => router.replace("/(tabs)"));
   const router = useSafeRouter();
-  const { readonly, error } = useLocalSearchParams<{ readonly?: string, error?: string }>();
-  const isReadonly = readonly === 'true';
+  const { readonly, error } = useLocalSearchParams<{
+    readonly?: string;
+    error?: string;
+  }>();
+  const isReadonly = readonly === "true";
 
   const [form, setForm] = useState({
-    businessName: '',
-    businessType: '',
-    establishedYear: '',
-    employees: '',
-    email: '',
-    phone: '',
-    website: '',
-    gst: '',
-    pan: '',
-    registration: '',
+    businessName: "",
+    businessType: "",
+    establishedYear: "",
+    employees: "",
+    email: "",
+    phone: "",
+    website: "",
+    gst: "",
+    pan: "",
+    registration: "",
   });
 
   const [typeModalVisible, setTypeModalVisible] = useState(false);
 
   const updateForm = (key: keyof typeof form, value: string) => {
-    setForm(prev => ({ ...prev, [key]: value }));
+    setForm((prev) => ({ ...prev, [key]: value }));
   };
 
   const handleBack = () => {
-    router.replace('/(tabs)');
+    router.replace("/(tabs)");
   };
 
   const handleSubmit = () => {
-    router.push('/(tabs)/upload?flow=business');
+    router.push("/(tabs)/upload?flow=business");
   };
 
   return (
-    <RoleAccessGuard allowedRoles={['BSP', 'BS']}>
+    <RoleAccessGuard allowedRoles={["BSP", "BS"]}>
       <GradientBackground style={styles.container}>
         <SafeAreaView style={styles.safeArea}>
           <View style={styles.header}>
@@ -77,31 +99,34 @@ export default function BusinessSetupScreen() {
             <Text style={styles.headerTitle}>Business Setup</Text>
           </View>
 
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.scrollContent}
+          >
             <Card style={styles.card} variant="default">
-              
               <Text style={styles.pageTitle}>Business Details</Text>
               <Text style={styles.pageDesc}>
-                Enter your company details for verification. This information will be linked to your branches and services.
+                Enter your company details for verification. This information
+                will be linked to your branches and services.
               </Text>
 
-              {error === 'true' && (
+              {error === "true" && (
                 <View style={{ marginBottom: 16 }}>
                   <InfoAlert message="Your business details were rejected. Please review and update them." />
                 </View>
               )}
 
               {/* Basic Information */}
-              <SectionHeader 
-                icon={<BuildingIcon size={18} color="#4338CA" />} 
-                title="Basic Information" 
+              <SectionHeader
+                icon={<BuildingIcon size={18} color="#4338CA" />}
+                title="Basic Information"
               />
-              
+
               <Input
                 label="Business Name"
                 placeholder="e.g. Acme Services"
                 value={form.businessName}
-                onChangeText={(t) => updateForm('businessName', t)}
+                onChangeText={(t) => updateForm("businessName", t)}
                 editable={!isReadonly}
               />
 
@@ -120,7 +145,7 @@ export default function BusinessSetupScreen() {
                     placeholder="YYYY"
                     keyboardType="numeric"
                     value={form.establishedYear}
-                    onChangeText={(t) => updateForm('establishedYear', t)}
+                    onChangeText={(t) => updateForm("establishedYear", t)}
                     editable={!isReadonly}
                   />
                 </View>
@@ -130,16 +155,16 @@ export default function BusinessSetupScreen() {
                     placeholder="Enter"
                     keyboardType="numeric"
                     value={form.employees}
-                    onChangeText={(t) => updateForm('employees', t)}
+                    onChangeText={(t) => updateForm("employees", t)}
                     editable={!isReadonly}
                   />
                 </View>
               </View>
 
               {/* Contact Information */}
-              <SectionHeader 
-                icon={<PhoneIcon size={18} color="#4338CA" />} 
-                title="Contact Information" 
+              <SectionHeader
+                icon={<PhoneIcon size={18} color="#4338CA" />}
+                title="Contact Information"
               />
 
               <Input
@@ -147,7 +172,7 @@ export default function BusinessSetupScreen() {
                 placeholder="contact@company.com"
                 keyboardType="email-address"
                 value={form.email}
-                onChangeText={(t) => updateForm('email', t)}
+                onChangeText={(t) => updateForm("email", t)}
                 editable={!isReadonly}
               />
 
@@ -155,7 +180,7 @@ export default function BusinessSetupScreen() {
                 label="Business Phone"
                 placeholder="+1 (555) 000-0000"
                 value={form.phone}
-                onChangeText={(t) => updateForm('phone', t)}
+                onChangeText={(t) => updateForm("phone", t)}
               />
 
               <Input
@@ -163,14 +188,14 @@ export default function BusinessSetupScreen() {
                 placeholder="https://www.company.com"
                 keyboardType="url"
                 value={form.website}
-                onChangeText={(t) => updateForm('website', t)}
+                onChangeText={(t) => updateForm("website", t)}
                 editable={!isReadonly}
               />
 
               {/* Legal & Verification */}
-              <SectionHeader 
-                icon={<ShieldCheckIcon size={18} color="#4338CA" />} 
-                title="Legal & Verification" 
+              <SectionHeader
+                icon={<ShieldCheckIcon size={18} color="#4338CA" />}
+                title="Legal & Verification"
               />
               <Text style={styles.legalDesc}>
                 These details will be securely stored for the approval process.
@@ -180,7 +205,7 @@ export default function BusinessSetupScreen() {
                 label="GST Number"
                 placeholder="Enter GSTIN"
                 value={form.gst}
-                onChangeText={(t) => updateForm('gst', t)}
+                onChangeText={(t) => updateForm("gst", t)}
                 editable={!isReadonly}
               />
 
@@ -188,7 +213,7 @@ export default function BusinessSetupScreen() {
                 label="PAN Number"
                 placeholder="Enter PAN"
                 value={form.pan}
-                onChangeText={(t) => updateForm('pan', t)}
+                onChangeText={(t) => updateForm("pan", t)}
                 editable={!isReadonly}
               />
 
@@ -196,19 +221,18 @@ export default function BusinessSetupScreen() {
                 label="Registration Number"
                 placeholder="Enter CIN / Registration No."
                 value={form.registration}
-                onChangeText={(t) => updateForm('registration', t)}
+                onChangeText={(t) => updateForm("registration", t)}
                 editable={!isReadonly}
               />
 
               {!isReadonly && (
-                <Button 
-                  title="Submit for Verification" 
-                  onPress={handleSubmit} 
-                  variant="primary" 
-                  style={styles.submitBtn} 
+                <Button
+                  title="Submit for Verification"
+                  onPress={handleSubmit}
+                  variant="primary"
+                  style={styles.submitBtn}
                 />
               )}
-
             </Card>
           </ScrollView>
           <SelectOptionsModal
@@ -216,7 +240,7 @@ export default function BusinessSetupScreen() {
             onClose={() => setTypeModalVisible(false)}
             title="Select Business Type"
             options={BUSINESS_TYPES}
-            onSelect={(value) => updateForm('businessType', value)}
+            onSelect={(value) => updateForm("businessType", value)}
           />
         </SafeAreaView>
       </GradientBackground>
@@ -230,12 +254,11 @@ const styles = StyleSheet.create({
   },
   safeArea: {
     flex: 1,
-    backgroundColor: 'transparent',
-    
+    backgroundColor: "transparent",
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingHorizontal: 20,
     paddingVertical: 16,
   },
@@ -244,8 +267,8 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: '700',
-    color: '#0F172A',
+    fontWeight: "700",
+    color: "#0F172A",
   },
   scrollContent: {
     paddingHorizontal: 20,
@@ -254,24 +277,24 @@ const styles = StyleSheet.create({
   card: {
     padding: 24,
     borderRadius: 24,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     marginTop: 8,
   },
   pageTitle: {
     fontSize: 20,
-    fontWeight: '700',
-    color: '#0F172A',
+    fontWeight: "700",
+    color: "#0F172A",
     marginBottom: 8,
   },
   pageDesc: {
     fontSize: 13,
-    color: '#64748B',
+    color: "#64748B",
     lineHeight: 18,
     marginBottom: 24,
   },
   sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 16,
     marginTop: 8,
   },
@@ -280,11 +303,11 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 15,
-    fontWeight: '700',
-    color: '#0F172A',
+    fontWeight: "700",
+    color: "#0F172A",
   },
   row: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 12,
   },
   flex1: {
@@ -292,7 +315,7 @@ const styles = StyleSheet.create({
   },
   legalDesc: {
     fontSize: 12,
-    color: '#94A3B8',
+    color: "#94A3B8",
     marginBottom: 16,
     marginTop: -8,
   },

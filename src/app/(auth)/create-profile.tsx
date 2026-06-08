@@ -25,6 +25,7 @@ export default function CreateProfileScreen() {
   const [datePickerVisible, setDatePickerVisible] = useState(false);
   const [dateValue, setDateValue] = useState(new Date());
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [isApproved, setIsApproved] = useState(false);
 
   const getOptions = () => {
     switch (modalType) {
@@ -88,19 +89,22 @@ export default function CreateProfileScreen() {
     const loadProfile = async () => {
       const session = await StorageService.getUserSession();
       setUserRole(session?.role || null);
+      if (session?.isApproved) {
+        setIsApproved(true);
+      }
 
-      if (isReadOnly) {
-        const profile = await StorageService.getPartnerProfile();
-        if (profile) {
-          setForm((prev) => ({ ...prev, ...profile }));
-        }
+      const profile = await StorageService.getPartnerProfile();
+      if (profile) {
+        setForm((prev) => ({ ...prev, ...profile }));
       }
     };
     loadProfile();
-  }, [isReadOnly]);
+  }, []);
 
   const handleBack = () => {
-    if (router.canGoBack()) {
+    if (isApproved) {
+      router.back();
+    } else if (router.canGoBack()) {
       router.back();
     } else {
       router.replace('/(auth)/role-selection');
@@ -109,8 +113,12 @@ export default function CreateProfileScreen() {
 
   const handleSave = async () => {
     await StorageService.setPartnerProfile(form);
-    await StorageService.updateMandatoryFlowStep('partnerProfile', 'reviewing');
-    router.replace('/(tabs)/kyc/upload');
+    if (isApproved) {
+      router.back();
+    } else {
+      const { completeStepAndNavigate } = require('@/utils/onboarding');
+      await completeStepAndNavigate('partnerProfile', router, 'reviewing');
+    }
   };
 
   return (
@@ -120,7 +128,7 @@ export default function CreateProfileScreen() {
           <TouchableOpacity onPress={handleBack} style={styles.backButton}>
             <BackArrowIcon size={24} color="#0F172A" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Create Profile</Text>
+          <Text style={styles.headerTitle}>{isApproved ? 'Edit Profile' : 'Create Profile'}</Text>
         </View>
 
         <Card style={styles.card} variant="default">
@@ -303,7 +311,7 @@ export default function CreateProfileScreen() {
 
             {!isReadOnly && (
               <Button
-                title="Save and Continue"
+                title={isApproved ? "Save Changes" : "Save and Continue"}
                 onPress={handleSave}
                 variant="primary"
                 style={styles.saveBtn}
@@ -364,7 +372,7 @@ const styles = StyleSheet.create({
   },
   card: {
     flex: 1,
-    width: '100%',
+    width: '92%',
     alignSelf: 'center',
     backgroundColor: '#FFFFFF',
     borderRadius: 24,
@@ -374,7 +382,6 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   scrollContent: {
-    padding: 16,
     paddingBottom: 0,
   },
   uploadSection: {
@@ -462,5 +469,6 @@ const styles = StyleSheet.create({
   },
   saveBtn: {
     marginTop: 12,
+    marginBottom: 12,
   },
 });

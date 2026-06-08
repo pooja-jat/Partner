@@ -24,7 +24,7 @@ export function EmployeeModal({ visible, onClose, mode, initialData, onSubmit }:
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.overlay}
       >
-        <Pressable onPress={Keyboard.dismiss}>
+        <Pressable onPress={Keyboard.dismiss} style={StyleSheet.absoluteFill}>
           <View style={StyleSheet.absoluteFill} />
         </Pressable>
         
@@ -60,8 +60,11 @@ const styles = StyleSheet.create({
   },
   keyboardView: {
     width: '100%',
+    maxWidth: 500,
     paddingHorizontal: 20,
     maxHeight: '85%',
+    flex: 1,
+    justifyContent: 'center',
   },
   modalContent: {
     backgroundColor: '#FFFFFF',
@@ -72,6 +75,7 @@ const styles = StyleSheet.create({
     paddingTop: 48, // space for close button
     paddingHorizontal: 24,
     paddingBottom: 24,
+    flex: 1,
   },
   closeButton: {
     position: 'absolute',
@@ -81,6 +85,6 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   formContainer: {
-    flexShrink: 1,
+    flex: 1,
   },
 });

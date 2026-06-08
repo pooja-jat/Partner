@@ -1,5 +1,5 @@
 import { useSafeRouter } from '@/hooks/useSafeRouter';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, Platform, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {  useLocalSearchParams } from 'expo-router';
@@ -31,11 +31,25 @@ const BIZ_DOCUMENT_TYPES = [
 ];
 
 export default function DocumentUploadScreen() {
-  useAndroidBack();
   const router = useSafeRouter();
   const { flow, readonly, error } = useLocalSearchParams<{ flow: string, readonly?: string, error?: string }>();
   const isReadonly = readonly === 'true';
   const { updateDocStatus } = useDocStore();
+  const [isApproved, setIsApproved] = useState(false);
+
+  useEffect(() => {
+    const checkApproval = async () => {
+      const session = await StorageService.getUserSession();
+      if (session?.isApproved) {
+        setIsApproved(true);
+      }
+    };
+    checkApproval();
+  }, []);
+
+  useAndroidBack(() => {
+    router.back();
+  });
 
   const isBusiness = flow === 'business';
 
@@ -45,12 +59,10 @@ export default function DocumentUploadScreen() {
   const [docModalVisible, setDocModalVisible] = useState(false);
 
   const handleSubmit = async () => {
+    let key = 'otherDocs';
     if (isBusiness) {
-      updateDocStatus('businessVerification', 'Pending');
-      await StorageService.updateMandatoryFlowStep('businessDocumentUpload', 'reviewing');
-      router.push('/(tabs)/services');
+      key = 'businessVerification';
     } else {
-      let key = 'otherDocs';
       if (docType === 'National ID Card' || docType === 'Aadhaar Card') {
         key = 'aadhaar';
       } else if (docType === 'PAN Card') {
@@ -60,9 +72,18 @@ export default function DocumentUploadScreen() {
       } else if (docType === 'Police Clearance') {
         key = 'policeClearance';
       }
-      updateDocStatus(key, 'Pending');
-      await StorageService.updateMandatoryFlowStep('kycUpload', 'reviewing');
+    }
+    updateDocStatus(key, 'Pending');
+
+    if (isApproved) {
       router.back();
+    } else {
+      const { completeStepAndNavigate } = require('@/utils/onboarding');
+      if (isBusiness) {
+        await completeStepAndNavigate('businessDocumentUpload', router, 'reviewing');
+      } else {
+        await completeStepAndNavigate('kycUpload', router, 'reviewing');
+      }
     }
   };
 
@@ -167,7 +188,7 @@ export default function DocumentUploadScreen() {
 
             {!isReadonly && (
               <Button 
-                title={isBusiness ? "Submit Documents" : "Submit for Verification"} 
+                title={isApproved ? "Save Changes" : (isBusiness ? "Submit Documents" : "Submit for Verification")} 
                 onPress={handleSubmit} 
                 variant="primary" 
                 style={styles.submitBtn} 

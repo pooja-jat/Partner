@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, Text, TouchableOpacity, ScrollView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSafeRouter } from '@/hooks/useSafeRouter';
@@ -16,8 +16,24 @@ import { completeStepAndNavigate } from '@/utils/onboarding';
 
 export default function BusinessProfileScreen() {
   const router = useSafeRouter();
+  const [isApproved, setIsApproved] = useState(false);
+
+  useEffect(() => {
+    const checkApproval = async () => {
+      const session = await StorageService.getUserSession();
+      if (session?.isApproved) {
+        setIsApproved(true);
+      }
+    };
+    checkApproval();
+  }, []);
+
   useAndroidBack(() => {
-    router.replace('/(tabs)');
+    if (isApproved) {
+      router.back();
+    } else {
+      router.replace('/(tabs)');
+    }
   });
 
   const [form, setForm] = useState({
@@ -31,11 +47,19 @@ export default function BusinessProfileScreen() {
   };
 
   const handleBack = () => {
-    router.replace('/(tabs)');
+    if (isApproved) {
+      router.back();
+    } else {
+      router.replace('/(tabs)');
+    }
   };
 
   const handleSave = async () => {
-    await completeStepAndNavigate('businessProfile', router, 'reviewing');
+    if (isApproved) {
+      router.back();
+    } else {
+      await completeStepAndNavigate('businessProfile', router, 'reviewing');
+    }
   };
 
   return (
@@ -91,7 +115,7 @@ export default function BusinessProfileScreen() {
             />
 
             <Button
-              title="Save and Continue"
+              title={isApproved ? "Save Changes" : "Save and Continue"}
               onPress={handleSave}
               variant="primary"
               style={styles.saveBtn}

@@ -37,7 +37,7 @@ export function GradientBackground({ children, style, isHeader = false }: Gradie
   
   const isTab = isTabScreen(pathname);
   const tabBarHeight = Platform.OS === 'ios' ? 64 + insets.bottom : 60 + insets.bottom;
-  const paddingBottomVal = isTab ? tabBarHeight : 0;
+  const paddingBottomVal = 0;
 
   if (Platform.OS === 'web') {
     return (
@@ -84,8 +84,7 @@ export function GradientBackground({ children, style, isHeader = false }: Gradie
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: '#8EC5FC',
+    backgroundColor: '#ffffff',
   },
   glassCard: {
     backgroundColor: 'rgba(255, 255, 255, 0.02)',

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, Platform, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSafeRouter } from '@/hooks/useSafeRouter';
@@ -23,9 +23,27 @@ const BIZ_DOCUMENT_TYPES = [
 ];
 
 export default function BusinessVerificationUpload() {
-  useAndroidBack(() => router.replace('/(tabs)'));
   const router = useSafeRouter();
   const { updateDocStatus } = useDocStore();
+  const [isApproved, setIsApproved] = useState(false);
+
+  useEffect(() => {
+    const checkApproval = async () => {
+      const session = await StorageService.getUserSession();
+      if (session?.isApproved) {
+        setIsApproved(true);
+      }
+    };
+    checkApproval();
+  }, []);
+
+  useAndroidBack(() => {
+    if (isApproved) {
+      router.back();
+    } else {
+      router.replace('/(tabs)');
+    }
+  });
 
   const [bizName, setBizName] = useState('e.g. Acme Corp');
   const [docType, setDocType] = useState('Business License');
@@ -33,9 +51,14 @@ export default function BusinessVerificationUpload() {
   const [docModalVisible, setDocModalVisible] = useState(false);
 
   const handleSubmit = async () => {
-    // Update store state to simulate submission
-    updateDocStatus('businessVerification', 'Pending');
-    await completeStepAndNavigate('businessDocumentUpload', router, 'reviewing');
+    if (isApproved) {
+      updateDocStatus('businessVerification', 'Pending');
+      router.back();
+    } else {
+      // Update store state to simulate submission
+      updateDocStatus('businessVerification', 'Pending');
+      await completeStepAndNavigate('businessDocumentUpload', router, 'reviewing');
+    }
   };
 
   return (
@@ -43,7 +66,13 @@ export default function BusinessVerificationUpload() {
       <GradientBackground style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.replace('/(tabs)')} style={styles.backButton}>
+          <TouchableOpacity onPress={() => {
+            if (isApproved) {
+              router.back();
+            } else {
+              router.replace('/(tabs)');
+            }
+          }} style={styles.backButton}>
             <BackArrowIcon size={24} color="#0F172A" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Business Documents</Text>
@@ -112,7 +141,7 @@ export default function BusinessVerificationUpload() {
           />
 
           <Button 
-            title="Submit Documents" 
+            title={isApproved ? "Save Changes" : "Submit Documents"} 
             onPress={handleSubmit} 
             variant="primary" 
             style={styles.submitBtn} 

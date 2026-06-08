@@ -85,7 +85,7 @@ export default function OrdersListScreen() {
         {
           id: 'ORD442190',
           title: 'Plumbing Checkup',
-          status: 'New',
+          status: 'Accepted',
           price: '₹499.00',
           customer: 'Anjali Sharma',
           address: 'Gachibowli, Hyderabad',
@@ -98,7 +98,7 @@ export default function OrdersListScreen() {
         {
           id: 'ORD112340',
           title: 'Electrical Install',
-          status: 'New',
+          status: 'In Progress',
           price: '₹3,250.00',
           customer: 'Vikram Singh',
           address: 'Andheri West, Mumbai',
@@ -106,6 +106,19 @@ export default function OrdersListScreen() {
           bookingId: 'BK-1029',
           items: [
             { name: 'Whole House Wiring', qty: 1, price: 3250.00 }
+          ]
+        },
+        {
+          id: 'ORD334521',
+          title: 'AC Servicing',
+          status: 'Ready',
+          price: '₹750.00',
+          customer: 'Priya Mehta',
+          address: 'Banjara Hills, Hyderabad',
+          requestId: 'RQ991234',
+          bookingId: 'BK-2210',
+          items: [
+            { name: 'AC Filter Cleaning', qty: 1, price: 750.00 }
           ]
         }
       ];

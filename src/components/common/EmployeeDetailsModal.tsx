@@ -15,7 +15,7 @@ export function EmployeeDetailsModal({ visible, onClose, employee }: EmployeeDet
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.overlay}>
-        <Pressable onPress={onClose}>
+        <Pressable onPress={onClose} style={StyleSheet.absoluteFill}>
           <View style={StyleSheet.absoluteFill} />
         </Pressable>
         

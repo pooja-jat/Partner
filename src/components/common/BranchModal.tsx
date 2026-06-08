@@ -69,16 +69,19 @@ const styles = StyleSheet.create({
   },
   keyboardView: {
     width: '100%',
+    flex: 1,
     ...Platform.select({
       web: {
         paddingHorizontal: 20,
         maxHeight: '85%',
         maxWidth: 600,
         alignSelf: 'center',
+        justifyContent: 'center',
       },
       default: {
         paddingHorizontal: 0,
         maxHeight: '90%',
+        justifyContent: 'flex-end',
       },
     }),
   },
@@ -86,6 +89,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     overflow: 'hidden',
     paddingTop: 48,
+    flex: 1,
     ...Platform.select({
       web: {
         borderRadius: 24,
@@ -122,6 +126,6 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   formContainer: {
-    flexShrink: 1,
+    flex: 1,
   },
 });

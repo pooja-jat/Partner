@@ -23,9 +23,27 @@ const CheckboxIcon = ({ checked, size = 24, color = 'rgba(26, 15, 163, 1.00)' }:
 );
 
 export default function PoliciesScreen() {
-  useAndroidBack(() => router.replace('/(tabs)'));
   const router = useSafeRouter();
   const [accepted, setAccepted] = useState(false);
+  const [isApproved, setIsApproved] = useState(false);
+
+  React.useEffect(() => {
+    const checkStatus = async () => {
+      const session = await StorageService.getUserSession();
+      if (session?.isApproved) {
+        setIsApproved(true);
+      }
+    };
+    checkStatus();
+  }, []);
+
+  useAndroidBack(() => {
+    if (isApproved) {
+      router.back();
+    } else {
+      router.replace('/(tabs)');
+    }
+  });
 
   const handleAccept = async () => {
     if (accepted) {
@@ -37,7 +55,16 @@ export default function PoliciesScreen() {
     <GradientBackground style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.replace('/(tabs)')} style={styles.backButton}>
+          <TouchableOpacity 
+            onPress={() => {
+              if (isApproved) {
+                router.back();
+              } else {
+                router.replace('/(tabs)');
+              }
+            }} 
+            style={styles.backButton}
+          >
             <BackArrowIcon size={24} color="#0F172A" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Privacy Policies</Text>
@@ -72,25 +99,27 @@ export default function PoliciesScreen() {
           </View>
         </ScrollView>
 
-        <View style={styles.footer}>
-          <TouchableOpacity 
-            style={styles.checkboxContainer} 
-            onPress={() => setAccepted(!accepted)}
-            activeOpacity={0.7}
-          >
-            <CheckboxIcon checked={accepted} />
-            <Text style={styles.checkboxText}>
-              I have read and agree to the Privacy Policies
-            </Text>
-          </TouchableOpacity>
-          
-          <Button 
-            title="Accept & Continue" 
-            onPress={handleAccept} 
-            variant={accepted ? "primary" : "secondary"} 
-            disabled={!accepted}
-          />
-        </View>
+        {!isApproved && (
+          <View style={styles.footer}>
+            <TouchableOpacity 
+              style={styles.checkboxContainer} 
+              onPress={() => setAccepted(!accepted)}
+              activeOpacity={0.7}
+            >
+              <CheckboxIcon checked={accepted} />
+              <Text style={styles.checkboxText}>
+                I have read and agree to the Privacy Policies
+              </Text>
+            </TouchableOpacity>
+            
+            <Button 
+              title="Accept & Continue" 
+              onPress={handleAccept} 
+              variant="primary" 
+              disabled={!accepted}
+            />
+          </View>
+        )}
       </SafeAreaView>
     </GradientBackground>
   );

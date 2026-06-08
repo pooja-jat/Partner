@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Platform, Modal } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Platform, Modal, Switch } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSafeRouter } from '@/hooks/useSafeRouter';
 import { GradientBackground } from '@/components/ui/GradientBackground';
@@ -7,11 +7,9 @@ import { BackArrowIcon } from '@/components/ui/Icons';
 import { useAndroidBack } from '@/hooks/useAndroidBack';
 import { StorageService } from '@/services/storage.service';
 import { useFocusEffect } from 'expo-router';
-import { useCallback } from 'react';
 import { Booking, UserSession, PartnerProfile } from '@/types/storage.types';
 import Svg, { Path, Circle, Rect } from 'react-native-svg';
 
-// Custom inline SVG icons matching the screenshot UI
 const SearchIcon = ({ size = 20, color = '#64748B' }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Circle cx="11" cy="11" r="7" stroke={color} strokeWidth="2" />
@@ -82,28 +80,27 @@ interface BookingDetails {
   price: string;
   paymentLabel: string;
   paymentColor: string;
-  statusLabel: string;
-  statusBg: string;
-  statusColor: string;
-  dotColor: string;
   serviceIcon: React.ReactNode;
   iconBg: string;
   dateStr: string;
   timeStr: string;
+  subServices: string[];
 }
 
 export default function BookingsScreen() {
   useAndroidBack();
   const router = useSafeRouter();
+  const [isOnDuty, setIsOnDuty] = useState(false);
   const [activeTab, setActiveTab] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [session, setSession] = useState<UserSession | null>(null);
-  const [partnerProfile, setPartnerProfile] = useState<PartnerProfile | null>(null);
   const [filterModalVisible, setFilterModalVisible] = useState(false);
   const [selectedPaymentStatus, setSelectedPaymentStatus] = useState('All');
   const [selectedPaymentType, setSelectedPaymentType] = useState('All');
   const [showPaymentTypeDropdown, setShowPaymentTypeDropdown] = useState(false);
+  const [bookingPopupVisible, setBookingPopupVisible] = useState(false);
+  const [popupBooking, setPopupBooking] = useState<Booking | null>(null);
 
   const TABS = [
     { id: 'All', label: 'All', icon: null },
@@ -115,13 +112,10 @@ export default function BookingsScreen() {
     useCallback(() => {
       const loadData = async () => {
         const s = await StorageService.getUserSession();
-        const p = await StorageService.getPartnerProfile();
         setSession(s);
-        setPartnerProfile(p);
-        
+
         let bks = await StorageService.getBookings();
-        if (bks.length === 0 || bks.some(b => (b as any).paymentMethod === 'cash') || bks.length < 5) {
-          // Initialize mock bookings with realistic data
+        if (bks.length === 0 || bks.length < 5) {
           const dummies: Booking[] = [
             {
               bookingId: '#BK123456', userId: 'U1', serviceId: 'S1', branchId: 'BR1', employeeId: undefined, profAccepted: undefined,
@@ -153,7 +147,6 @@ export default function BookingsScreen() {
           bks = dummies;
         }
 
-        // Apply role based filtering
         if (s?.role === 'ISP') {
           bks = bks.filter(b => b.serviceRadius <= 25);
         } else if (s?.role === 'Professional') {
@@ -168,124 +161,82 @@ export default function BookingsScreen() {
 
   const getBookingDisplayDetails = (booking: Booking): BookingDetails => {
     let serviceName = booking.serviceId;
-    let serviceIcon = <DropletIcon size={20} />;
-    let iconBg = '#FFF7ED'; // light orange
+    let serviceIcon: React.ReactNode = <DropletIcon size={20} />;
+    let iconBg = '#FFF7ED';
+    let subServices: string[] = [];
 
-    if (booking.serviceId === 'S1' || booking.serviceId.toLowerCase().includes('ac') || booking.serviceId.toLowerCase().includes('repair')) {
+    if (booking.serviceId === 'S1' || booking.serviceId.toLowerCase().includes('ac')) {
       serviceName = 'AC Repair';
       serviceIcon = <SnowflakeIcon size={20} />;
-      iconBg = '#EFF6FF'; // light blue
-    } else if (booking.serviceId === 'S2' || booking.serviceId.toLowerCase().includes('wash') || booking.serviceId.toLowerCase().includes('machine')) {
+      iconBg = '#EFF6FF';
+      subServices = ['Deep Cleaning', 'Gas Refilling', 'Filter Wash'];
+    } else if (booking.serviceId === 'S2' || booking.serviceId.toLowerCase().includes('wash')) {
       serviceName = 'Washing Machine';
       serviceIcon = <WashingMachineIcon size={20} />;
-      iconBg = '#F0FDF4'; // light green
-    } else if (booking.serviceId === 'S3' || booking.serviceId.toLowerCase().includes('ro') || booking.serviceId.toLowerCase().includes('install')) {
+      iconBg = '#F0FDF4';
+      subServices = ['Motor Repair', 'Drum Cleaning', 'PCB Check'];
+    } else if (booking.serviceId === 'S3' || booking.serviceId.toLowerCase().includes('ro')) {
       serviceName = 'RO Installation';
       serviceIcon = <DropletIcon size={20} />;
-      iconBg = '#FFF7ED'; // light orange/brown
+      iconBg = '#FFF7ED';
+      subServices = ['Filter Change', 'Tank Cleaning', 'UV Lamp Check'];
     }
 
-    let customerName = `User ${booking.userId}`;
-    let location = booking.location;
-    if (booking.userId === 'U1') {
-      customerName = 'Amit Kumar';
-      location = 'A-101, Green Residency, Sector 45, Noida, UP - 201301';
-    } else if (booking.userId === 'U2') {
-      customerName = 'Priya Verma';
-      location = 'B-205, Sunshine Apartments, Sector 50, Noida, UP - 201301';
-    } else if (booking.userId === 'U3') {
-      customerName = 'Neha Singh';
-      location = 'C-205, Galaxy Tower, Sector 76, Noida, UP - 201301';
-    } else if (booking.userId === 'U4') {
-      customerName = 'Rajesh Sharma';
-      location = 'D-312, Stellar Park, Sector 62, Noida, UP - 201301';
-    } else if (booking.userId === 'U5') {
-      customerName = 'Vikram Aditya';
-      location = 'E-401, Purvanchal Royal Park, Sector 137, Noida, UP - 201301';
-    }
+    const customerMap: Record<string, string> = {
+      U1: 'Amit Kumar', U2: 'Priya Verma', U3: 'Neha Singh', U4: 'Rajesh Sharma', U5: 'Vikram Aditya',
+    };
+    const priceMap: Record<string, string> = {
+      U1: '₹599', U2: '₹649', U3: '₹799', U4: '₹549', U5: '₹599',
+    };
 
-    let price = '₹599';
-    if (booking.userId === 'U1') price = '₹599';
-    else if (booking.userId === 'U2') price = '₹649';
-    else if (booking.userId === 'U3') price = '₹799';
-    else if (booking.userId === 'U4') price = '₹549';
-    else if (booking.userId === 'U5') price = '₹599';
-    else price = '₹350';
+    const customerName = customerMap[booking.userId] ?? `User ${booking.userId}`;
+    const price = priceMap[booking.userId] ?? '₹350';
+    const paymentLabel = booking.paymentStatus === 'paid' ? 'Paid' : 'Pending';
+    const paymentColor = booking.paymentStatus === 'paid' ? '#16A34A' : '#EA580C';
 
-    let paymentLabel = 'Pending';
-    let paymentColor = '#EA580C'; // orange / pending
-
-    if (booking.paymentStatus === 'paid') {
-      paymentLabel = 'Paid';
-      paymentColor = '#16A34A'; // green / paid
-    }
-
-    let statusLabel = 'Scheduled';
-    let statusBg = '#F3E8FF'; // light purple
-    let statusColor = '#7C3AED'; // purple
-    let dotColor = '#7C3AED';
-
-    if (booking.status === 'accepted' || booking.status === 'checked_in') {
-      statusLabel = 'On the way';
-      statusBg = '#EFF6FF'; // light blue
-      statusColor = '#2563EB'; // blue
-      dotColor = '#2563EB';
-    } else if (booking.status === 'pending') {
-      statusLabel = 'Upcoming';
-      statusBg = '#FFEDD5'; // light orange
-      statusColor = '#EA580C'; // orange
-      dotColor = '#EA580C';
-    } else if (booking.status === 'closed' || booking.status === 'completed') {
-      statusLabel = 'Scheduled';
-      statusBg = '#F3E8FF'; // light purple
-      statusColor = '#7C3AED'; // purple
-      dotColor = '#7C3AED';
-    }
-
-    // Split date & time
     const schedParts = booking.scheduledTime.split('\n');
     const dateStr = schedParts[0] || '2 May 2024 (Today)';
     const timeStr = schedParts[1] || '10:00 AM';
 
-    return {
-      serviceName,
-      customerName,
-      location,
-      price,
-      paymentLabel,
-      paymentColor,
-      statusLabel,
-      statusBg,
-      statusColor,
-      dotColor,
-      serviceIcon,
-      iconBg,
-      dateStr,
-      timeStr,
-    };
+    return { serviceName, customerName, location: booking.location, price, paymentLabel, paymentColor, serviceIcon, iconBg, dateStr, timeStr, subServices };
   };
 
-  // Filter and search computation
+  const handleDutyToggle = (value: boolean) => {
+    setIsOnDuty(value);
+    if (value && bookings.length > 0) {
+      setPopupBooking(bookings[0]);
+      setBookingPopupVisible(true);
+    }
+  };
+
+  const handleAccept = () => {
+    setBookingPopupVisible(false);
+  };
+
+  const handleReject = () => {
+    setBookingPopupVisible(false);
+  };
+
   const filteredBookings = bookings.filter(booking => {
     const details = getBookingDisplayDetails(booking);
-    const matchesSearch = 
+    const matchesSearch =
       booking.bookingId.toLowerCase().includes(searchQuery.toLowerCase()) ||
       details.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       details.serviceName.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesTab = 
+    const matchesTab =
       activeTab === 'All' ||
       (activeTab === 'On the way' && (booking.status === 'accepted' || booking.status === 'checked_in')) ||
       (activeTab === 'Upcoming' && booking.status === 'pending');
 
-    const matchesPaymentStatus = 
+    const matchesPaymentStatus =
       selectedPaymentStatus === 'All' ||
       (selectedPaymentStatus === 'Paid' && booking.paymentStatus === 'paid') ||
       (selectedPaymentStatus === 'Pending' && booking.paymentStatus === 'unpaid') ||
-      (selectedPaymentStatus === 'Partial Paid' && booking.paymentStatus === 'unpaid') || // Mock fallback matching Design
-      (selectedPaymentStatus === 'Failed' && booking.paymentStatus === 'unpaid'); // Mock fallback matching Design
+      (selectedPaymentStatus === 'Partial Paid' && booking.paymentStatus === 'unpaid') ||
+      (selectedPaymentStatus === 'Failed' && booking.paymentStatus === 'unpaid');
 
-    const matchesPaymentType = 
+    const matchesPaymentType =
       selectedPaymentType === 'All' ||
       (selectedPaymentType === 'Online' && booking.paymentMethod === 'online') ||
       (selectedPaymentType === 'Cash' && booking.paymentMethod === 'cash');
@@ -293,130 +244,200 @@ export default function BookingsScreen() {
     return matchesSearch && matchesTab && matchesPaymentStatus && matchesPaymentType;
   });
 
+  const popupDetails = popupBooking ? getBookingDisplayDetails(popupBooking) : null;
+
   return (
     <GradientBackground style={styles.container}>
       <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
-        
-        {/* Search and Filter Row */}
-        <View style={styles.searchFilterRow}>
-          <View style={styles.searchContainer}>
-            <SearchIcon size={20} color="#94A3B8" />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search by ID, customer name or service"
-              placeholderTextColor="#94A3B8"
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-            />
-          </View>
-          <TouchableOpacity style={styles.filterBtn} onPress={() => setFilterModalVisible(true)}>
-            <FilterIcon size={18} color="rgba(26, 15, 163, 1.00)" />
-            <Text style={styles.filterBtnText}>Filter</Text>
+
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <BackArrowIcon size={24} color="#0F172A" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>
+            {isOnDuty ? `${filteredBookings.length} Orders` : '0 Orders'}
+          </Text>
+          <TouchableOpacity
+            style={[styles.dutyBadge, isOnDuty ? styles.dutyBadgeOn : styles.dutyBadgeOff]}
+            onPress={() => handleDutyToggle(!isOnDuty)}
+          >
+            <View style={[styles.dutyDot, { backgroundColor: isOnDuty ? '#FFFFFF' : '#94A3B8' }]} />
+            <Text style={[styles.dutyBadgeText, isOnDuty ? styles.dutyBadgeTextOn : styles.dutyBadgeTextOff]}>
+              {isOnDuty ? 'ON DUTY' : 'OFF DUTY'}
+            </Text>
           </TouchableOpacity>
         </View>
 
-        {/* Tabs Row */}
-        <View style={styles.tabsRow}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabsScroll}>
-            {TABS.map(tab => {
-              const isActive = activeTab === tab.id;
-              const activeColor = '#FFFFFF';
-              const inactiveColor = '#64748B';
-              const iconColor = isActive ? activeColor : inactiveColor;
-              
-              return (
-                <TouchableOpacity 
-                  key={tab.id} 
-                  style={[styles.tabBtn, isActive ? styles.tabBtnActive : styles.tabBtnInactive]}
-                  onPress={() => setActiveTab(tab.id)}
-                >
-                  <View style={styles.tabContent}>
-                    {tab.icon && <View style={styles.tabIconBox}>{tab.icon(iconColor)}</View>}
-                    <Text style={[styles.tabText, isActive ? styles.tabTextActive : styles.tabTextInactive]}>
-                      {tab.label}
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
-        </View>
-
-        {/* Bookings Card List */}
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-          {filteredBookings.map((booking) => {
-            const display = getBookingDisplayDetails(booking);
-            return (
-              <TouchableOpacity 
-                key={booking.bookingId} 
-                style={styles.bookingCard}
-                onPress={() => router.push(`/(dashboard)/bookings/${booking.bookingId.replace('#', '')}`)}
-              >
-                {/* Card Header */}
-                <View style={styles.cardHeader}>
-                  <View style={[styles.serviceIconContainer, { backgroundColor: display.iconBg }]}>
-                    {display.serviceIcon}
-                  </View>
-                  <View style={styles.serviceTextCol}>
-                    <Text style={styles.serviceName}>{display.serviceName}</Text>
-                    <Text style={styles.idText}>ID: {booking.bookingId}</Text>
-                  </View>
-                  <View style={[styles.statusBadge, { backgroundColor: display.statusBg }]}>
-                    <View style={[styles.statusDot, { backgroundColor: display.dotColor }]} />
-                    <Text style={[styles.statusText, { color: display.statusColor }]}>{display.statusLabel}</Text>
-                  </View>
-                </View>
-
-                {/* Divider */}
-                <View style={styles.divider} />
-
-                {/* Customer Row */}
-                <View style={styles.infoRow}>
-                  <UserIcon size={16} color="#64748B" />
-                  <Text style={styles.infoText}>{display.customerName}</Text>
-                </View>
-
-                {/* Location Row */}
-                <View style={styles.infoRowAlignTop}>
-                  <LocationIcon size={16} color="#64748B" />
-                  <Text style={styles.addressText}>{display.location}</Text>
-                </View>
-
-                {/* Bottom Banner */}
-                <View style={styles.bottomBanner}>
-                  <View>
-                    <Text style={styles.bannerLabel}>Schedule</Text>
-                    <Text style={styles.bannerValueDate}>{display.dateStr}</Text>
-                    <Text style={styles.bannerValueTime}>{display.timeStr}</Text>
-                  </View>
-                  <View style={styles.alignRight}>
-                    <Text style={styles.bannerLabel}>Payment</Text>
-                    <Text style={styles.bannerValuePrice}>{display.price}</Text>
-                    <Text style={[styles.paymentStatusText, { color: display.paymentColor }]}>
-                      {display.paymentLabel}
-                    </Text>
-                  </View>
-                </View>
-
-                {/* View Details Button */}
-                <TouchableOpacity 
-                  style={styles.viewBtn}
-                  onPress={() => router.push(`/(dashboard)/bookings/${booking.bookingId.replace('#', '')}`)}
-                >
-                  <Text style={styles.viewBtnText}>View</Text>
-                </TouchableOpacity>
-
+        {!isOnDuty ? (
+          /* Off Duty Empty State */
+          <View style={styles.offDutyContainer}>
+            <Text style={styles.offDutyText}>Go On-Duty to receive orders.</Text>
+            <View style={styles.offDutySwitchRow}>
+              <Text style={styles.offDutySwitchLabel}>OFF DUTY</Text>
+              <Switch
+                value={isOnDuty}
+                onValueChange={handleDutyToggle}
+                trackColor={{ false: '#E2E8F0', true: '#22C55E' }}
+                thumbColor="#FFFFFF"
+              />
+            </View>
+          </View>
+        ) : (
+          /* On Duty — Orders List */
+          <>
+            {/* Search and Filter */}
+            <View style={styles.searchFilterRow}>
+              <View style={styles.searchContainer}>
+                <SearchIcon size={20} color="#94A3B8" />
+                <TextInput
+                  style={styles.searchInput}
+                  placeholder="Search by ID, customer name or service"
+                  placeholderTextColor="#94A3B8"
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                />
+              </View>
+              <TouchableOpacity style={styles.filterBtn} onPress={() => setFilterModalVisible(true)}>
+                <FilterIcon size={18} color="rgba(26, 15, 163, 1.00)" />
+                <Text style={styles.filterBtnText}>Filter</Text>
               </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
+            </View>
+
+            {/* Tabs */}
+            <View style={styles.tabsRow}>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tabsScroll}>
+                {TABS.map(tab => {
+                  const isActive = activeTab === tab.id;
+                  const iconColor = isActive ? '#FFFFFF' : '#64748B';
+                  return (
+                    <TouchableOpacity
+                      key={tab.id}
+                      style={[styles.tabBtn, isActive ? styles.tabBtnActive : styles.tabBtnInactive]}
+                      onPress={() => setActiveTab(tab.id)}
+                    >
+                      <View style={styles.tabContent}>
+                        {tab.icon && <View style={styles.tabIconBox}>{tab.icon(iconColor)}</View>}
+                        <Text style={[styles.tabText, isActive ? styles.tabTextActive : styles.tabTextInactive]}>
+                          {tab.label}
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+            </View>
+
+            {/* Booking Cards */}
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+              {filteredBookings.map((booking) => {
+                const display = getBookingDisplayDetails(booking);
+                return (
+                  <TouchableOpacity
+                    key={booking.bookingId}
+                    style={styles.bookingCard}
+                    onPress={() => router.push(`/(dashboard)/bookings/${booking.bookingId.replace('#', '')}` as any)}
+                  >
+                    <View style={styles.cardHeader}>
+                      <View style={[styles.serviceIconContainer, { backgroundColor: display.iconBg }]}>
+                        {display.serviceIcon}
+                      </View>
+                      <View style={styles.serviceTextCol}>
+                        <Text style={styles.serviceName}>{display.serviceName}</Text>
+                        <Text style={styles.idText}>ID: {booking.bookingId}</Text>
+                      </View>
+                      <View style={styles.distanceBadge}>
+                        <LocationIcon size={12} color="#3B82F6" />
+                        <Text style={styles.distanceText}>Distance: {(booking.serviceRadius ?? 0).toFixed(1)}KM</Text>
+                      </View>
+                    </View>
+
+                    <View style={styles.divider} />
+
+                    <View style={styles.infoRow}>
+                      <UserIcon size={16} color="#64748B" />
+                      <Text style={styles.infoText}>{display.customerName}</Text>
+                    </View>
+
+                    <View style={styles.infoRowAlignTop}>
+                      <LocationIcon size={16} color="#64748B" />
+                      <Text style={styles.addressText}>{display.location}</Text>
+                    </View>
+
+                    <View style={styles.bottomBanner}>
+                      <View>
+                        <Text style={styles.bannerLabel}>Schedule</Text>
+                        <Text style={styles.bannerValueDate}>{display.dateStr}</Text>
+                        <Text style={styles.bannerValueTime}>{display.timeStr}</Text>
+                      </View>
+                      <View style={styles.alignRight}>
+                        <Text style={styles.bannerLabel}>Payment</Text>
+                        <Text style={styles.bannerValuePrice}>{display.price}</Text>
+                        <Text style={[styles.paymentStatusText, { color: display.paymentColor }]}>
+                          {display.paymentLabel}
+                        </Text>
+                      </View>
+                    </View>
+
+                    <TouchableOpacity
+                      style={styles.viewBtn}
+                      onPress={() => router.push(`/(dashboard)/bookings/${booking.bookingId.replace('#', '')}` as any)}
+                    >
+                      <Text style={styles.viewBtnText}>View</Text>
+                    </TouchableOpacity>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          </>
+        )}
       </SafeAreaView>
 
+      {/* Booking Request Popup */}
+      <Modal visible={bookingPopupVisible} animationType="fade" transparent>
+        <View style={styles.popupOverlay}>
+          <View style={styles.bookingPopup}>
+            <TouchableOpacity style={styles.popupCloseBtn} onPress={handleReject}>
+              <Text style={styles.popupCloseX}>×</Text>
+            </TouchableOpacity>
+
+            <Text style={styles.popupServiceName}>{popupDetails?.serviceName ?? 'Service'}</Text>
+
+            <View style={styles.popupDivider} />
+
+            <Text style={styles.popupSubTitle}>{popupDetails?.customerName}</Text>
+            {(popupDetails?.subServices ?? []).map((item, i) => (
+              <Text key={i} style={styles.popupSubItem}>• {item}</Text>
+            ))}
+
+            <View style={styles.popupDivider} />
+
+            <View style={styles.popupPriceRow}>
+              <Text style={styles.popupPrice}>{popupDetails?.price}</Text>
+              <Text style={styles.popupPaymentStatus}> ({popupDetails?.paymentLabel})</Text>
+            </View>
+
+            <View style={styles.popupDivider} />
+
+            <View style={styles.popupActionsRow}>
+              <View style={styles.popupDotIndicator} />
+              <View style={styles.popupBtnGroup}>
+                <TouchableOpacity style={styles.popupRejectBtn} onPress={handleReject}>
+                  <Text style={styles.popupRejectText}>−</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.popupAcceptBtn} onPress={handleAccept}>
+                  <Text style={styles.popupAcceptText}>Accept</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Filter Modal */}
       <Modal visible={filterModalVisible} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
           <View style={styles.modalSheetContainer}>
-            
-            {/* Header */}
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Filter Bookings</Text>
               <TouchableOpacity style={styles.modalCloseBtn} onPress={() => setFilterModalVisible(false)}>
@@ -424,14 +445,13 @@ export default function BookingsScreen() {
               </TouchableOpacity>
             </View>
 
-            {/* Payment Status Label & Chips */}
             <Text style={styles.modalSectionLabel}>Payment Status</Text>
             <View style={styles.chipsRow}>
               {['All', 'Paid', 'Pending', 'Partial Paid', 'Failed'].map(status => {
                 const isSelected = selectedPaymentStatus === status;
                 return (
-                  <TouchableOpacity 
-                    key={status} 
+                  <TouchableOpacity
+                    key={status}
                     style={[styles.chip, isSelected ? styles.chipSelected : styles.chipUnselected]}
                     onPress={() => setSelectedPaymentStatus(status)}
                   >
@@ -443,9 +463,8 @@ export default function BookingsScreen() {
               })}
             </View>
 
-            {/* Payment Type Label & Custom Dropdown */}
             <Text style={styles.modalSectionLabel}>Payment Type</Text>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.dropdownTrigger}
               onPress={() => setShowPaymentTypeDropdown(!showPaymentTypeDropdown)}
             >
@@ -458,13 +477,10 @@ export default function BookingsScreen() {
             {showPaymentTypeDropdown && (
               <View style={styles.dropdownMenu}>
                 {['All', 'Online', 'Cash'].map(type => (
-                  <TouchableOpacity 
-                    key={type} 
+                  <TouchableOpacity
+                    key={type}
                     style={styles.dropdownItem}
-                    onPress={() => {
-                      setSelectedPaymentType(type);
-                      setShowPaymentTypeDropdown(false);
-                    }}
+                    onPress={() => { setSelectedPaymentType(type); setShowPaymentTypeDropdown(false); }}
                   >
                     <Text style={styles.dropdownItemText}>{type}</Text>
                   </TouchableOpacity>
@@ -472,89 +488,58 @@ export default function BookingsScreen() {
               </View>
             )}
 
-            {/* Footer Buttons */}
             <View style={styles.modalFooter}>
-              <TouchableOpacity 
-                style={styles.modalResetBtn} 
-                onPress={() => {
-                  setSelectedPaymentStatus('All');
-                  setSelectedPaymentType('All');
-                  setFilterModalVisible(false);
-                }}
+              <TouchableOpacity
+                style={styles.modalResetBtn}
+                onPress={() => { setSelectedPaymentStatus('All'); setSelectedPaymentType('All'); setFilterModalVisible(false); }}
               >
                 <Text style={styles.modalResetBtnText}>Reset</Text>
               </TouchableOpacity>
-
-              <TouchableOpacity 
-                style={styles.modalApplyBtn} 
-                onPress={() => setFilterModalVisible(false)}
-              >
+              <TouchableOpacity style={styles.modalApplyBtn} onPress={() => setFilterModalVisible(false)}>
                 <Text style={styles.modalApplyBtnText}>Apply Filter</Text>
               </TouchableOpacity>
             </View>
-
           </View>
         </View>
       </Modal>
-  </GradientBackground>
+    </GradientBackground>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
   safeArea: { flex: 1 },
-  
-  // Search & Filter styles
-  searchFilterRow: { flexDirection: 'row', paddingHorizontal: 16, paddingTop: 16, paddingBottom: 12, gap: 12, alignItems: 'center' },
+
+  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingTop: 16, paddingBottom: 12 },
+  backButton: { marginRight: 12 },
+  headerTitle: { flex: 1, fontSize: 16, fontWeight: '700', color: '#0F172A' },
+  dutyBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, gap: 6 },
+  dutyBadgeOn: { backgroundColor: '#22C55E' },
+  dutyBadgeOff: { backgroundColor: '#F1F5F9', borderWidth: 1, borderColor: '#E2E8F0' },
+  dutyDot: { width: 8, height: 8, borderRadius: 4 },
+  dutyBadgeText: { fontSize: 11, fontWeight: '700' },
+  dutyBadgeTextOn: { color: '#FFFFFF' },
+  dutyBadgeTextOff: { color: '#64748B' },
+
+  // Off duty empty state
+  offDutyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 40 },
+  offDutyText: { fontSize: 16, color: '#334155', fontWeight: '500', marginBottom: 32, textAlign: 'center' },
+  offDutySwitchRow: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: '#FFFFFF', paddingHorizontal: 20, paddingVertical: 14, borderRadius: 40, borderWidth: 1, borderColor: '#E2E8F0' },
+  offDutySwitchLabel: { fontSize: 12, fontWeight: '700', color: '#64748B' },
+
+  // Search & Filter
+  searchFilterRow: { flexDirection: 'row', paddingHorizontal: 16, paddingBottom: 12, gap: 12, alignItems: 'center' },
   searchContainer: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: '#E2E8F0',
-    paddingHorizontal: 12,
-    height: 48,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 8,
-      },
-      android: {
-        elevation: 2,
-      }
-    })
+    flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF',
+    borderRadius: 12, borderWidth: 1.5, borderColor: '#E2E8F0', paddingHorizontal: 12, height: 48,
   },
   searchInput: { flex: 1, marginLeft: 8, fontSize: 13, color: '#0F172A', fontWeight: '500' },
   filterBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: '#E2E8F0',
-    paddingHorizontal: 16,
-    height: 48,
-    gap: 8,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 8,
-      },
-      android: {
-        elevation: 2,
-      }
-    })
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFFFFF',
+    borderRadius: 12, borderWidth: 1.5, borderColor: '#E2E8F0', paddingHorizontal: 16, height: 48, gap: 8,
   },
   filterBtnText: { fontSize: 13, color: 'rgba(26, 15, 163, 1.00)', fontWeight: '700' },
 
-  // Filter tabs styles
   tabsRow: { marginBottom: 16 },
   tabsScroll: { paddingHorizontal: 16, gap: 8 },
   tabBtn: { paddingHorizontal: 18, paddingVertical: 8, borderRadius: 20, borderWidth: 1, minHeight: 38, justifyContent: 'center' },
@@ -566,110 +551,74 @@ const styles = StyleSheet.create({
   tabTextActive: { color: '#FFFFFF' },
   tabTextInactive: { color: '#64748B' },
 
-  // Scroll Content List
   scrollContent: { paddingHorizontal: 16, paddingBottom: 120 },
 
-  // Booking Card Design
   bookingCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 8,
-      },
-      android: {
-        elevation: 2,
-      },
-      web: {
-        boxShadow: '0px 2px 8px rgba(0,0,0,0.05)',
-      },
-    })
+    backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, marginBottom: 16,
+    ...Platform.select({ ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8 }, android: { elevation: 2 } })
   },
   cardHeader: { flexDirection: 'row', alignItems: 'center' },
   serviceIconContainer: { width: 44, height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
   serviceTextCol: { flex: 1, marginLeft: 12 },
   serviceName: { fontSize: 14, fontWeight: '700', color: 'rgba(26, 15, 163, 1.00)', marginBottom: 2 },
   idText: { fontSize: 11, color: '#94A3B8', fontWeight: '500' },
-  
-  statusBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
-  statusDot: { width: 6, height: 6, borderRadius: 3, marginRight: 6 },
-  statusText: { fontSize: 10, fontWeight: '700' },
-
+  distanceBadge: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  distanceText: { fontSize: 11, fontWeight: '700', color: '#3B82F6' },
   divider: { height: 1, backgroundColor: '#F1F5F9', marginVertical: 12 },
-
   infoRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
   infoRowAlignTop: { flexDirection: 'row', alignItems: 'flex-start' },
   infoText: { marginLeft: 8, fontSize: 12, color: '#0F172A', fontWeight: '500' },
   addressText: { marginLeft: 8, fontSize: 12, color: '#64748B', flex: 1, lineHeight: 18 },
-
-  // Bottom Banner
-  bottomBanner: {
-    marginTop: 12,
-    backgroundColor: '#EFF6FF',
-    borderRadius: 12,
-    padding: 12,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center'
-  },
+  bottomBanner: { marginTop: 12, backgroundColor: '#EFF6FF', borderRadius: 12, padding: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   bannerLabel: { fontSize: 10, color: '#64748B', fontWeight: '500', marginBottom: 4 },
   bannerValueDate: { fontSize: 12, fontWeight: '700', color: '#0F172A' },
   bannerValueTime: { fontSize: 11, color: '#64748B', marginTop: 1 },
   alignRight: { alignItems: 'flex-end' },
   bannerValuePrice: { fontSize: 16, fontWeight: '800', color: 'rgba(26, 15, 163, 1.00)', marginBottom: 2 },
   paymentStatusText: { fontSize: 9, fontWeight: '800' },
-  viewBtn: {
-    marginTop: 12,
-    backgroundColor: 'rgba(26, 15, 163, 1.00)',
-    borderRadius: 12,
-    paddingVertical: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '100%',
-    ...Platform.select({
-      ios: {
-        shadowColor: '#1A0FA3',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.15,
-        shadowRadius: 6,
-      },
-      android: {
-        elevation: 3,
-      }
-    })
-  },
-  viewBtnText: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '700',
-  },
+  viewBtn: { marginTop: 12, backgroundColor: 'rgba(26, 15, 163, 1.00)', borderRadius: 12, paddingVertical: 12, alignItems: 'center', justifyContent: 'center' },
+  viewBtnText: { color: '#FFFFFF', fontSize: 13, fontWeight: '700' },
+
+  // Booking popup
+  popupOverlay: { flex: 1, backgroundColor: 'rgba(15, 23, 42, 0.5)', justifyContent: 'center', alignItems: 'center' },
+  bookingPopup: { width: '88%', backgroundColor: '#FFFFFF', borderRadius: 20, padding: 20 },
+  popupCloseBtn: { position: 'absolute', top: 12, right: 16, zIndex: 10 },
+  popupCloseX: { fontSize: 26, color: '#94A3B8', lineHeight: 28 },
+  popupServiceName: { fontSize: 18, fontWeight: '700', color: '#0F172A', marginBottom: 4, marginTop: 4, paddingRight: 24 },
+  popupDivider: { height: 1, backgroundColor: '#F1F5F9', marginVertical: 12 },
+  popupSubTitle: { fontSize: 14, fontWeight: '600', color: '#0F172A', marginBottom: 6 },
+  popupSubItem: { fontSize: 13, color: '#334155', marginBottom: 4, paddingLeft: 4 },
+  popupPriceRow: { flexDirection: 'row', alignItems: 'center' },
+  popupPrice: { fontSize: 22, fontWeight: '800', color: '#22C55E' },
+  popupPaymentStatus: { fontSize: 14, color: '#64748B', fontWeight: '500' },
+  popupActionsRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 },
+  popupDotIndicator: { width: 12, height: 12, borderRadius: 6, backgroundColor: '#EF4444' },
+  popupBtnGroup: { flexDirection: 'row', gap: 12, alignItems: 'center' },
+  popupRejectBtn: { width: 44, height: 44, borderRadius: 22, borderWidth: 1.5, borderColor: '#E2E8F0', justifyContent: 'center', alignItems: 'center', backgroundColor: '#F8FAFC' },
+  popupRejectText: { fontSize: 22, color: '#64748B', lineHeight: 26 },
+  popupAcceptBtn: { backgroundColor: 'rgba(26, 15, 163, 1.00)', borderRadius: 24, paddingHorizontal: 32, paddingVertical: 12 },
+  popupAcceptText: { fontSize: 15, fontWeight: '700', color: '#FFFFFF' },
+
+  // Filter modal
   modalOverlay: { flex: 1, backgroundColor: 'rgba(15, 23, 42, 0.4)', justifyContent: 'flex-end' },
   modalSheetContainer: { backgroundColor: '#FFFFFF', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, minHeight: 360, borderTopWidth: 1, borderTopColor: '#F1F5F9' },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
   modalTitle: { fontSize: 18, fontWeight: '800', color: '#0F172A' },
   modalCloseBtn: { padding: 4 },
   modalSectionLabel: { fontSize: 13, fontWeight: '700', color: '#0F172A', marginTop: 16, marginBottom: 12 },
-  
   chipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 },
-  chip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: '#CBD5E1' },
+  chip: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, borderWidth: 1 },
   chipSelected: { backgroundColor: 'rgba(26, 15, 163, 1.00)', borderColor: 'rgba(26, 15, 163, 1.00)' },
   chipUnselected: { backgroundColor: '#FFFFFF', borderColor: '#E2E8F0' },
   chipText: { fontSize: 12, fontWeight: '600' },
   chipTextSelected: { color: '#FFFFFF' },
   chipTextUnselected: { color: '#64748B' },
-
   dropdownTrigger: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#F8FAFC', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 12, paddingHorizontal: 16, paddingVertical: 12, marginBottom: 16 },
   dropdownTriggerText: { fontSize: 13, color: '#334155', fontWeight: '500' },
   dropdownChevron: { fontSize: 10, color: '#64748B' },
   dropdownMenu: { backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 12, paddingVertical: 4, marginBottom: 16, marginTop: -8 },
   dropdownItem: { paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#F8FAFC' },
   dropdownItemText: { fontSize: 13, color: '#334155' },
-
   modalFooter: { flexDirection: 'row', gap: 16, marginTop: 24, borderTopWidth: 1, borderTopColor: '#F1F5F9', paddingTop: 16 },
   modalResetBtn: { flex: 1, height: 48, borderRadius: 14, borderWidth: 1, borderColor: '#CBD5E1', justifyContent: 'center', alignItems: 'center' },
   modalResetBtnText: { fontSize: 14, fontWeight: '700', color: '#64748B' },

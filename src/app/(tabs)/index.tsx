@@ -1,7 +1,6 @@
 import { useSafeRouter } from '@/hooks/useSafeRouter';
 import React, { useMemo, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, Platform, TouchableOpacity, BackHandler } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import {  useFocusEffect } from 'expo-router';
 import { GradientBackground } from '@/components/ui/GradientBackground';
 import { Card } from '@/components/ui/Card';
@@ -17,6 +16,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useAndroidBack } from '@/hooks/useAndroidBack';
 import { StorageService } from '@/services/storage.service';
 import { MandatoryFlow, UserSession, FlowStatus } from '@/types/storage.types';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const getIconForStatus = (status: FlowStatus) => {
   switch (status) {
@@ -54,6 +54,8 @@ export default function ApplicationApprovalScreen() {
   const router = useSafeRouter();
   const { mobileNumber } = useAuthStore();
   
+  const [showCongrats, setShowCongrats] = useState(false);
+  
   const [session, setSession] = useState<UserSession | null>(null);
   const [flowState, setFlowState] = useState<MandatoryFlow | null>(null);
 
@@ -61,6 +63,10 @@ export default function ApplicationApprovalScreen() {
     useCallback(() => {
       const loadState = async () => {
         const s = await StorageService.getUserSession();
+        if (s?.isApproved) {
+          router.replace('/(dashboard)');
+          return;
+        }
         const f = await StorageService.getMandatoryFlow();
         setSession(s);
         setFlowState(f);
@@ -73,7 +79,11 @@ export default function ApplicationApprovalScreen() {
     // optional back action
   };
 
-  const handleApprove = async () => {
+  const handleApprove = () => {
+    setShowCongrats(true);
+  };
+
+  const handleGoToDashboard = async () => {
     if (session) {
       await StorageService.updateUserSession({ isApproved: true });
       router.replace('/(dashboard)');
@@ -117,7 +127,7 @@ export default function ApplicationApprovalScreen() {
   const isAllApproved = useMemo(() => {
     if (!flowState || flowSteps.length === 0) return false;
     const statuses = flowSteps.map(step => flowState[step.key as keyof MandatoryFlow]);
-    return statuses.every(s => s === 'verified' || s === 'completed');
+    return statuses.every(s => s === 'verified' || s === 'completed' || s === 'reviewing');
   }, [flowState, flowSteps]);
 
   if (!flowState) {
@@ -139,17 +149,17 @@ export default function ApplicationApprovalScreen() {
           {/* Top Blue Status Card */}
           <View style={styles.blueCard}>
             <View style={styles.clockIconWrapper}>
-              {isAllApproved ? (
+              {(isAllApproved || showCongrats) ? (
                 <VerifiedIcon size={24} color="#FFFFFF" />
               ) : (
                 <ReviewingIcon size={24} color="#FFFFFF" />
               )}
             </View>
             <Text style={styles.blueCardTitle}>
-              {isAllApproved ? 'Application Approved' : 'Application Under Review'}
+              {(isAllApproved || showCongrats) ? 'Application Approved' : 'Application Under Review'}
             </Text>
             <Text style={styles.blueCardText}>
-              {isAllApproved 
+              {(isAllApproved || showCongrats)
                 ? 'Your application has been fully approved. You can now accept bookings.'
                 : 'We have received your details and documents. Our team is currently reviewing your application.'}
             </Text>
@@ -159,15 +169,15 @@ export default function ApplicationApprovalScreen() {
                 theme="dark"
                 steps={[
                   { id: '1', label: 'SUBMITTED', state: 'completed' },
-                  { id: '2', label: 'REVIEWING', state: isAllApproved ? 'completed' : 'active' },
-                  { id: '3', label: 'APPROVED', state: isAllApproved ? 'completed' : 'pending' },
+                  { id: '2', label: 'REVIEWING', state: (isAllApproved || showCongrats) ? 'completed' : 'active' },
+                  { id: '3', label: 'APPROVED', state: (isAllApproved || showCongrats) ? 'completed' : 'pending' },
                 ]} 
               />
             </View>
           </View>
 
           {/* Congratulations Card */}
-          {isAllApproved && (
+          {(isAllApproved || showCongrats) && (
             <Card style={styles.card} variant="default">
               <View style={styles.congratsRow}>
                 <View style={styles.congratsIconWrapper}>
@@ -183,7 +193,7 @@ export default function ApplicationApprovalScreen() {
               </View>
               <Button 
                 title="Go to Dashboard" 
-                onPress={() => router.replace('/(dashboard)')} 
+                onPress={handleGoToDashboard} 
                 variant="primary" 
                 style={{ marginTop: 16 }} 
               />
@@ -191,7 +201,7 @@ export default function ApplicationApprovalScreen() {
           )}
 
           {/* Info Alert */}
-          {!isAllApproved && (
+          {!(isAllApproved || showCongrats) && (
             <View style={styles.alertWrapper}>
               <InfoAlert message="You will be notified via email and SMS once your account is approved. You cannot accept bookings until verification is complete." />
             </View>
@@ -259,7 +269,7 @@ export default function ApplicationApprovalScreen() {
           </View>
           
           {/* Approve Button */}
-          {!isAllApproved && (
+          {!(isAllApproved || showCongrats) && (
             <Button 
               title="Approve Account (Demo)" 
               onPress={handleApprove} 
@@ -276,7 +286,7 @@ export default function ApplicationApprovalScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  safeArea: { flex: 1,  },
+  safeArea: { flex: 1 },
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 16 },
   backButton: { marginRight: 12 },
   headerTitle: { fontSize: 18, fontWeight: '700', color: '#0F172A' },

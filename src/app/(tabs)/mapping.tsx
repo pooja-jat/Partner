@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSafeRouter } from '@/hooks/useSafeRouter';
 import { GradientBackground } from '@/components/ui/GradientBackground';
-import { BackArrowIcon, DownloadExcelIcon } from '@/components/ui/Icons';
+import { BackArrowIcon, PencilIcon, BranchIcon, OutlineStarIcon } from '@/components/ui/Icons';
 import { Button } from '@/components/ui/Button';
 import { MapServicesModal } from '@/components/common/MapServicesModal';
 import { useAndroidBack } from '@/hooks/useAndroidBack';
@@ -12,9 +12,9 @@ import { RoleAccessGuard } from '@/components/common/RoleAccessGuard';
 import { completeStepAndNavigate } from '@/utils/onboarding';
 
 const DUMMY_MAPPINGS = [
-  { 
-    id: '1', 
-    branchName: 'Name', 
+  {
+    id: '1',
+    branchName: 'Name',
     category: 'Cleaning',
     status: 'Active',
     services: [
@@ -24,9 +24,9 @@ const DUMMY_MAPPINGS = [
       { name: 'Open area cleaning', experience: '1.5 years' },
     ]
   },
-  { 
-    id: '2', 
-    branchName: 'Name', 
+  {
+    id: '2',
+    branchName: 'Name',
     category: 'Cleaning',
     status: 'Active',
     services: [
@@ -36,9 +36,9 @@ const DUMMY_MAPPINGS = [
       { name: 'Open area cleaning', experience: '1.5 years' },
     ]
   },
-  { 
-    id: '3', 
-    branchName: 'Name', 
+  {
+    id: '3',
+    branchName: 'Name',
     category: 'Cleaning',
     status: 'Active',
     services: [
@@ -51,16 +51,38 @@ const DUMMY_MAPPINGS = [
 ];
 
 export default function MappingScreen() {
-  useAndroidBack(() => router.replace('/(tabs)'));
   const router = useSafeRouter();
   const [filter, setFilter] = useState<'All' | 'Active' | 'Inactive'>('All');
   
   const [modalVisible, setModalVisible] = useState(false);
   const [modalMode, setModalMode] = useState<'create' | 'update'>('create');
   const [selectedMapping, setSelectedMapping] = useState<any>(null);
+  const [isApproved, setIsApproved] = useState(false);
+
+  useEffect(() => {
+    const checkApproval = async () => {
+      const session = await StorageService.getUserSession();
+      if (session?.isApproved) {
+        setIsApproved(true);
+      }
+    };
+    checkApproval();
+  }, []);
+
+  useAndroidBack(() => {
+    if (isApproved) {
+      router.back();
+    } else {
+      router.replace('/(tabs)');
+    }
+  });
 
   const handleBack = () => {
-    router.replace('/(tabs)');
+    if (isApproved) {
+      router.back();
+    } else {
+      router.replace('/(tabs)');
+    }
   };
 
   const handleEdit = (mapping: any) => {
@@ -76,7 +98,7 @@ export default function MappingScreen() {
   };
 
   return (
-    <RoleAccessGuard allowedRoles={['BSP']}>
+    <RoleAccessGuard allowedRoles={['BSP', 'BS']}>
       <GradientBackground style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
@@ -100,14 +122,23 @@ export default function MappingScreen() {
           </View>
         </View>
 
-        <View style={styles.actionRow}>
-          <TouchableOpacity style={styles.excelButton}>
-            <DownloadExcelIcon size={14} color="#3B82F6" />
-            <Text style={styles.excelText}>Excel</Text>
-          </TouchableOpacity>
-        </View>
-
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.listContainer}>
+          {DUMMY_MAPPINGS.length === 0 && (
+            <View style={styles.emptyContainer}>
+              <View style={styles.emptyIconContainer}>
+                <View style={styles.emptyLargeCircle}>
+                  <BranchIcon size={48} color="#3B82F6" />
+                </View>
+                <View style={styles.emptySmallCircle}>
+                  <OutlineStarIcon size={20} color="#3B82F6" />
+                </View>
+              </View>
+              <Text style={styles.emptyTitle}>No Mapping Added Yet</Text>
+              <Text style={styles.emptySubtitle}>
+                Add your branch and service mappings{'\n'}to manage them from one place
+              </Text>
+            </View>
+          )}
           {DUMMY_MAPPINGS.map((mapping) => (
             <View key={mapping.id} style={styles.card}>
               <View style={styles.cardHeader}>
@@ -135,7 +166,7 @@ export default function MappingScreen() {
               </View>
 
               <TouchableOpacity style={styles.editBtn} onPress={() => handleEdit(mapping)}>
-                <Text style={styles.editBtnText}>Edit</Text>
+                <PencilIcon size={16} color="#0F172A" />
               </TouchableOpacity>
             </View>
           ))}
@@ -146,26 +177,28 @@ export default function MappingScreen() {
             title="+ Add service branch mapping" 
             onPress={handleAdd} 
             variant="primary" 
-            style={{ backgroundColor: 'rgba(26, 15, 163, 1.00)', marginBottom: 12 }}
+            style={{ backgroundColor: 'rgba(26, 15, 163, 1.00)', marginBottom: isApproved ? 0 : 12 }}
           />
-          <View style={{ flexDirection: 'row', gap: 12 }}>
-            <Button 
-              title="Skip" 
-              onPress={async () => {
-                await completeStepAndNavigate('serviceBranchMapping', router, 'completed');
-              }} 
-              variant="outline" 
-              style={{ flex: 1 }}
-            />
-            <Button 
-              title="Continue" 
-              onPress={async () => {
-                await completeStepAndNavigate('serviceBranchMapping', router, 'completed');
-              }} 
-              variant="primary" 
-              style={{ flex: 1 }}
-            />
-          </View>
+          {!isApproved && (
+            <View style={{ flexDirection: 'row', gap: 12 }}>
+              <Button 
+                title="Skip" 
+                onPress={async () => {
+                  await completeStepAndNavigate('serviceBranchMapping', router, 'completed');
+                }} 
+                variant="outline" 
+                style={{ flex: 1 }}
+              />
+              <Button 
+                title="Continue" 
+                onPress={async () => {
+                  await completeStepAndNavigate('serviceBranchMapping', router, 'completed');
+                }} 
+                variant="primary" 
+                style={{ flex: 1 }}
+              />
+            </View>
+          )}
         </View>
       </SafeAreaView>
 
@@ -197,10 +230,6 @@ const styles = StyleSheet.create({
   tabText: { color: '#64748B', fontSize: 13, fontWeight: '500' },
   activeTabText: { color: '#FFFFFF' },
 
-  actionRow: { flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: 20, marginBottom: 12 },
-  excelButton: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, gap: 6, boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.05)', elevation: 2 },
-  excelText: { color: '#3B82F6', fontSize: 13, fontWeight: '500' },
-
   listContainer: { paddingHorizontal: 20, paddingBottom: 40 },
   
   card: { position: 'relative', backgroundColor: '#FFFFFF', borderRadius: 24, padding: 20, marginBottom: 12, boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.05)', elevation: 2 },
@@ -220,8 +249,14 @@ const styles = StyleSheet.create({
   serviceName: { fontSize: 11, color: '#64748B' },
   serviceExp: { fontSize: 10, color: '#64748B', width: 60, textAlign: 'right' },
   
-  editBtn: { position: 'absolute', right: 20, top: '50%', transform: [{ translateY: -16 }], borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 20, paddingHorizontal: 16, paddingVertical: 6, backgroundColor: '#FFFFFF' },
-  editBtnText: { fontSize: 12, fontWeight: '600', color: '#0F172A' },
+  editBtn: { position: 'absolute', right: 20, top: '50%', transform: [{ translateY: -16 }], borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 20, padding: 8, backgroundColor: '#FFFFFF', justifyContent: 'center', alignItems: 'center' },
 
-  footer: { paddingHorizontal: 20, paddingBottom: 40, paddingTop: 16 }
+  footer: { paddingHorizontal: 20, paddingBottom: 40, paddingTop: 16 },
+
+  emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 40, paddingTop: 60 },
+  emptyIconContainer: { position: 'relative', marginBottom: 32 },
+  emptyLargeCircle: { width: 120, height: 120, borderRadius: 60, backgroundColor: 'rgba(206, 218, 255, 0.8)', justifyContent: 'center', alignItems: 'center' },
+  emptySmallCircle: { position: 'absolute', bottom: 0, right: 0, width: 36, height: 36, borderRadius: 18, backgroundColor: '#FFFFFF', justifyContent: 'center', alignItems: 'center', elevation: 3 },
+  emptyTitle: { fontSize: 22, fontWeight: '700', color: '#000000', marginBottom: 12, textAlign: 'center' },
+  emptySubtitle: { fontSize: 14, color: '#94A3B8', textAlign: 'center', lineHeight: 22 },
 });

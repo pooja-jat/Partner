@@ -1,8 +1,7 @@
 import { useSafeRouter } from '@/hooks/useSafeRouter';
 import { useCallback, useRef, useEffect } from 'react';
 import { BackHandler } from 'react-native';
-import {  usePathname } from 'expo-router';
-import { useFocusEffect } from '@react-navigation/native';
+import {  usePathname, useFocusEffect } from 'expo-router';
 
 export function useAndroidBack(customAction?: () => void) {
   const router = useSafeRouter();

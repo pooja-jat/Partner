@@ -225,7 +225,7 @@ export default function SettingsScreen() {
           <View style={styles.deleteContent}>
             {Platform.OS !== 'web' && <View style={styles.dragHandle} />}
             <Text style={styles.modalTitle}>Delete Account</Text>
-            <Text style={[styles.modalDesc, { color: '#EF4444', marginBottom: 20 }]}>
+            <Text style={[styles.modalDesc, { marginBottom: 20 }]}>
               Warning: This action is permanent and will delete all your account data, branches, services, and employee records.
             </Text>
             <View style={styles.modalButtonsRow}>
@@ -371,7 +371,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(26, 15, 163, 1.00)',
   },
   deleteConfirmBtn: {
-    backgroundColor: '#EF4444',
+    backgroundColor: 'rgba(26, 15, 163, 1.00)',
   },
   confirmBtnText: {
     fontSize: 14,

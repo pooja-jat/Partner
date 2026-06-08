@@ -3,17 +3,46 @@ import { View, Text, StyleSheet, TouchableOpacity, Platform, FlatList } from 're
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSafeRouter } from '@/hooks/useSafeRouter';
 import { GradientBackground } from '@/components/ui/GradientBackground';
-import { BackArrowIcon, DownloadExcelIcon } from '@/components/ui/Icons';
+import { BackArrowIcon, EmployeeIcon, OutlineStarIcon } from '@/components/ui/Icons';
 import { Button } from '@/components/ui/Button';
 import { useEmployeeStore } from '@/store/employeeStore';
 import { EmployeeModal } from '@/components/common/EmployeeModal';
 import { EmployeeDetailsModal } from '@/components/common/EmployeeDetailsModal';
 import { EmployeeBookingsModal } from '@/components/common/EmployeeBookingsModal';
-import { LocationPinIcon, OutlineStarIcon } from '@/components/ui/Icons';
+import Svg, { Path, Circle, Rect } from 'react-native-svg';
+
+const ViewIcon = () => (
+  <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
+    <Path d="M1 12C1 12 5 4 12 4C19 4 23 12 23 12C23 12 19 20 12 20C5 20 1 12 1 12Z" stroke="#3B82F6" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    <Circle cx="12" cy="12" r="3" stroke="#3B82F6" strokeWidth="1.5"/>
+  </Svg>
+);
+
+const EditIcon = () => (
+  <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
+    <Path d="M11 4H4C3.46957 4 2.96086 4.21071 2.58579 4.58579C2.21071 4.96086 2 5.46957 2 6V20C2 20.5304 2.21071 21.0391 2.58579 21.4142C2.96086 21.7893 3.46957 22 4 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V13" stroke="#F97316" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    <Path d="M18.5 2.50023C18.8978 2.1024 19.4374 1.87891 20 1.87891C20.5626 1.87891 21.1022 2.1024 21.5 2.50023C21.8978 2.89805 22.1213 3.43762 22.1213 4.00023C22.1213 4.56284 21.8978 5.1024 21.5 5.50023L12 15.0002L8 16.0002L9 12.0002L18.5 2.50023Z" stroke="#F97316" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+  </Svg>
+);
+
+const BookingIcon = () => (
+  <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
+    <Rect x="3" y="4" width="18" height="18" rx="2" stroke="#8B5CF6" strokeWidth="1.5"/>
+    <Path d="M16 2V6M8 2V6M3 10H21" stroke="#8B5CF6" strokeWidth="1.5" strokeLinecap="round"/>
+    <Path d="M8 14H16M8 18H12" stroke="#8B5CF6" strokeWidth="1.5" strokeLinecap="round"/>
+  </Svg>
+);
+
+const PayoutIcon = () => (
+  <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
+    <Path d="M12 1V23M17 5H9.5C8.57174 5 7.6815 5.36875 7.02513 6.02513C6.36875 6.6815 6 7.57174 6 8.5C6 9.42826 6.36875 10.3185 7.02513 10.9749C7.6815 11.6313 8.57174 12 9.5 12H14.5C15.4283 12 16.3185 12.3687 16.9749 13.0251C17.6313 13.6815 18 14.5717 18 15.5C18 16.4283 17.6313 17.3185 16.9749 17.9749C16.3185 18.6313 15.4283 19 14.5 19H6" stroke="#16A34A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+  </Svg>
+);
 import { Employee } from '@/types';
 import { useAndroidBack } from '@/hooks/useAndroidBack';
 import { RoleAccessGuard } from '@/components/common/RoleAccessGuard';
 import { completeStepAndNavigate } from '@/utils/onboarding';
+import { StorageService } from '@/services/storage.service';
 
 export default function EmployeeListScreen() {
   const router = useSafeRouter();
@@ -26,15 +55,27 @@ export default function EmployeeListScreen() {
   const [isDetailsVisible, setIsDetailsVisible] = useState(false);
   const [isBookingsVisible, setIsBookingsVisible] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+  const [isApproved, setIsApproved] = useState(false);
 
   const handleBack = () => {
-    router.replace('/(tabs)');
+    if (isApproved) {
+      router.back();
+    } else {
+      router.replace('/(tabs)');
+    }
   };
 
   useAndroidBack(handleBack);
 
   useEffect(() => {
     initialize();
+    const checkApproval = async () => {
+      const session = await StorageService.getUserSession();
+      if (session?.isApproved) {
+        setIsApproved(true);
+      }
+    };
+    checkApproval();
   }, []);
 
   const filteredEmployees = employees.filter(e => {
@@ -70,26 +111,27 @@ export default function EmployeeListScreen() {
       
       <View style={styles.actionsRow}>
         <TouchableOpacity style={styles.actionButton} onPress={() => handleView(item)}>
+          <ViewIcon />
           <Text style={styles.actionButtonText}>View</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.actionButton} onPress={() => handleEdit(item)}>
+          <EditIcon />
           <Text style={styles.actionButtonText}>Edit</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.actionButton} onPress={() => handleBookings(item)}>
+          <BookingIcon />
           <Text style={styles.actionButtonText}>Booking</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.actionButton} onPress={() => router.push('/(tabs)/employee/payouts')}>
+          <PayoutIcon />
           <Text style={styles.actionButtonText}>Payout</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.actionButton} onPress={() => router.push('/(tabs)/employee/schedule')}>
-          <Text style={styles.actionButtonText}>Schedule</Text>
         </TouchableOpacity>
       </View>
     </View>
   );
 
   return (
-    <RoleAccessGuard allowedRoles={['BSP']}>
+    <RoleAccessGuard allowedRoles={['BSP', 'BS']}>
       <GradientBackground style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         {/* Header */}
@@ -120,14 +162,6 @@ export default function EmployeeListScreen() {
           </View>
         </View>
 
-        {/* Excel Button */}
-        <View style={styles.actionRow}>
-          <TouchableOpacity style={styles.excelButton}>
-            <DownloadExcelIcon size={16} color="#3B82F6" />
-            <Text style={styles.excelText}>Excel</Text>
-          </TouchableOpacity>
-        </View>
-
         {/* List */}
         <FlatList
           data={filteredEmployees}
@@ -139,14 +173,14 @@ export default function EmployeeListScreen() {
             <View style={styles.emptyContainer}>
               <View style={styles.emptyIconWrapper}>
                 <View style={styles.emptyIconCircle}>
-                  <LocationPinIcon size={40} color="#3B82F6" />
+                  <EmployeeIcon size={40} color="#3B82F6" />
                 </View>
                 <View style={styles.emptyStarBadge}>
                   <OutlineStarIcon size={16} color="#3B82F6" />
                 </View>
               </View>
-              <Text style={styles.emptyTitle}>No Branch Service{'\n'}Added Yet</Text>
-              <Text style={styles.emptySubtitle}>Add locations that you frequently{'\n'}visit for quick access</Text>
+              <Text style={styles.emptyTitle}>No Employee Added Yet</Text>
+              <Text style={styles.emptySubtitle}>Add your team members to manage{'\n'}bookings and assignments</Text>
             </View>
           }
         />
@@ -159,16 +193,18 @@ export default function EmployeeListScreen() {
               setSelectedEmployee(null);
               setIsModalVisible(true);
             }} 
-            variant="outline" 
-            style={{ marginBottom: 12 }}
+            variant={isApproved ? "primary" : "outline"}
+            style={isApproved ? undefined : { marginBottom: 12 }}
           />
-          <Button 
-            title="Continue" 
-            onPress={async () => {
-              await completeStepAndNavigate('branchEmployeeMapping', router, 'completed');
-            }} 
-            variant="primary" 
-          />
+          {!isApproved && (
+            <Button 
+              title="Continue" 
+              onPress={async () => {
+                await completeStepAndNavigate('branchEmployeeMapping', router, 'completed');
+              }} 
+              variant="primary" 
+            />
+          )}
         </View>
       </SafeAreaView>
 
@@ -219,27 +255,24 @@ const styles = StyleSheet.create({
   activeTab: { backgroundColor: 'rgba(26, 15, 163, 1.00)' },
   tabText: { color: '#64748B', fontSize: 14, fontWeight: '500' },
   activeTabText: { color: '#FFFFFF' },
-  actionRow: { flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: 20, marginBottom: 12 },
-  excelButton: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, gap: 4 },
-  excelText: { color: '#3B82F6', fontSize: 14, fontWeight: '500' },
   listContent: { paddingHorizontal: 20, paddingBottom: 40, gap: 12 },
   card: { backgroundColor: '#FFFFFF', borderRadius: 24, padding: 20 },
   cardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 16, gap: 8 },
   employeeName: { fontSize: 14, fontWeight: '600', color: '#334155' },
   statusText: { fontSize: 11, fontWeight: '700', color: '#22C55E' },
   statusInactive: { color: '#EF4444' },
-  actionsRow: { flexDirection: 'row', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 },
-  actionButton: { 
-    borderWidth: 1, 
-    borderColor: '#E2E8F0', 
-    borderRadius: 20, 
-    paddingHorizontal: 16, 
-    paddingVertical: 6,
+  actionsRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 8 },
+  actionButton: {
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    borderRadius: 16,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
     flex: 1,
     alignItems: 'center',
-    minWidth: '22%'
+    gap: 4,
   },
-  actionButtonText: { fontSize: 11, color: '#0F172A', fontWeight: '500' },
+  actionButtonText: { fontSize: 10, color: '#0F172A', fontWeight: '500' },
   
   emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: 80 },
   emptyIconWrapper: { position: 'relative', marginBottom: 24 },

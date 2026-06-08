@@ -141,8 +141,6 @@ const styles = StyleSheet.create({
   },
   primary: {
     backgroundColor: COLORS.primary,
-    boxShadow: `${0}px ${4}px ${8}px ${COLORS.primary}`,
-    elevation: 3,
   },
   secondary: {
     backgroundColor: '#F1F5F9',
