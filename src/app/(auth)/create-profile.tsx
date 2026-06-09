@@ -1,11 +1,10 @@
 import { useSafeRouter } from '@/hooks/useSafeRouter';
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, Text, TouchableOpacity, ScrollView, Platform, Switch } from 'react-native';
+import { View, StyleSheet, Text, TouchableOpacity, ScrollView, Platform, Switch, KeyboardAvoidingView } from 'react-native';
 import {  useLocalSearchParams } from 'expo-router';
 import { GradientBackground } from '@/components/ui/GradientBackground';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
-import { SelectInput } from '@/components/ui/SelectInput';
 import { Button } from '@/components/ui/Button';
 import { BackArrowIcon, UploadIcon, PlusIcon, ChevronDownIcon } from '@/components/ui/Icons';
 import { COLORS } from '@/constants';
@@ -30,10 +29,6 @@ export default function CreateProfileScreen() {
   const getOptions = () => {
     switch (modalType) {
       case 'gender': return [{ label: 'Male', value: 'Male' }, { label: 'Female', value: 'Female' }, { label: 'Other', value: 'Other' }];
-      case 'country': return [{ label: 'India', value: 'India' }, { label: 'United States', value: 'United States' }, { label: 'Canada', value: 'Canada' }];
-      case 'state': return [{ label: 'Gujarat', value: 'Gujarat' }, { label: 'Maharashtra', value: 'Maharashtra' }, { label: 'Delhi', value: 'Delhi' }];
-      case 'district': return [{ label: 'Ahmedabad', value: 'Ahmedabad' }, { label: 'Surat', value: 'Surat' }, { label: 'Pune', value: 'Pune' }];
-      case 'city': return [{ label: 'Ahmedabad City', value: 'Ahmedabad City' }, { label: 'Gandhinagar', value: 'Gandhinagar' }];
       default: return [];
     }
   };
@@ -41,10 +36,6 @@ export default function CreateProfileScreen() {
   const getModalTitle = () => {
     switch (modalType) {
       case 'gender': return 'Select Gender';
-      case 'country': return 'Select Country';
-      case 'state': return 'Select State';
-      case 'district': return 'Select District';
-      case 'city': return 'Select City';
       default: return '';
     }
   };
@@ -131,8 +122,17 @@ export default function CreateProfileScreen() {
           <Text style={styles.headerTitle}>{isApproved ? 'Edit Profile' : 'Create Profile'}</Text>
         </View>
 
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+        >
         <Card style={styles.card} variant="default">
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.scrollContent}
+            keyboardShouldPersistTaps="handled"
+          >
             
             {/* Upload Photo Section */}
             <View style={styles.uploadSection}>
@@ -211,15 +211,17 @@ export default function CreateProfileScreen() {
                 </TouchableOpacity>
               </View>
               <View style={styles.flex1}>
-                    <SelectInput
-                      label="Gender"
-                      value={form.gender}
-                      placeholder="Select"
-                      onPress={() => !isReadOnly && setModalType('gender')}
-                      style={{ marginBottom: 12 }}
-                      required={false}
-                      disabled={isReadOnly}
-                    />
+                <TouchableOpacity activeOpacity={0.7} onPress={() => !isReadOnly && setModalType('gender')} disabled={isReadOnly}>
+                  <Input
+                    label="Gender"
+                    value={form.gender}
+                    placeholder="Select"
+                    editable={false}
+                    pointerEvents="none"
+                    style={{ marginBottom: 12 }}
+                    rightIcon={<ChevronDownIcon size={20} color="#64748B" />}
+                  />
+                </TouchableOpacity>
               </View>
             </View>
 
@@ -251,58 +253,58 @@ export default function CreateProfileScreen() {
 
             <View style={styles.row}>
               <View style={styles.flex1}>
-                    <SelectInput
-                      label="Country"
-                      value={form.country}
-                      placeholder="Select"
-                      onPress={() => !isReadOnly && setModalType('country')}
-                      style={{ marginBottom: 12 }}
-                      required={false}
-                      disabled={isReadOnly}
-                    />
+                <Input
+                  label="Country"
+                  value={form.country}
+                  placeholder="Enter country"
+                  editable={!isReadOnly}
+                  pointerEvents={isReadOnly ? 'none' : 'auto'}
+                  onChangeText={(t) => updateForm('country', t)}
+                  style={{ marginBottom: 12 }}
+                />
               </View>
               <View style={styles.flex1}>
-                    <SelectInput
-                      label="State"
-                      value={form.state}
-                      placeholder="Select"
-                      onPress={() => !isReadOnly && setModalType('state')}
-                      style={{ marginBottom: 12 }}
-                      required={false}
-                      disabled={isReadOnly}
-                    />
+                <Input
+                  label="State"
+                  value={form.state}
+                  placeholder="Enter state"
+                  editable={!isReadOnly}
+                  pointerEvents={isReadOnly ? 'none' : 'auto'}
+                  onChangeText={(t) => updateForm('state', t)}
+                  style={{ marginBottom: 12 }}
+                />
               </View>
             </View>
 
             <View style={styles.row}>
               <View style={styles.flex1}>
-                    <SelectInput
-                      label="District"
-                      value={form.district}
-                      placeholder="Select"
-                      onPress={() => !isReadOnly && setModalType('district')}
-                      style={{ marginBottom: 12 }}
-                      required={false}
-                      disabled={isReadOnly}
-                    />
+                <Input
+                  label="District"
+                  value={form.district}
+                  placeholder="Enter district"
+                  editable={!isReadOnly}
+                  pointerEvents={isReadOnly ? 'none' : 'auto'}
+                  onChangeText={(t) => updateForm('district', t)}
+                  style={{ marginBottom: 12 }}
+                />
               </View>
               <View style={styles.flex1}>
-                    <SelectInput
-                      label="City"
-                      value={form.city}
-                      placeholder="Select"
-                      onPress={() => !isReadOnly && setModalType('city')}
-                      style={{ marginBottom: 12 }}
-                      required={false}
-                      disabled={isReadOnly}
-                    />
+                <Input
+                  label="City"
+                  value={form.city}
+                  placeholder="Enter city"
+                  editable={!isReadOnly}
+                  pointerEvents={isReadOnly ? 'none' : 'auto'}
+                  onChangeText={(t) => updateForm('city', t)}
+                  style={{ marginBottom: 12 }}
+                />
               </View>
             </View>
 
             <Input
               label="Pincode / ZIP"
               placeholder="123456"
-              keyboardType="numeric"
+              keyboardType="number-pad"
               value={form.pincode}
               editable={!isReadOnly}
               pointerEvents={isReadOnly ? 'none' : 'auto'}
@@ -320,6 +322,7 @@ export default function CreateProfileScreen() {
 
           </ScrollView>
         </Card>
+        </KeyboardAvoidingView>
       </SafeAreaView>
 
       <DatePickerModal

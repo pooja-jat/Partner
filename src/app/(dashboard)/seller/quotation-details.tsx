@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSafeRouter } from '@/hooks/useSafeRouter';
 import { useLocalSearchParams } from 'expo-router';
@@ -218,10 +218,10 @@ export default function QuotationDetailsScreen() {
 
           {/* Map Section */}
           <View style={styles.mapCard}>
-            <Image 
-              source={{ uri: 'https://images.unsplash.com/photo-1524661135-423995f22d0b?q=80&w=600&auto=format&fit=crop' }} 
-              style={styles.mapImage} 
-            />
+            <View style={styles.mapPlaceholder}>
+              <LocationPinIcon color="#1A0FA3" size={32} />
+              <Text style={styles.mapPlaceholderText}>{request.location?.split(',').slice(-2).join(',').trim() || 'Gurugram, Haryana'}</Text>
+            </View>
             <View style={styles.mapLabelContainer}>
               <Text style={styles.mapLabelText}>GURUGRAM SECTOR 12</Text>
             </View>
@@ -332,7 +332,9 @@ const styles = StyleSheet.create({
   unitBadge: { backgroundColor: '#DBEAFE', paddingHorizontal: 8, height: '100%', justifyContent: 'center', alignItems: 'center' },
   unitBadgeText: { fontSize: 10, fontWeight: '700', color: '#1E40AF' },
 
-  mapCard: { height: 140, borderRadius: 20, overflow: 'hidden', borderWidth: 1, borderColor: '#E2E8F0', marginBottom: 12 },
+  mapCard: { height: 140, borderRadius: 20, overflow: 'hidden', marginBottom: 12 },
+  mapPlaceholder: { flex: 1, backgroundColor: '#EEF2FF', justifyContent: 'center', alignItems: 'center', gap: 8 },
+  mapPlaceholderText: { fontSize: 11, fontWeight: '600', color: '#4338CA', textAlign: 'center', paddingHorizontal: 16 },
   mapImage: { width: '100%', height: '100%' },
   mapLabelContainer: { position: 'absolute', bottom: 12, right: 12, backgroundColor: '#FFFFFF', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 4, borderWidth: 1, borderColor: '#E2E8F0' },
   mapLabelText: { fontSize: 9, fontWeight: '800', color: '#475569' },
@@ -349,7 +351,7 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     paddingBottom: Platform.OS === 'ios' ? 24 : 12
   },
-  actionBtn: { backgroundColor: '#1E1B4B', height: 48, borderRadius: 12, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8 },
+  actionBtn: { backgroundColor: 'rgba(26, 15, 163, 1.00)', height: 48, borderRadius: 16, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8, shadowColor: '#1A0FA3', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8, elevation: 4 },
   actionBtnText: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' },
   statusBannerQuoted: { backgroundColor: '#EFF6FF', height: 44, borderRadius: 12, justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#DBEAFE' },
   statusBannerQuotedText: { color: '#1D4ED8', fontSize: 12, fontWeight: '700' },

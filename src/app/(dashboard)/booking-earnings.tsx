@@ -136,30 +136,30 @@ export default function BookingEarningsScreen() {
             <Text style={styles.headerTitle}>Order Earnings</Text>
           </View>
 
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.bsScroll}>
 
             {/* Branch + Services filters */}
-            <View style={styles.filterRow}>
+            <View style={styles.bsFilterRow}>
               <Dropdown value={bsBranchFilter}  options={BRANCHES}  onSelect={setBsBranchFilter} />
               <Dropdown value={bsServiceFilter} options={SERVICES}  onSelect={setBsServiceFilter} />
             </View>
 
             {/* Stat boxes */}
-            <View style={styles.statsRow}>
-              <View style={styles.statBox}>
-                <Text style={styles.statValue}>{completedOrders}</Text>
+            <View style={styles.bsStatsRow}>
+              <View style={styles.bsStatBox}>
+                <Text style={styles.bsStatValue}>{completedOrders}</Text>
                 <Text style={styles.statLabel}>Completed Orders</Text>
               </View>
-              <View style={[styles.statBox, styles.statBoxEarnings]}>
-                <Text style={[styles.statValue, { color: '#16A34A' }]}>₹{orderEarnings}</Text>
+              <View style={[styles.bsStatBox, styles.bsStatBoxEarnings]}>
+                <Text style={[styles.bsStatValue, { color: '#16A34A' }]}>₹{orderEarnings}</Text>
                 <Text style={styles.statLabel}>Order Earnings</Text>
               </View>
             </View>
 
             {/* Order History */}
-            <Text style={styles.sectionTitle}>Order History</Text>
+            <Text style={styles.bsSectionTitle}>Order History</Text>
 
-            <View style={styles.historyTabsRow}>
+            <View style={styles.bsHistoryTabsRow}>
               {(['Completed', 'Canceled', 'Missed'] as HistoryTab[]).map(tab => (
                 <TouchableOpacity
                   key={tab}
@@ -182,13 +182,13 @@ export default function BookingEarningsScreen() {
               filteredHistory.map(b => {
                 const col = STATUS_COLOR[b.status as HistoryTab];
                 return (
-                  <View key={b.id} style={styles.card}>
+                  <View key={b.id} style={styles.bsCard}>
                     <View style={styles.cardLeft}>
-                      <Text style={styles.cardService}>{b.service}</Text>
+                      <Text style={styles.bsCardService}>{b.service}</Text>
                       <Text style={styles.cardDate}>{b.date}</Text>
                     </View>
                     <View style={styles.cardRight}>
-                      <Text style={styles.cardAmount}>{b.amount}</Text>
+                      <Text style={styles.bsCardAmount}>{b.amount}</Text>
                       <View style={[styles.statusBadge, { backgroundColor: col.bg }]}>
                         <Text style={[styles.statusText, { color: col.text }]}>{b.status}</Text>
                       </View>
@@ -315,7 +315,7 @@ const styles = StyleSheet.create({
   filterRow:  { flexDirection: 'row', gap: 10 },
   summaryRow: { flexDirection: 'row', gap: 12, marginBottom: 16 },
 
-  // BS stat boxes
+  // BSP stat boxes (shared)
   statsRow:       { flexDirection: 'row', gap: 12, marginBottom: 24 },
   statBox:        { flex: 1, backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, alignItems: 'center', borderWidth: 1, borderColor: '#F1F5F9', elevation: 1 },
   statBoxEarnings:{ borderColor: '#DCFCE7', backgroundColor: '#F0FDF4' },
@@ -330,7 +330,7 @@ const styles = StyleSheet.create({
   historyTabText:     { fontSize: 12, fontWeight: '600', color: '#64748B' },
   historyTabTextActive: { color: '#FFFFFF' },
 
-  // shared card
+  // BSP card (shared)
   card:        { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#FFFFFF', borderRadius: 14, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: '#F1F5F9', elevation: 1 },
   earningCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, marginBottom: 10, borderWidth: 1, borderColor: '#F1F5F9', elevation: 1 },
   cardLeft:    { flex: 1 },
@@ -347,6 +347,19 @@ const styles = StyleSheet.create({
 
   emptyBox:  { paddingVertical: 40, alignItems: 'center' },
   emptyText: { fontSize: 13, color: '#94A3B8' },
+
+  // ── BS-specific styles ──
+  bsScroll:        { paddingHorizontal: 24, paddingBottom: 48 },
+  bsFilterRow:     { flexDirection: 'row', gap: 12, marginBottom: 20, zIndex: 10 },
+  bsStatsRow:      { flexDirection: 'row', gap: 14, marginBottom: 28 },
+  bsStatBox:       { flex: 1, backgroundColor: '#FFFFFF', borderRadius: 18, paddingVertical: 20, paddingHorizontal: 16, alignItems: 'center', borderWidth: 1, borderColor: '#E8ECF1', elevation: 3, shadowColor: '#0F172A', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 8 },
+  bsStatBoxEarnings: { borderColor: '#BBF7D0', backgroundColor: '#F0FDF4' },
+  bsStatValue:     { fontSize: 32, fontWeight: '800', color: PRIMARY, marginBottom: 6 },
+  bsSectionTitle:  { fontSize: 16, fontWeight: '700', color: '#0F172A', marginBottom: 16, marginTop: 4 },
+  bsHistoryTabsRow:{ flexDirection: 'row', backgroundColor: '#F1F5F9', borderRadius: 14, padding: 5, marginBottom: 20 },
+  bsCard:          { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#FFFFFF', borderRadius: 16, paddingVertical: 18, paddingHorizontal: 20, marginBottom: 14, borderWidth: 1, borderColor: '#E8ECF1', elevation: 3, shadowColor: '#0F172A', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 8 },
+  bsCardService:   { fontSize: 15, fontWeight: '700', color: '#0F172A', marginBottom: 6 },
+  bsCardAmount:    { fontSize: 18, fontWeight: '800', color: PRIMARY },
 });
 
 const dd = StyleSheet.create({

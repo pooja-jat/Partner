@@ -11,9 +11,10 @@ interface SelectInputProps {
   style?: ViewStyle;
   required?: boolean;
   disabled?: boolean;
+  hideArrow?: boolean;
 }
 
-export function SelectInput({ label, value, placeholder, onPress, style, required, disabled }: SelectInputProps) {
+export function SelectInput({ label, value, placeholder, onPress, style, required, disabled, hideArrow = false }: SelectInputProps) {
   const { marginBottom, ...touchableStyle } = (style as any) || {};
   return (
     <TouchableOpacity activeOpacity={0.7} onPress={onPress} style={touchableStyle} disabled={disabled}>
@@ -23,7 +24,7 @@ export function SelectInput({ label, value, placeholder, onPress, style, require
         placeholder={placeholder}
         editable={false}
         pointerEvents="none"
-        rightIcon={<ChevronDownIcon size={20} />}
+        rightIcon={hideArrow ? undefined : <ChevronDownIcon size={20} />}
         required={required}
         style={{ marginBottom: marginBottom !== undefined ? marginBottom : 12 }}
       />

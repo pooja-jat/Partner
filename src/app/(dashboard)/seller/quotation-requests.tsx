@@ -28,7 +28,7 @@ const SearchIcon = ({ color = "#94A3B8", size = 16 }) => (
   </Svg>
 );
 
-const FilterIcon = ({ color = "#4F46E5", size = 16 }) => (
+const FilterIcon = ({ color = "#1A0FA3", size = 16 }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path
       d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"
@@ -210,6 +210,7 @@ export default function QuotationRequestsScreen() {
           {(["Pending", "Approved", "Rejected"] as const).map((tab) => (
             <TouchableOpacity
               key={tab}
+              activeOpacity={0.85}
               style={[
                 styles.tabItem,
                 activeTab === tab && styles.activeTabItem,
@@ -241,7 +242,7 @@ export default function QuotationRequestsScreen() {
             />
           </View>
           <TouchableOpacity style={styles.filterBtn}>
-            <FilterIcon size={18} color="#4F46E5" />
+            <FilterIcon size={18} color="#1A0FA3" />
           </TouchableOpacity>
         </View>
 
@@ -368,7 +369,7 @@ const styles = StyleSheet.create({
     borderBottomColor: "transparent",
   },
   activeTabItem: {
-    borderBottomColor: "#4F46E5",
+    borderBottomColor: "#1A0FA3",
   },
   tabText: {
     fontSize: 13,
@@ -376,7 +377,7 @@ const styles = StyleSheet.create({
     color: "#64748B",
   },
   activeTabText: {
-    color: "#4F46E5",
+    color: "#1A0FA3",
   },
 
   searchSection: {

@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Platform, FlatList } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, Modal, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSafeRouter } from '@/hooks/useSafeRouter';
 import { GradientBackground } from '@/components/ui/GradientBackground';
-import { BackArrowIcon, DownloadExcelIcon } from '@/components/ui/Icons';
+import { BackArrowIcon, EyeIcon, PencilIcon } from '@/components/ui/Icons';
 import { BranchModal } from '@/components/common/BranchModal';
 import { useBranchStore } from '@/store/branchStore';
 import { Button } from '@/components/ui/Button';
@@ -11,33 +11,50 @@ import { useAndroidBack } from '@/hooks/useAndroidBack';
 import { RoleAccessGuard } from '@/components/common/RoleAccessGuard';
 import { completeStepAndNavigate } from '@/utils/onboarding';
 import { StorageService } from '@/services/storage.service';
+import Svg, { Path } from 'react-native-svg';
+
+const TrashIcon = ({ size = 18, color = '#EF4444' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M3 6H5H21" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <Path d="M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6M19 6L18.1 20.1C18.0433 20.8 17.7 21.4 17.2 21.7C16.7 22 16 22 15.5 22H8.5C8 22 7.3 22 6.8 21.7C6.3 21.4 5.95667 20.8 5.9 20.1L5 6H19Z" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <Path d="M10 11V17" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <Path d="M14 11V17" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+);
+
+const CloseXIcon = ({ size = 22, color = '#0F172A' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M18 6L6 18M6 6L18 18" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+);
 
 export default function BranchListScreen() {
   const router = useSafeRouter();
-  const { branches, initialize, updateBranch, addBranch } = useBranchStore();
+  const { branches, initialize, updateBranch, addBranch, deleteBranch } = useBranchStore();
   const [filter, setFilter] = useState<'All' | 'Active' | 'Inactive'>('All');
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [modalMode, setModalMode] = useState<'create' | 'update'>('create');
   const [selectedBranch, setSelectedBranch] = useState<any>(null);
   const [isApproved, setIsApproved] = useState(false);
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [viewBranch, setViewBranch] = useState<any>(null);
+  const [deleteTarget, setDeleteTarget] = useState<any>(null);
+
+  const isBSP = userRole === 'BSP';
 
   useEffect(() => {
     initialize();
     const checkApproval = async () => {
       const session = await StorageService.getUserSession();
-      if (session?.isApproved) {
-        setIsApproved(true);
-      }
+      if (session?.isApproved) setIsApproved(true);
+      setUserRole(session?.role || null);
     };
     checkApproval();
   }, []);
 
   useAndroidBack(() => {
-    if (isApproved) {
-      router.back();
-    } else {
-      router.replace('/(tabs)');
-    }
+    if (isApproved) router.back();
+    else router.replace('/(tabs)');
   });
 
   const filteredBranches = branches.filter(b => {
@@ -46,164 +63,243 @@ export default function BranchListScreen() {
     return true;
   });
 
+  const handleDelete = (item: any) => setDeleteTarget(item);
+
+  const confirmDelete = () => {
+    if (deleteTarget) {
+      deleteBranch?.(deleteTarget.id);
+      setDeleteTarget(null);
+    }
+  };
+
   const renderItem = ({ item }: { item: any }) => (
     <View style={styles.card}>
       <View style={styles.cardHeader}>
-        <Text style={styles.branchName}>Branch Name : {item.name}</Text>
+        <Text style={styles.branchName}>{item.name}</Text>
         <Text style={[styles.statusText, !item.isActive && styles.statusInactive]}>
           {item.isActive ? 'Active' : 'Inactive'}
         </Text>
       </View>
-      
       <View style={styles.detailsContainer}>
-        <Text style={styles.detailText}>• Branch Manager Name : {item.managerName}</Text>
-        <Text style={styles.detailText}>• Branch Email ID : {item.email}</Text>
-        <Text style={styles.detailText}>• Branch Mobile No : {item.mobile}</Text>
-        <Text style={styles.detailText}>• Branch Address : {item.address}</Text>
+        <Text style={styles.detailText}>Manager: {item.managerName}</Text>
+        <Text style={styles.detailText}>Email: {item.email}</Text>
+        <Text style={styles.detailText}>Mobile: {item.mobile}</Text>
+        <Text style={styles.detailText}>Address: {item.address}</Text>
       </View>
-      
-      <TouchableOpacity 
-        style={styles.editButton}
-        onPress={() => {
+      <View style={styles.cardActions}>
+        <TouchableOpacity style={styles.iconBtn} onPress={() => setViewBranch(item)}>
+          <EyeIcon size={18} color="#4338CA" />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.iconBtn} onPress={() => {
           setModalMode('update');
           setSelectedBranch(item);
           setIsModalVisible(true);
-        }}
-      >
-        <Text style={styles.editButtonText}>Edit</Text>
-      </TouchableOpacity>
+        }}>
+          <PencilIcon size={18} color="#0F172A" />
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.iconBtn, styles.iconBtnDelete]} onPress={() => handleDelete(item)}>
+          <TrashIcon size={18} color="#EF4444" />
+        </TouchableOpacity>
+      </View>
     </View>
   );
 
   return (
     <RoleAccessGuard allowedRoles={['BSP', 'BS']}>
       <GradientBackground style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => {
-            if (isApproved) {
-              router.back();
-            } else {
-              router.replace('/(tabs)');
-            }
-          }} style={styles.backButton}>
-            <BackArrowIcon size={24} color="#0F172A" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>List of parter services</Text>
-          <TouchableOpacity style={styles.helpButton} onPress={() => router.push('/(dashboard)/help')}>
-            <Text style={styles.helpText}>Help</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Filters */}
-        <View style={styles.filterContainer}>
-          <View style={styles.tabsRow}>
-            {['All', 'Active', 'Inactive'].map((tab) => (
-              <TouchableOpacity 
-                key={tab} 
-                style={[styles.tab, filter === tab && styles.activeTab]}
-                onPress={() => setFilter(tab as any)}
-              >
-                <Text style={[styles.tabText, filter === tab && styles.activeTabText]}>
-                  {tab}
-                </Text>
-              </TouchableOpacity>
-            ))}
+        <SafeAreaView style={styles.safeArea}>
+          <View style={styles.header}>
+            <TouchableOpacity onPress={() => {
+              if (isApproved) router.back();
+              else router.replace('/(tabs)');
+            }} style={styles.backButton}>
+              <BackArrowIcon size={24} color="#0F172A" />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>{isBSP ? 'Business Branch' : 'List of Branches'}</Text>
+            <TouchableOpacity style={styles.helpButton} onPress={() => router.push('/(dashboard)/help')}>
+              <Text style={styles.helpText}>Help</Text>
+            </TouchableOpacity>
           </View>
-        </View>
 
-        {/* Excel Button */}
-        <View style={styles.actionRow}>
-          <TouchableOpacity style={styles.excelButton}>
-            <DownloadExcelIcon size={16} color="#3B82F6" />
-            <Text style={styles.excelText}>Excel</Text>
-          </TouchableOpacity>
-        </View>
+          <View style={styles.filterContainer}>
+            <View style={styles.tabsRow}>
+              {['All', 'Active', 'Inactive'].map((tab) => (
+                <TouchableOpacity
+                  key={tab}
+                  style={[styles.tab, filter === tab && (isBSP ? styles.activeTabBSP : styles.activeTab)]}
+                  onPress={() => setFilter(tab as any)}
+                >
+                  <Text style={[styles.tabText, filter === tab && styles.activeTabText]}>{tab}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
 
-        {/* List */}
-        <FlatList
-          data={filteredBranches}
-          keyExtractor={(item) => item.id}
-          renderItem={renderItem}
-          contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false}
-          ListEmptyComponent={
-            <Text style={styles.emptyText}>No branches found.</Text>
-          }
-        />
-        
-        <View style={styles.footer}>
-          <Button 
-            title="+ Add Branch" 
-            onPress={() => {
-              setModalMode('create');
-              setSelectedBranch(null);
-              setIsModalVisible(true);
-            }} 
-            variant={isApproved ? "primary" : "outline"}
-            style={isApproved ? undefined : { marginBottom: 12 }}
+          <FlatList
+            data={filteredBranches}
+            keyExtractor={(item) => item.id}
+            renderItem={renderItem}
+            contentContainerStyle={styles.listContent}
+            showsVerticalScrollIndicator={false}
+            ListEmptyComponent={<Text style={styles.emptyText}>No branches found.</Text>}
           />
-          {!isApproved && (
-            <Button 
-              title="Continue" 
-              onPress={async () => {
-                await completeStepAndNavigate('branchCreation', router, 'completed');
-              }} 
-              variant="primary" 
-            />
-          )}
-        </View>
-      </SafeAreaView>
 
-      <BranchModal 
-        visible={isModalVisible} 
-        onClose={() => {
-          setIsModalVisible(false);
-          setTimeout(() => setSelectedBranch(null), 300); // clear after animation
-        }} 
-        mode={modalMode} 
-        initialData={selectedBranch}
-        onSubmit={(data) => {
-          if (modalMode === 'update') {
-            updateBranch(selectedBranch.id, data);
-          } else {
-            addBranch(data);
-          }
-        }}
-      />
-    </GradientBackground>
+          <View style={styles.footer}>
+            <Button
+              title="+ Add Branch"
+              onPress={() => {
+                setModalMode('create');
+                setSelectedBranch(null);
+                setIsModalVisible(true);
+              }}
+              variant="primary"
+              style={isApproved ? undefined : { marginBottom: 12 }}
+            />
+            {!isApproved && (
+              <Button
+                title="Continue"
+                onPress={async () => {
+                  await completeStepAndNavigate('branchCreation', router, 'completed');
+                }}
+                variant="primary"
+              />
+            )}
+          </View>
+        </SafeAreaView>
+
+        <BranchModal
+          visible={isModalVisible}
+          onClose={() => {
+            setIsModalVisible(false);
+            setTimeout(() => setSelectedBranch(null), 300);
+          }}
+          mode={modalMode}
+          initialData={selectedBranch}
+          onSubmit={(data) => {
+            if (modalMode === 'update') updateBranch(selectedBranch.id, data);
+            else addBranch(data);
+          }}
+        />
+
+        {/* View Branch Modal */}
+        <Modal visible={!!viewBranch} transparent animationType="slide" onRequestClose={() => setViewBranch(null)}>
+          <View style={styles.modalOverlay}>
+            <TouchableOpacity style={StyleSheet.absoluteFillObject} activeOpacity={1} onPress={() => setViewBranch(null)} />
+            <View style={styles.modalSheet}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Branch Details</Text>
+                <TouchableOpacity onPress={() => setViewBranch(null)} style={styles.closeBtn}>
+                  <CloseXIcon size={22} color="#0F172A" />
+                </TouchableOpacity>
+              </View>
+              {viewBranch && (
+                <View style={styles.viewRows}>
+                  <View style={styles.viewRow}>
+                    <Text style={styles.viewLabel}>Branch Name</Text>
+                    <Text style={styles.viewValue}>{viewBranch.name}</Text>
+                  </View>
+                  <View style={styles.viewRow}>
+                    <Text style={styles.viewLabel}>Manager</Text>
+                    <Text style={styles.viewValue}>{viewBranch.managerName}</Text>
+                  </View>
+                  <View style={styles.viewRow}>
+                    <Text style={styles.viewLabel}>Email</Text>
+                    <Text style={styles.viewValue}>{viewBranch.email}</Text>
+                  </View>
+                  <View style={styles.viewRow}>
+                    <Text style={styles.viewLabel}>Mobile</Text>
+                    <Text style={styles.viewValue}>{viewBranch.mobile}</Text>
+                  </View>
+                  <View style={styles.viewRow}>
+                    <Text style={styles.viewLabel}>Address</Text>
+                    <Text style={styles.viewValue}>{viewBranch.address}</Text>
+                  </View>
+                  <View style={styles.viewRow}>
+                    <Text style={styles.viewLabel}>Status</Text>
+                    <Text style={[styles.viewValue, viewBranch.isActive ? styles.activeColor : styles.inactiveColor]}>
+                      {viewBranch.isActive ? 'Active' : 'Inactive'}
+                    </Text>
+                  </View>
+                </View>
+              )}
+            </View>
+          </View>
+        </Modal>
+
+        {/* Delete Confirmation Modal */}
+        <Modal visible={!!deleteTarget} transparent animationType="slide" onRequestClose={() => setDeleteTarget(null)}>
+          <View style={styles.modalOverlay}>
+            <TouchableOpacity style={StyleSheet.absoluteFillObject} activeOpacity={1} onPress={() => setDeleteTarget(null)} />
+            <View style={styles.modalSheet}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Delete Branch</Text>
+                <TouchableOpacity onPress={() => setDeleteTarget(null)} style={styles.closeBtn}>
+                  <CloseXIcon size={22} color="#0F172A" />
+                </TouchableOpacity>
+              </View>
+              <Text style={styles.deleteMsg}>
+                Are you sure you want to delete <Text style={{ fontWeight: '700' }}>{deleteTarget?.name}</Text>? This action cannot be undone.
+              </Text>
+              <View style={styles.deleteActions}>
+                <TouchableOpacity style={styles.cancelBtn} onPress={() => setDeleteTarget(null)}>
+                  <Text style={styles.cancelBtnText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.deleteBtn} onPress={confirmDelete}>
+                  <Text style={styles.deleteBtnText}>Delete</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+      </GradientBackground>
     </RoleAccessGuard>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  safeArea: { flex: 1,  },
+  safeArea: { flex: 1 },
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 16 },
   backButton: { marginRight: 12 },
-  headerTitle: { flex: 1, fontSize: 16, fontWeight: '500', color: '#0F172A' },
+  headerTitle: { flex: 1, fontSize: 16, fontWeight: '700', color: '#0F172A' },
   helpButton: { backgroundColor: '#FF8A00', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
   helpText: { color: '#FFF', fontSize: 12, fontWeight: '600' },
   filterContainer: { paddingHorizontal: 20, marginBottom: 12 },
   tabsRow: { flexDirection: 'row', gap: 8 },
-  tab: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: '#FFFFFF' },
-  activeTab: { backgroundColor: 'rgba(26, 15, 163, 1.00)' },
+  tab: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: '#FFFFFF', elevation: 2 },
+  activeTab: { backgroundColor: '#1A0FA3', elevation: 4 },
+  activeTabBSP: { backgroundColor: '#1A0FA3', elevation: 4 },
   tabText: { color: '#64748B', fontSize: 14, fontWeight: '500' },
   activeTabText: { color: '#FFFFFF' },
-  actionRow: { flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: 20, marginBottom: 12 },
-  excelButton: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, gap: 4 },
-  excelText: { color: '#3B82F6', fontSize: 14, fontWeight: '500' },
   listContent: { paddingHorizontal: 20, paddingBottom: 40, gap: 12 },
-  card: { backgroundColor: '#FFFFFF', borderRadius: 24, padding: 20, position: 'relative' },
-  cardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 12, gap: 8 },
-  branchName: { fontSize: 14, fontWeight: '600', color: '#334155' },
+  card: { backgroundColor: '#FFFFFF', borderRadius: 20, padding: 16 },
+  cardHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
+  branchName: { fontSize: 15, fontWeight: '700', color: '#0F172A', flex: 1 },
   statusText: { fontSize: 12, fontWeight: '600', color: '#22C55E' },
   statusInactive: { color: '#EF4444' },
-  detailsContainer: { gap: 6, paddingRight: 60 },
-  detailText: { fontSize: 12, color: '#334155', lineHeight: 18 },
-  editButton: { position: 'absolute', right: 20, top: 40, borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 20, paddingHorizontal: 16, paddingVertical: 6 },
-  editButtonText: { fontSize: 12, color: '#0F172A', fontWeight: '500' },
+  detailsContainer: { gap: 4, marginBottom: 12 },
+  detailText: { fontSize: 12, color: '#64748B', lineHeight: 18 },
+  cardActions: { flexDirection: 'row', gap: 8, justifyContent: 'flex-end', borderTopWidth: 1, borderTopColor: '#F1F5F9', paddingTop: 10 },
+  iconBtn: { width: 36, height: 36, borderRadius: 10, backgroundColor: '#EEF2FF', justifyContent: 'center', alignItems: 'center' },
+  iconBtnDelete: { backgroundColor: '#FEE2E2' },
   emptyText: { textAlign: 'center', color: '#64748B', marginTop: 40 },
-  footer: { paddingHorizontal: 20, paddingBottom: 40, paddingTop: 16 }
+  footer: { paddingHorizontal: 20, paddingBottom: 40, paddingTop: 16 },
+
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(15,23,42,0.45)', justifyContent: 'flex-end' },
+  modalSheet: { backgroundColor: '#FFFFFF', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24 },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+  modalTitle: { fontSize: 17, fontWeight: '700', color: '#0F172A' },
+  closeBtn: { padding: 4 },
+  viewRows: { gap: 12, paddingBottom: 8 },
+  viewRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
+  viewLabel: { fontSize: 13, color: '#64748B', fontWeight: '500' },
+  viewValue: { fontSize: 13, color: '#0F172A', fontWeight: '600', maxWidth: '60%', textAlign: 'right' },
+  activeColor: { color: '#22C55E' },
+  inactiveColor: { color: '#EF4444' },
+  deleteMsg: { fontSize: 14, color: '#475569', lineHeight: 22, marginBottom: 24 },
+  deleteActions: { flexDirection: 'row', gap: 12 },
+  cancelBtn: { flex: 1, paddingVertical: 14, borderRadius: 12, borderWidth: 1, borderColor: '#E2E8F0', alignItems: 'center' },
+  cancelBtnText: { fontSize: 14, fontWeight: '600', color: '#64748B' },
+  deleteBtn: { flex: 1, paddingVertical: 14, borderRadius: 12, backgroundColor: '#EF4444', alignItems: 'center' },
+  deleteBtnText: { fontSize: 14, fontWeight: '700', color: '#FFFFFF' },
 });

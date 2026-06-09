@@ -12,8 +12,8 @@ export const ROLE_STEPS = {
   ],
   BSP: [
     'partnerProfile',
-    'businessProfile',
     'kycUpload',
+    'businessProfile',
     'businessDocumentUpload',
     'branchCreation',
     'partnerServiceSelection',
@@ -26,10 +26,14 @@ export const ROLE_STEPS = {
   ],
   BS: [
     'partnerProfile',
-    'businessProfile',
     'kycUpload',
+    'businessProfile',
     'businessDocumentUpload',
+    'partnerServiceSelection',
     'branchCreation',
+    'serviceBranchMapping',
+    'branchEmployeeMapping',
+    'addingEmployee',
     'partnerServiceAreaCreation',
     'termsAndConditions',
     'policies'

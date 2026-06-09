@@ -149,8 +149,9 @@ export default function EmployeeListScreen() {
         <View style={styles.filterContainer}>
           <View style={styles.tabsRow}>
             {['All', 'Active', 'Inactive'].map((tab) => (
-              <TouchableOpacity 
-                key={tab} 
+              <TouchableOpacity
+                key={tab}
+                activeOpacity={0.85}
                 style={[styles.tab, filter === tab && styles.activeTab]}
                 onPress={() => setFilter(tab as any)}
               >
@@ -193,16 +194,16 @@ export default function EmployeeListScreen() {
               setSelectedEmployee(null);
               setIsModalVisible(true);
             }} 
-            variant={isApproved ? "primary" : "outline"}
+            variant="primary"
             style={isApproved ? undefined : { marginBottom: 12 }}
           />
           {!isApproved && (
-            <Button 
-              title="Continue" 
+            <Button
+              title="Skip / Continue"
               onPress={async () => {
                 await completeStepAndNavigate('branchEmployeeMapping', router, 'completed');
-              }} 
-              variant="primary" 
+              }}
+              variant="outline"
             />
           )}
         </View>
@@ -251,8 +252,8 @@ const styles = StyleSheet.create({
   helpText: { color: '#FFF', fontSize: 12, fontWeight: '600' },
   filterContainer: { paddingHorizontal: 20, marginBottom: 12 },
   tabsRow: { flexDirection: 'row', gap: 8 },
-  tab: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: '#FFFFFF' },
-  activeTab: { backgroundColor: 'rgba(26, 15, 163, 1.00)' },
+  tab: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: '#FFFFFF', elevation: 2 },
+  activeTab: { backgroundColor: '#1A0FA3', elevation: 4 },
   tabText: { color: '#64748B', fontSize: 14, fontWeight: '500' },
   activeTabText: { color: '#FFFFFF' },
   listContent: { paddingHorizontal: 20, paddingBottom: 40, gap: 12 },

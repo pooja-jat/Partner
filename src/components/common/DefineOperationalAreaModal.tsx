@@ -10,9 +10,10 @@ interface DefineOperationalAreaModalProps {
   mode: 'create' | 'update';
   initialData?: any;
   onSubmit: (data: any) => void;
+  hideBranch?: boolean;
 }
 
-export const DefineOperationalAreaModal: React.FC<DefineOperationalAreaModalProps> = ({ visible, onClose, mode, initialData, onSubmit }) => {
+export const DefineOperationalAreaModal: React.FC<DefineOperationalAreaModalProps> = ({ visible, onClose, mode, initialData, onSubmit, hideBranch = false }) => {
   const [branch, setBranch] = useState(initialData?.branch || '');
   const [radius, setRadius] = useState(initialData?.radius || 15);
   const [locationType, setLocationType] = useState<'Urban' | 'Rural'>(initialData?.locationType || 'Urban');
@@ -39,16 +40,18 @@ export const DefineOperationalAreaModal: React.FC<DefineOperationalAreaModalProp
               <Text style={styles.subtitle}>Set the locations and radius where you provide services.</Text>
             </View>
 
-            <View style={styles.section}>
-              <Text style={styles.label}>Service Provider Name</Text>
-              <TextInput
-                style={styles.inputBox}
-                value={branch}
-                onChangeText={setBranch}
-                placeholder="Enter service provider name"
-                placeholderTextColor="#94A3B8"
-              />
-            </View>
+            {!hideBranch && (
+              <View style={styles.section}>
+                <Text style={styles.label}>Service Provider Name</Text>
+                <TextInput
+                  style={styles.inputBox}
+                  value={branch}
+                  onChangeText={setBranch}
+                  placeholder="Enter service provider name"
+                  placeholderTextColor="#94A3B8"
+                />
+              </View>
+            )}
 
             <View style={styles.section}>
               <View style={styles.radiusHeader}>

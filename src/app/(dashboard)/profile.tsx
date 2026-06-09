@@ -80,7 +80,7 @@ export default function ProfileScreen() {
       { id: 'earning', title: 'My earning', icon: <BellIcon size={20} color="#64748B" />, route: '/(dashboard)/earnings' },
       { id: 'rating', title: 'My Rating', icon: <BellIcon size={20} color="#64748B" />, route: '/(dashboard)/my-rating' },
       { id: 'idcard', title: 'Hozify ID Card', icon: <BellIcon size={20} color="#64748B" />, onPress: () => setIdCardVisible(true) },
-      { id: 'kyc', title: 'KYC Documents', icon: <BellIcon size={20} color="#64748B" />, route: '/(tabs)/kyc/view' },
+      { id: 'kyc', title: 'KYC Documents', icon: <BellIcon size={20} color="#64748B" />, route: '/(tabs)/kyc' },
     ];
 
     if (role === 'ISP' || role === 'BSP') {

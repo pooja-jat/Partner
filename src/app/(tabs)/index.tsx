@@ -117,11 +117,11 @@ export default function ApplicationApprovalScreen() {
     if (role === 'ISP') {
       keys.push('partnerProfile', 'kycUpload', 'partnerServiceSelection', 'partnerServiceAreaCreation', 'termsAndConditions', 'policies');
     } else if (role === 'BSP') {
-      keys.push('partnerProfile', 'businessProfile', 'kycUpload', 'businessDocumentUpload', 'branchCreation', 'partnerServiceSelection', 'serviceBranchMapping', 'branchEmployeeMapping', 'addingEmployee', 'partnerServiceAreaCreation', 'termsAndConditions', 'policies');
+      keys.push('partnerProfile', 'kycUpload', 'businessProfile', 'businessDocumentUpload', 'branchCreation', 'partnerServiceSelection', 'serviceBranchMapping', 'branchEmployeeMapping', 'addingEmployee', 'partnerServiceAreaCreation', 'termsAndConditions', 'policies');
     } else if (role === 'BS') {
-      keys.push('partnerProfile', 'businessProfile', 'kycUpload', 'businessDocumentUpload', 'branchCreation', 'partnerServiceAreaCreation', 'termsAndConditions', 'policies');
+      keys.push('partnerProfile', 'kycUpload', 'businessProfile', 'businessDocumentUpload', 'partnerServiceSelection', 'branchCreation', 'serviceBranchMapping', 'branchEmployeeMapping', 'addingEmployee', 'partnerServiceAreaCreation', 'termsAndConditions', 'policies');
     }
-    return ALL_FLOW_STEPS.filter(step => keys.includes(step.key));
+    return keys.map(k => ALL_FLOW_STEPS.find(s => s.key === k)!).filter(Boolean);
   }, [role]);
 
   const isAllApproved = useMemo(() => {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Platform, KeyboardAvoidingView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSafeRouter } from '@/hooks/useSafeRouter';
 import { GradientBackground } from '@/components/ui/GradientBackground';
@@ -48,7 +48,7 @@ export default function AddEmployeeScreen() {
   };
 
   return (
-    <RoleAccessGuard allowedRoles={['BSP']}>
+    <RoleAccessGuard allowedRoles={['BSP', 'BS']}>
       <GradientBackground style={styles.container}>
         <SafeAreaView style={styles.safeArea}>
           <View style={styles.header}>
@@ -74,10 +74,15 @@ export default function AddEmployeeScreen() {
             )}
           </View>
 
-          <View style={styles.card}>
-
-            <EmployeeForm mode="create" onSubmit={handleSubmit} />
-          </View>
+          <KeyboardAvoidingView
+            style={{ flex: 1 }}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+          >
+            <View style={styles.card}>
+              <EmployeeForm mode="create" onSubmit={handleSubmit} />
+            </View>
+          </KeyboardAvoidingView>
         </SafeAreaView>
       </GradientBackground>
     </RoleAccessGuard>
@@ -96,7 +101,6 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     marginHorizontal: 16,
     marginBottom: 16,
-    overflow: 'hidden',
     padding: 24,
   },
 });

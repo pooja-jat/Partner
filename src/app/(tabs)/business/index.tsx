@@ -96,7 +96,7 @@ export default function BusinessSetupScreen() {
             <TouchableOpacity onPress={handleBack} style={styles.backButton}>
               <BackArrowIcon size={24} color="#0F172A" />
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>Business Setup</Text>
+            <Text style={styles.headerTitle}>Business Profile</Text>
           </View>
 
           <ScrollView

@@ -1,39 +1,55 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSafeRouter } from '@/hooks/useSafeRouter';
 import { GradientBackground } from '@/components/ui/GradientBackground';
-import { BackArrowIcon, DownloadExcelIcon } from '@/components/ui/Icons';
+import { BackArrowIcon } from '@/components/ui/Icons';
 import { Button } from '@/components/ui/Button';
 import { useServicesStore } from '@/store/servicesStore';
 import { useAndroidBack } from '@/hooks/useAndroidBack';
 import { RoleAccessGuard } from '@/components/common/RoleAccessGuard';
 import { completeStepAndNavigate } from '@/utils/onboarding';
 import { StorageService } from '@/services/storage.service';
-import { useEffect } from 'react';
+import Svg, { Path } from 'react-native-svg';
+
+const TrashIcon = ({ size = 18, color = '#EF4444' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M3 6H5H21" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <Path d="M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6M19 6L18.1 20.1C18.0433 20.8 17.7 21.4 17.2 21.7C16.7 22 16 22 15.5 22H8.5C8 22 7.3 22 6.8 21.7C6.3 21.4 5.95667 20.8 5.9 20.1L5 6H19Z" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <Path d="M10 11V17" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <Path d="M14 11V17" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+);
+
+const CloseXIcon = ({ size = 22, color = '#0F172A' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M18 6L6 18M6 6L18 18" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+);
 
 export default function ServicesListScreen() {
   const router = useSafeRouter();
-  const { services } = useServicesStore();
+  const { services, removeService } = useServicesStore();
   const [filter, setFilter] = useState<'All' | 'Active' | 'Inactive'>('All');
   const [isApproved, setIsApproved] = useState(false);
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [viewService, setViewService] = useState<any>(null);
+  const [deleteTarget, setDeleteTarget] = useState<any>(null);
+
+  const isISP = userRole === 'ISP';
 
   useEffect(() => {
     const checkApproval = async () => {
       const session = await StorageService.getUserSession();
-      if (session?.isApproved) {
-        setIsApproved(true);
-      }
+      if (session?.isApproved) setIsApproved(true);
+      setUserRole(session?.role || null);
     };
     checkApproval();
   }, []);
 
   useAndroidBack(() => {
-    if (isApproved) {
-      router.back();
-    } else {
-      router.replace('/(tabs)');
-    }
+    if (isApproved) router.back();
+    else router.replace('/(tabs)');
   });
 
   const filteredServices = services.filter(s => {
@@ -42,165 +58,236 @@ export default function ServicesListScreen() {
     return true;
   });
 
-  const handleEdit = (id: string) => {
-    router.push(`/(tabs)/services/update?id=${id}`);
+  const confirmDelete = () => {
+    if (deleteTarget) {
+      removeService?.(deleteTarget.id);
+      setDeleteTarget(null);
+    }
   };
 
   return (
     <RoleAccessGuard allowedRoles={['BSP', 'ISP', 'BS']}>
       <GradientBackground style={{ flex: 1 }}>
-      <SafeAreaView style={styles.safeArea}>
-        <View style={styles.header}>
-          <View style={styles.headerLeft}>
-            <TouchableOpacity onPress={() => {
-              if (isApproved) {
-                router.back();
-              } else {
-                router.replace('/(tabs)');
-              }
-            }} style={styles.backButton}>
-              <BackArrowIcon size={24} color="#0F172A" />
+        <SafeAreaView style={styles.safeArea}>
+          <View style={styles.header}>
+            <View style={styles.headerLeft}>
+              <TouchableOpacity onPress={() => {
+                if (isApproved) router.back();
+                else router.replace('/(tabs)');
+              }} style={styles.backButton}>
+                <BackArrowIcon size={24} color="#0F172A" />
+              </TouchableOpacity>
+              <Text style={styles.headerTitle}>List of Services</Text>
+            </View>
+            <TouchableOpacity style={styles.helpButton} onPress={() => router.push('/(dashboard)/help')}>
+              <Text style={styles.helpText}>Help</Text>
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>List of parter services</Text>
           </View>
-          <TouchableOpacity style={styles.helpButton} onPress={() => router.push('/(dashboard)/help')}>
-            <Text style={styles.helpText}>Help</Text>
-          </TouchableOpacity>
-        </View>
 
-        <View style={styles.filterRow}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScroll}>
-            {['All', 'Active', 'Inactive'].map(f => {
-              const isActive = filter === f;
-              return (
-                <TouchableOpacity 
-                  key={f} 
-                  style={[styles.filterPill, isActive && styles.filterPillActive]}
-                  onPress={() => setFilter(f as any)}
-                  activeOpacity={0.7}
-                >
-                  <Text style={[styles.filterText, isActive && styles.filterTextActive]}>{f}</Text>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
-        </View>
+          <View style={styles.filterRow}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScroll}>
+              {['All', 'Active', 'Inactive'].map(f => {
+                const isActive = filter === f;
+                return (
+                  <TouchableOpacity
+                    key={f}
+                    style={[styles.filterPill, isActive && (isISP ? styles.filterPillActiveISP : styles.filterPillActive)]}
+                    onPress={() => setFilter(f as any)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={[styles.filterText, isActive && styles.filterTextActive]}>{f}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          </View>
 
-        <View style={styles.actionRow}>
-          <TouchableOpacity style={styles.excelButton}>
-            <DownloadExcelIcon size={16} color="#3B82F6" />
-            <Text style={styles.excelText}>Excel</Text>
-          </TouchableOpacity>
-        </View>
-
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.listContent}>
-          {filteredServices.map(service => (
-            <View key={service.id} style={styles.card}>
-              <View style={styles.cardTop}>
-                <View>
-                  <View style={styles.cardTitleRow}>
-                    <Text style={styles.cardTitle}>{service.name}</Text>
-                    {service.subServices.length > 0 && (
-                      <Text style={[styles.statusText, !service.active && styles.statusTextInactive]}>
-                        {service.active ? 'Active' : 'In active'}
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.listContent}>
+            {filteredServices.map(service => (
+              <View key={service.id} style={styles.card}>
+                <View style={styles.cardTop}>
+                  <View style={styles.cardInfo}>
+                    <View style={styles.cardTitleRow}>
+                      <Text style={styles.cardTitle}>{service.name}</Text>
+                      <Text style={[styles.statusBadge, !service.active && styles.statusBadgeInactive]}>
+                        {service.active ? 'Active' : 'Inactive'}
                       </Text>
-                    )}
+                    </View>
                   </View>
-                  {service.subServices.length === 0 && (
-                    <Text style={styles.dateText}>
-                      {service.dateAdded} <Text style={styles.dotSeparator}>•</Text> <Text style={[styles.statusText, !service.active && styles.statusTextInactive]}>{service.active ? 'Active' : 'In active'}</Text>
-                    </Text>
-                  )}
+                  <TouchableOpacity onPress={() => router.push(`/(tabs)/services/update?id=${service.id}`)}>
+                    <Text style={styles.editText}>Edit</Text>
+                  </TouchableOpacity>
                 </View>
-                <TouchableOpacity style={styles.editButton} onPress={() => handleEdit(service.id)}>
-                  <Text style={styles.editText}>Edit</Text>
+
+                {service.subServices.length > 0 && (
+                  <View style={styles.subServicesList}>
+                    {service.subServices.map(sub => (
+                      <View key={sub.id} style={styles.subRow}>
+                        <Text style={styles.subDot}>•</Text>
+                        <Text style={styles.subName}>{sub.name}</Text>
+                        <Text style={styles.subExp}>{sub.yearsOfExperience} years</Text>
+                      </View>
+                    ))}
+                  </View>
+                )}
+              </View>
+            ))}
+            {filteredServices.length === 0 && (
+              <View style={styles.emptyState} />
+            )}
+          </ScrollView>
+
+          <View style={styles.footer}>
+            <Button
+              title="+ Add Services"
+              onPress={() => router.push('/(tabs)/services/select')}
+              variant="outline"
+              style={{ marginBottom: 12 }}
+            />
+            {!isApproved && (
+              <Button
+                title="Continue"
+                onPress={async () => {
+                  await completeStepAndNavigate('partnerServiceSelection', router, 'completed');
+                }}
+                variant="primary"
+              />
+            )}
+          </View>
+        </SafeAreaView>
+
+        {/* View Service Modal */}
+        <Modal visible={!!viewService} transparent animationType="slide" onRequestClose={() => setViewService(null)}>
+          <View style={styles.modalOverlay}>
+            <TouchableOpacity style={StyleSheet.absoluteFillObject} activeOpacity={1} onPress={() => setViewService(null)} />
+            <View style={styles.modalSheet}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Service Details</Text>
+                <TouchableOpacity onPress={() => setViewService(null)} style={styles.closeBtn}>
+                  <CloseXIcon size={22} color="#0F172A" />
                 </TouchableOpacity>
               </View>
-
-              {service.subServices.length > 0 && (
-                <View style={styles.subServicesList}>
-                  {service.subServices.map(sub => (
-                    <View key={sub.id} style={styles.subRow}>
-                      <Text style={styles.subDot}>•</Text>
-                      <Text style={styles.subName}>{sub.name}</Text>
-                      <Text style={styles.subExp}>{sub.yearsOfExperience} years</Text>
+              {viewService && (
+                <View style={styles.viewRows}>
+                  <View style={styles.viewRow}>
+                    <Text style={styles.viewLabel}>Service Name</Text>
+                    <Text style={styles.viewValue}>{viewService.name}</Text>
+                  </View>
+                  <View style={styles.viewRow}>
+                    <Text style={styles.viewLabel}>Status</Text>
+                    <Text style={[styles.viewValue, viewService.active ? styles.activeColor : styles.inactiveColor]}>
+                      {viewService.active ? 'Active' : 'Inactive'}
+                    </Text>
+                  </View>
+                  {viewService.dateAdded && (
+                    <View style={styles.viewRow}>
+                      <Text style={styles.viewLabel}>Date Added</Text>
+                      <Text style={styles.viewValue}>{viewService.dateAdded}</Text>
                     </View>
-                  ))}
+                  )}
+                  {viewService.subServices?.length > 0 && (
+                    <View style={styles.viewSubSection}>
+                      <Text style={styles.viewSubHeader}>Sub-services</Text>
+                      {viewService.subServices.map((sub: any) => (
+                        <View key={sub.id} style={styles.viewSubRow}>
+                          <Text style={styles.viewSubName}>{sub.name}</Text>
+                          <Text style={styles.viewSubExp}>{sub.yearsOfExperience} yrs exp</Text>
+                        </View>
+                      ))}
+                    </View>
+                  )}
                 </View>
               )}
             </View>
-          ))}
-          {filteredServices.length === 0 && (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyText}>No services found.</Text>
-            </View>
-          )}
-        </ScrollView>
+          </View>
+        </Modal>
 
-        <View style={styles.footer}>
-          <Button 
-            title="+ Add Services" 
-            onPress={() => router.push('/(tabs)/services/select')} 
-            variant={isApproved ? "primary" : "outline"}
-            style={isApproved ? undefined : { marginBottom: 12 }}
-          />
-          {!isApproved && (
-            <Button 
-              title="Continue" 
-              onPress={async () => {
-                await completeStepAndNavigate('partnerServiceSelection', router, 'completed');
-              }} 
-              variant="primary" 
-            />
-          )}
-        </View>
-      </SafeAreaView>
-    </GradientBackground>
+        {/* Delete Confirmation Modal */}
+        <Modal visible={!!deleteTarget} transparent animationType="slide" onRequestClose={() => setDeleteTarget(null)}>
+          <View style={styles.modalOverlay}>
+            <TouchableOpacity style={StyleSheet.absoluteFillObject} activeOpacity={1} onPress={() => setDeleteTarget(null)} />
+            <View style={styles.modalSheet}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Delete Service</Text>
+                <TouchableOpacity onPress={() => setDeleteTarget(null)} style={styles.closeBtn}>
+                  <CloseXIcon size={22} color="#0F172A" />
+                </TouchableOpacity>
+              </View>
+              <Text style={styles.deleteMsg}>
+                Are you sure you want to delete <Text style={{ fontWeight: '700' }}>{deleteTarget?.name}</Text>? This action cannot be undone.
+              </Text>
+              <View style={styles.deleteActions}>
+                <TouchableOpacity style={styles.cancelBtn} onPress={() => setDeleteTarget(null)}>
+                  <Text style={styles.cancelBtnText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.deleteBtn} onPress={confirmDelete}>
+                  <Text style={styles.deleteBtnText}>Delete</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+      </GradientBackground>
     </RoleAccessGuard>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: 'transparent',  },
+  safeArea: { flex: 1, backgroundColor: 'transparent' },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 16 },
   headerLeft: { flexDirection: 'row', alignItems: 'center' },
   backButton: { marginRight: 12 },
   headerTitle: { fontSize: 18, fontWeight: '700', color: '#0F172A' },
   helpButton: { backgroundColor: '#F97316', paddingHorizontal: 16, paddingVertical: 6, borderRadius: 8 },
   helpText: { color: '#FFFFFF', fontWeight: '600', fontSize: 12 },
-  
+
   filterRow: { marginBottom: 12 },
   filterScroll: { paddingHorizontal: 20, gap: 12 },
-  filterPill: { paddingHorizontal: 20, paddingVertical: 8, backgroundColor: '#FFFFFF', borderRadius: 20 },
-  filterPillActive: { backgroundColor: 'rgba(26, 15, 163, 1.00)' },
+  filterPill: { paddingHorizontal: 20, paddingVertical: 8, backgroundColor: '#FFFFFF', borderRadius: 20, elevation: 2 },
+  filterPillActive: { backgroundColor: '#1A0FA3', elevation: 4 },
+  filterPillActiveISP: { backgroundColor: '#1A0FA3', elevation: 4 },
   filterText: { fontSize: 13, fontWeight: '600', color: '#64748B' },
   filterTextActive: { color: '#FFFFFF' },
-  
-  actionRow: { flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: 20, marginBottom: 16 },
-  excelButton: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, gap: 6 },
-  excelText: { fontSize: 13, fontWeight: '600', color: '#3B82F6' },
-  
-  listContent: { paddingHorizontal: 20, paddingBottom: 40 },
-  card: { backgroundColor: '#FFFFFF', borderRadius: 24, padding: 20, marginBottom: 16 },
-  cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-  cardTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
-  cardTitle: { fontSize: 16, fontWeight: '700', color: '#0F172A' },
-  statusText: { fontSize: 11, fontWeight: '700', color: '#22C55E' },
-  statusTextInactive: { color: '#F59E0B' },
-  dateText: { fontSize: 12, color: '#64748B' },
-  dotSeparator: { marginHorizontal: 4 },
-  
-  editButton: { paddingHorizontal: 20, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: '#E2E8F0' },
+
+  listContent: { paddingHorizontal: 20, paddingBottom: 40, gap: 12 },
+  card: { backgroundColor: '#FFFFFF', borderRadius: 20, padding: 16 },
+  cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  cardInfo: { flex: 1, marginRight: 8 },
+  cardTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  cardTitle: { fontSize: 15, fontWeight: '700', color: '#0F172A' },
+  statusBadge: { fontSize: 11, fontWeight: '600', color: '#22C55E' },
+  statusBadgeInactive: { color: '#F59E0B' },
   editText: { fontSize: 13, fontWeight: '600', color: '#0F172A' },
-  
-  subServicesList: { marginTop: 12 },
-  subRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
-  subDot: { fontSize: 14, color: '#64748B', marginRight: 8, marginTop: -2 },
+
+  subServicesList: { marginTop: 10, borderTopWidth: 1, borderTopColor: '#F1F5F9', paddingTop: 10, gap: 6 },
+  subRow: { flexDirection: 'row', alignItems: 'center' },
+  subDot: { fontSize: 14, color: '#64748B', marginRight: 8 },
   subName: { flex: 1, fontSize: 13, color: '#475569' },
   subExp: { fontSize: 12, color: '#94A3B8' },
-  
-  emptyState: { padding: 40, alignItems: 'center' },
-  emptyText: { color: '#64748B' },
-  
-  footer: { paddingHorizontal: 20, paddingBottom: 40, paddingTop: 16 }
+
+  emptyState: { flex: 1, minHeight: 200 },
+  footer: { paddingHorizontal: 20, paddingBottom: 40, paddingTop: 16 },
+
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(15,23,42,0.45)', justifyContent: 'flex-end' },
+  modalSheet: { backgroundColor: '#FFFFFF', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24 },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+  modalTitle: { fontSize: 17, fontWeight: '700', color: '#0F172A' },
+  closeBtn: { padding: 4 },
+  viewRows: { gap: 4, paddingBottom: 8 },
+  viewRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
+  viewLabel: { fontSize: 13, color: '#64748B', fontWeight: '500' },
+  viewValue: { fontSize: 13, color: '#0F172A', fontWeight: '600', maxWidth: '60%', textAlign: 'right' },
+  activeColor: { color: '#22C55E' },
+  inactiveColor: { color: '#F59E0B' },
+  viewSubSection: { marginTop: 12 },
+  viewSubHeader: { fontSize: 13, fontWeight: '700', color: '#0F172A', marginBottom: 8 },
+  viewSubRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: '#F8FAFC' },
+  viewSubName: { fontSize: 13, color: '#475569' },
+  viewSubExp: { fontSize: 12, color: '#94A3B8' },
+  deleteMsg: { fontSize: 14, color: '#475569', lineHeight: 22, marginBottom: 24 },
+  deleteActions: { flexDirection: 'row', gap: 12 },
+  cancelBtn: { flex: 1, paddingVertical: 14, borderRadius: 12, borderWidth: 1, borderColor: '#E2E8F0', alignItems: 'center' },
+  cancelBtnText: { fontSize: 14, fontWeight: '600', color: '#64748B' },
+  deleteBtn: { flex: 1, paddingVertical: 14, borderRadius: 12, backgroundColor: '#EF4444', alignItems: 'center' },
+  deleteBtnText: { fontSize: 14, fontWeight: '700', color: '#FFFFFF' },
 });

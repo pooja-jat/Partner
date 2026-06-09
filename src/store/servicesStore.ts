@@ -20,6 +20,7 @@ interface ServicesState {
   services: ServiceCategory[];
   addService: (service: ServiceCategory) => void;
   updateService: (id: string, updatedService: Partial<ServiceCategory>) => void;
+  removeService: (id: string) => void;
   loadServices: () => Promise<void>;
   clearServices: () => void;
 }
@@ -37,6 +38,12 @@ export const useServicesStore = create<ServicesState>((set, get) => ({
 
   updateService: async (id, updatedService) => {
     const updatedServices = get().services.map(s => s.id === id ? { ...s, ...updatedService } : s);
+    set({ services: updatedServices });
+    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updatedServices));
+  },
+
+  removeService: async (id) => {
+    const updatedServices = get().services.filter(s => s.id !== id);
     set({ services: updatedServices });
     await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updatedServices));
   },

@@ -142,7 +142,7 @@ export function EmployeeForm({ mode, initialData, onSubmit }: EmployeeFormProps)
         Enter details to add a new employee to your branch.
       </Text>
 
-      <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+      <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.scrollContent}>
         
         <Input
           label="Employee Name"
@@ -224,11 +224,10 @@ export function EmployeeForm({ mode, initialData, onSubmit }: EmployeeFormProps)
       </ScrollView>
 
       <View style={styles.footer}>
-        <Button 
-          title={mode === 'create' ? "Save New Employee" : "Update Employee"} 
-          onPress={handleSubmit} 
-          variant="primary" 
-          style={{ backgroundColor: 'rgba(26, 15, 163, 1.00)' }}
+        <Button
+          title={mode === 'create' ? "Save New Employee" : "Update Employee"}
+          onPress={handleSubmit}
+          variant="primary"
         />
       </View>
 
@@ -246,7 +245,6 @@ export function EmployeeForm({ mode, initialData, onSubmit }: EmployeeFormProps)
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    display: 'flex',
     flexDirection: 'column',
   },
   title: {
@@ -264,7 +262,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   scrollContent: {
-    paddingBottom: 20,
+    paddingBottom: 120,
   },
   statusContainer: {
     flexDirection: 'row',
