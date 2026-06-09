@@ -15,17 +15,17 @@ export default function DashboardLayout() {
           backgroundColor: '#FFFFFF',
           borderTopWidth: 1,
           borderTopColor: '#E2E8F0',
-          height: Platform.OS === 'ios' ? 60 + insets.bottom : 60,
-          paddingTop: 8,
-          paddingBottom: Platform.OS === 'ios' ? insets.bottom : 8,
+          height: 80 + insets.bottom,
+          paddingTop: 10,
+          paddingBottom: insets.bottom > 0 ? insets.bottom + 12 : 20,
           display: ['index', 'bookings', 'wallet', 'profile'].includes(route.name) ? 'flex' : 'none',
         },
         tabBarActiveTintColor: 'rgba(26, 15, 163, 1.00)',
         tabBarInactiveTintColor: '#94A3B8',
         tabBarLabelStyle: {
-          fontSize: 12,
+          fontSize: 11,
           fontWeight: '600',
-          marginTop: 4,
+          marginTop: 2,
         },
       })}
     >
