@@ -19,13 +19,13 @@ import { useAuthStore } from '@/store/authStore';
 // Custom high-fidelity inline SVG icons
 const PhoneIcon = ({ color = 'rgba(26, 15, 163, 1.00)', size = 20 }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M3 5.5C3 14.0604 9.93959 21 18.5 21C18.8862 21 19.2691 20.9859 19.6483 20.9581C20.0834 20.9262 20.3009 20.9103 20.493 20.7963C20.763 20.6361 20.9759 20.3606 21.0598 20.0607C21.1192 19.8487 21.0456 19.6277 20.8983 19.1856L19.5103 15.021C19.3879 14.6539 19.3267 14.4703 19.2135 14.3312C19.1136 14.2084 18.9806 14.1166 18.8285 14.0655C18.656 14.0076 18.4624 14.027 18.0751 14.0657L15.3582 14.3374C14.8697 14.3862 14.3822 14.1205 14.1122 13.6828L10.3172 7.53323C10.0472 7.09553 10.1118 6.54144 10.48 6.13643L12.5186 3.89412C12.7844 3.6017 12.8361 3.41162 12.8306 3.23896C12.8257 3.08643 12.7766 2.94052 12.6896 2.81765C12.5912 2.67858 12.4343 2.58444 12.1206 2.39616L8.43501 0.184852C8.03362 -0.0560156 7.83292 -0.17645 7.61803 -0.160161C7.31557 -0.137233 7.03185 0.0469446 6.84542 0.300185C6.71286 0.479261 6.6433 0.68792 6.50417 1.10524L5.61909 3.76044C5.16335 5.12769 5.09919 5.48512 5.03157 5.8694C4.94584 6.35677 4.90807 6.85244 4.9189 7.34861C4.93339 8.01248 5.03352 8.70034 5.23377 10.076Z" fill={color} />
+    <Path d="M6.62 10.79a15.053 15.053 0 006.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1C10.61 21 3 13.39 3 4c0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.24 1.02l-2.21 2.2z" fill={color} />
   </Svg>
 );
 
 const MessageIcon = ({ color = 'rgba(26, 15, 163, 1.00)', size = 20 }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <Path d="M21 11.5C21.0034 12.8199 20.6951 14.1219 20.1 15.3C19.3944 16.7118 18.3098 17.8992 16.9674 18.7293C15.6251 19.5594 14.0782 19.9994 12.5 20C11.1801 20.0035 9.87812 19.6951 8.7 19.1L3 21L4.9 15.3C4.30493 14.1219 3.99656 12.8199 4 11.5C4.00061 9.92179 4.44061 8.37488 5.27072 7.03258C6.10083 5.69028 7.28825 4.6056 8.7 3.90003C9.87812 3.30496 11.1801 2.99659 12.5 3.00003H13C15.0843 3.11502 17.053 3.99479 18.5291 5.47089C20.0052 6.94699 20.885 8.91568 21 11V11.5Z" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <Path d="M20 2H4C2.9 2 2 2.9 2 4v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" fill={color} />
   </Svg>
 );
 
@@ -132,13 +132,7 @@ export default function BookingDetailsScreen() {
     const bks = await StorageService.getBookings();
     const bk = bks.find(b => b.bookingId.replace('#', '') === id || b.bookingId === id);
     if (bk) {
-      let currentBk = bk;
-      // Auto-reset BK123456 to pending if it was completed/closed to allow testing acceptance flow
-      if (currentBk.bookingId.includes('123456') && currentBk.status !== 'pending') {
-        currentBk = { ...currentBk, status: 'pending' as const, employeeId: undefined, profAccepted: undefined };
-        await StorageService.saveBooking(currentBk);
-      }
-      setBooking(currentBk);
+      setBooking(bk);
       setProfAccepted(!!bk.profAccepted);
       const reqs = await StorageService.getMaterialRequests();
       const activeReq = reqs.find(r => r.bookingId === bk.bookingId);
@@ -150,7 +144,7 @@ export default function BookingDetailsScreen() {
     if (!booking) return;
     const updated = { ...booking, status: 'accepted' as const };
     await StorageService.saveBooking(updated);
-    setBooking(updated);
+    setBooking({ ...updated });
   };
 
   const handleDeny = async () => {
@@ -361,7 +355,7 @@ export default function BookingDetailsScreen() {
 
   // Determine timeline progress indicators
   const stepAccepted = booking.status !== 'pending';
-  const stepOnWay = booking.status === 'accepted' || booking.status === 'checked_in' || booking.status === 'started' || booking.status === 'closed' || booking.status === 'completed';
+  const stepOnWay = booking.status === 'on_the_way' || booking.status === 'accepted' || booking.status === 'checked_in' || booking.status === 'started' || booking.status === 'closed' || booking.status === 'completed';
   const stepArrived = booking.status === 'checked_in' || booking.status === 'started' || booking.status === 'closed' || booking.status === 'completed';
   const stepStartWork = booking.status === 'started' || booking.status === 'closed' || booking.status === 'completed';
   const stepCompleted = booking.status === 'closed' || booking.status === 'completed';
@@ -397,12 +391,17 @@ export default function BookingDetailsScreen() {
                 <Text style={styles.idValueText}>{booking.bookingId}</Text>
               </View>
               
-              <View style={[styles.statusBadge, { borderColor: '#22C55E', backgroundColor: '#F0FDF4' }]}>
-                <View style={[styles.statusDot, { backgroundColor: '#22C55E' }]} />
-                <Text style={[styles.statusBadgeText, { color: '#15803D' }]}>
-                  {booking.status === 'pending' ? 'UPCOMING' : booking.status === 'accepted' ? 'ON THE WAY' : booking.status.toUpperCase()}
-                </Text>
-              </View>
+              {booking.status !== 'pending' && (
+                <View style={[styles.statusBadge, {
+                  borderColor: (booking.status === 'accepted' || booking.status === 'on_the_way') ? '#2563EB' : '#22C55E',
+                  backgroundColor: (booking.status === 'accepted' || booking.status === 'on_the_way') ? '#EFF6FF' : '#F0FDF4'
+                }]}>
+                  <View style={[styles.statusDot, { backgroundColor: (booking.status === 'accepted' || booking.status === 'on_the_way') ? '#2563EB' : '#22C55E' }]} />
+                  <Text style={[styles.statusBadgeText, { color: (booking.status === 'accepted' || booking.status === 'on_the_way') ? '#1D4ED8' : '#15803D' }]}>
+                    {(booking.status === 'accepted' || booking.status === 'on_the_way') ? 'ON THE WAY' : booking.status.toUpperCase()}
+                  </Text>
+                </View>
+              )}
             </View>
 
             <Text style={styles.bookedOnText}>Booked on 2 May 2024, 09:20 AM</Text>
@@ -479,7 +478,7 @@ export default function BookingDetailsScreen() {
               </View>
 
               {/* ETA Warning alert box */}
-              {booking.status === 'accepted' && (
+              {(booking.status === 'accepted' || booking.status === 'on_the_way') && (
                 <View style={styles.etaAlertBox}>
                   <MotorbikeIcon size={22} color="#2563EB" />
                   <View style={styles.etaAlertTextCol}>
@@ -499,35 +498,51 @@ export default function BookingDetailsScreen() {
               <Text style={styles.sectionHeading}>CURRENT STATUS</Text>
               
               {/* Custom Timeline visual — matches image */}
-              <View style={styles.timelineVisualContainer}>
-                {/* Line + dots layer */}
-                <View style={styles.tlRow}>
-                  {/* Full-width base line behind dots */}
-                  <View style={styles.tlBaseLine} />
-                  {/* 5 dots evenly spaced */}
-                  {(role === 'BSP' ? [
-                    { active: false },
-                    { active: false },
-                    { active: false },
-                    { active: false },
-                    { active: false },
-                  ] : [
-                    { active: stepAccepted },
-                    { active: stepOnWay },
-                    { active: stepArrived },
-                    { active: stepStartWork },
-                    { active: stepCompleted },
-                  ]).map((step, idx) => (
-                    <View key={idx} style={[styles.tlDot, step.active && styles.tlDotActive]} />
-                  ))}
-                </View>
-                {/* Labels row */}
-                <View style={styles.tlLabelsRow}>
-                  {['Accepted', 'On the way', 'Arrived', 'Start Work', 'Completed'].map((lbl, idx) => (
-                    <Text key={idx} style={styles.tlLabel}>{lbl}</Text>
-                  ))}
-                </View>
-              </View>
+              {(() => {
+                const steps = [stepAccepted, stepOnWay, stepArrived, stepStartWork, stepCompleted];
+                const labels = ['Accepted', 'On the way', 'Arrived', 'Start Work', 'Completed'];
+                // current = last active step index
+                const currentIdx = steps.lastIndexOf(true);
+                return (
+                  <View style={styles.timelineVisualContainer}>
+                    {/* Timeline: dots row with connecting lines between each pair */}
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
+                      {steps.map((active, idx) => {
+                        const isDone = active && idx < currentIdx;
+                        const isCurrent = idx === currentIdx && active;
+                        const lineActive = idx < currentIdx && steps[idx] && steps[idx + 1];
+                        return (
+                          <React.Fragment key={idx}>
+                            <View style={[
+                              styles.tlDot,
+                              isDone && { backgroundColor: '#22C55E', borderColor: '#22C55E' },
+                              isCurrent && { backgroundColor: '#22C55E', borderColor: '#22C55E' },
+                            ]}>
+                              {isDone && (
+                                <Svg width={12} height={12} viewBox="0 0 24 24" fill="none">
+                                  <Path d="M20 6L9 17l-5-5" stroke="#FFFFFF" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+                                </Svg>
+                              )}
+                              {isCurrent && <MotorbikeIcon size={12} color="#FFFFFF" />}
+                            </View>
+                            {idx < steps.length - 1 && (
+                              <View style={{ flex: 1, height: 2, backgroundColor: lineActive ? '#22C55E' : '#CBD5E1' }} />
+                            )}
+                          </React.Fragment>
+                        );
+                      })}
+                    </View>
+                    <View style={styles.tlLabelsRow}>
+                      {labels.map((lbl, idx) => (
+                        <Text key={idx} style={[
+                          styles.tlLabel,
+                          idx === currentIdx && { color: '#0F172A', fontWeight: '700' }
+                        ]}>{lbl}</Text>
+                      ))}
+                    </View>
+                  </View>
+                );
+              })()}
 
               {/* Context Action Area inside Status card */}
               <View style={styles.timelineContentArea}>
@@ -535,21 +550,39 @@ export default function BookingDetailsScreen() {
                   <MotorbikeIcon size={22} color="rgba(26, 15, 163, 1.00)" />
                   <View style={styles.etaAlertTextCol}>
                     <Text style={styles.statusDescriptionTitle}>
-                      {booking.status === 'pending' ? 'Pending Acceptance' : booking.status === 'accepted' ? 'You are on the way' : booking.status === 'checked_in' ? 'Arrived at location' : 'Job Completed'}
+                      {booking.status === 'pending' ? 'Pending Acceptance' : (booking.status === 'accepted' || booking.status === 'on_the_way') ? 'You are on the way' : booking.status === 'checked_in' ? 'Arrived at location' : 'Job Completed'}
                     </Text>
                     <Text style={styles.statusDescriptionText}>
-                      {booking.status === 'pending' ? 'Please review quotation and accept.' : booking.status === 'accepted' ? 'Please reach customer location and mark as arrived.' : booking.status === 'checked_in' ? 'Perform service check and begin work.' : 'The booking has been completed.'}
+                      {booking.status === 'pending' ? 'Please review quotation and accept.' : (booking.status === 'accepted' || booking.status === 'on_the_way') ? 'Please reach customer location and mark as arrived.' : booking.status === 'checked_in' ? 'Perform service check and begin work.' : 'The booking has been completed.'}
                     </Text>
                   </View>
                 </View>
                 
-                {role !== 'ISP' && (
+                {(booking.status === 'pending' || booking.status === 'accepted' || booking.status === 'on_the_way') && (
                   <>
                     <Text style={styles.nextStepTextLabel}>NEXT STEP</Text>
                     <Text style={styles.nextStepActionTitle}>
-                      {booking.status === 'pending' ? 'Accept Booking' : booking.status === 'accepted' ? 'Mark as Arrived' : 'Complete Job'}
+                      {booking.status === 'pending' ? 'Accept Booking' : 'Mark as Arrived'}
                     </Text>
                   </>
+                )}
+
+                {booking.status === 'pending' && role === 'ISP' && (
+                  <View style={styles.actionBtnGroupInline}>
+                    <TouchableOpacity style={styles.primaryActionButton} onPress={handleAccept}>
+                      <Text style={styles.primaryActionButtonText}>Accept Booking</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.secondaryActionButton} onPress={handleDeny}>
+                      <Text style={styles.secondaryActionButtonText}>Decline</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+
+                {(booking.status === 'accepted' || booking.status === 'on_the_way') && role === 'ISP' && (
+                  <TouchableOpacity style={[styles.primaryActionButton, { flex: 0, width: '100%' }]} onPress={handleCheckIn}>
+                    <MapPinIcon color="#FFFFFF" size={16} />
+                    <Text style={styles.primaryActionButtonText}>Mark Arrived</Text>
+                  </TouchableOpacity>
                 )}
 
                 {booking.status === 'pending' && role !== 'ISP' && (
@@ -563,7 +596,7 @@ export default function BookingDetailsScreen() {
                   </View>
                 )}
 
-                {booking.status === 'accepted' && role !== 'ISP' && (
+                {(booking.status === 'accepted' || booking.status === 'on_the_way') && role !== 'ISP' && (
                   <>
                     {role === 'BSP' ? (
                       !booking.employeeId ? (
@@ -822,13 +855,13 @@ export default function BookingDetailsScreen() {
               </View>
 
               {/* Green Earnings highlight card */}
-              <View style={styles.earningsHighlightBox}>
+              <TouchableOpacity style={styles.earningsHighlightBox} onPress={() => router.push('/(dashboard)/wallet')} activeOpacity={0.8}>
                 <View style={styles.earningsHeaderRow}>
                   <Text style={styles.earningsTitle}>Your Earnings</Text>
                   <InfoCircleIcon size={14} color="#059669" />
                 </View>
                 <Text style={styles.earningsValueText}>{extra.earnings}</Text>
-              </View>
+              </TouchableOpacity>
 
               {/* Status Badges Row */}
               <View style={styles.badgesWrapperRow}>
@@ -954,12 +987,7 @@ export default function BookingDetailsScreen() {
                   <TouchableOpacity style={styles.footerPrimaryBtn} onPress={handleAssignPress}>
                     <Text style={styles.footerPrimaryBtnText}>Assign Professional</Text>
                   </TouchableOpacity>
-                ) : (
-                  <TouchableOpacity style={styles.footerPrimaryBtn} onPress={handleCheckIn}>
-                    <MapPinIcon color="#FFFFFF" size={16} />
-                    <Text style={styles.footerPrimaryBtnText}>Mark Arrived</Text>
-                  </TouchableOpacity>
-                )
+                ) : null
               ) : role === 'Professional' ? (
                 !profAccepted ? (
                   <View style={styles.actionBtnGroupInline}>
@@ -1275,16 +1303,18 @@ const styles = StyleSheet.create({
   },
   tlBaseLine: {
     position: 'absolute',
-    left: 11, right: 11,
-    height: 1,
+    left: 13, right: 13,
+    height: 2,
     backgroundColor: '#CBD5E1',
-    top: 11,
+    top: 12,
   },
   tlDot: {
-    width: 22, height: 22, borderRadius: 11,
-    borderWidth: 1, borderColor: '#94A3B8',
+    width: 26, height: 26, borderRadius: 13,
+    borderWidth: 1.5, borderColor: '#CBD5E1',
     backgroundColor: '#FFFFFF',
     zIndex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   tlDotActive: { borderColor: 'rgba(26, 15, 163, 1.00)', backgroundColor: 'rgba(26, 15, 163, 1.00)' },
   tlLabelsRow: { flexDirection: 'row', justifyContent: 'space-between' },

@@ -138,7 +138,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   requiredAsterisk: {
-    color: '#EF4444', // red 500
+    color: COLORS.primary,
     marginLeft: 2,
   },
   inputContainer: {
@@ -160,7 +160,7 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
   },
   inputContainerError: {
-    borderColor: '#EF4444',
+    borderColor: COLORS.primary,
   },
   prefixText: {
     fontSize: 16,

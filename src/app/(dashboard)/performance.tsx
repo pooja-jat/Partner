@@ -229,6 +229,19 @@ const ProgressCircle = ({
   );
 };
 
+const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+function getDateWindow(centerDate: Date) {
+  const result = [];
+  for (let i = -1; i <= 1; i++) {
+    const d = new Date(centerDate);
+    d.setDate(centerDate.getDate() + i);
+    result.push(d);
+  }
+  return result;
+}
+
 export default function PerformanceScreen() {
   useAndroidBack();
   const router = useSafeRouter();
@@ -240,6 +253,7 @@ export default function PerformanceScreen() {
   const [serviceFilter, setServiceFilter] = useState("All Services");
   const [historyTab, setHistoryTab] = useState<HistoryTab>("Completed");
   const [bsTypeFilter, setBsTypeFilter] = useState<"Quotations" | "Orders">("Quotations");
+  const [selectedDate, setSelectedDate] = useState(new Date());
 
   const completedCount = BOOKING_HISTORY.filter(
     (b) => b.status === "Completed",
@@ -356,22 +370,44 @@ export default function PerformanceScreen() {
 
             {/* Date scroller */}
             <View style={styles.dateScrollRow}>
-              <TouchableOpacity style={styles.dateArrow}>
+              <TouchableOpacity
+                style={styles.dateArrow}
+                onPress={() => {
+                  const d = new Date(selectedDate);
+                  d.setDate(d.getDate() - 1);
+                  setSelectedDate(d);
+                }}
+                activeOpacity={0.7}
+              >
                 <ChevronLeft />
               </TouchableOpacity>
-              <View style={styles.datePill}>
-                <Text style={styles.dateDay}>Mon</Text>
-                <Text style={styles.dateNum}>06</Text>
-              </View>
-              <View style={styles.datePill}>
-                <Text style={styles.dateDay}>Tue</Text>
-                <Text style={styles.dateNum}>07</Text>
-              </View>
-              <View style={styles.datePillActive}>
-                <Text style={styles.dateDayActive}>Wed</Text>
-                <Text style={styles.dateNumActive}>08</Text>
-              </View>
-              <TouchableOpacity style={styles.dateArrow}>
+              {getDateWindow(selectedDate).map((date, idx) => {
+                const isActive = idx === 1;
+                return (
+                  <TouchableOpacity
+                    key={idx}
+                    style={isActive ? styles.datePillActive : styles.datePill}
+                    onPress={() => setSelectedDate(date)}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={isActive ? styles.dateDayActive : styles.dateDay}>
+                      {DAY_NAMES[date.getDay()]}
+                    </Text>
+                    <Text style={isActive ? styles.dateNumActive : styles.dateNum}>
+                      {String(date.getDate()).padStart(2, '0')}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+              <TouchableOpacity
+                style={styles.dateArrow}
+                onPress={() => {
+                  const d = new Date(selectedDate);
+                  d.setDate(d.getDate() + 1);
+                  setSelectedDate(d);
+                }}
+                activeOpacity={0.7}
+              >
                 <ChevronRight />
               </TouchableOpacity>
             </View>

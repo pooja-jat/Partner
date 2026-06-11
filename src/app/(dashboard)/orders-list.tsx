@@ -178,8 +178,9 @@ export default function OrdersListScreen() {
         {/* Tab Selection */}
         <View style={styles.tabBar}>
           {(['New', 'Accepted', 'In Progress', 'Ready'] as const).map((tab) => (
-            <TouchableOpacity 
-              key={tab} 
+            <TouchableOpacity
+              key={tab}
+              activeOpacity={0.85}
               style={[styles.tabItem, activeTab === tab && styles.activeTabItem]}
               onPress={() => setActiveTab(tab)}
             >

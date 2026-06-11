@@ -6,6 +6,7 @@ import {
   ScrollView,
   Platform,
   TouchableOpacity,
+  KeyboardAvoidingView,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useSafeRouter } from "@/hooks/useSafeRouter";
@@ -92,6 +93,7 @@ export default function BusinessSetupScreen() {
     <RoleAccessGuard allowedRoles={["BSP", "BS"]}>
       <GradientBackground style={styles.container}>
         <SafeAreaView style={styles.safeArea}>
+          <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
           <View style={styles.header}>
             <TouchableOpacity onPress={handleBack} style={styles.backButton}>
               <BackArrowIcon size={24} color="#0F172A" />
@@ -124,7 +126,7 @@ export default function BusinessSetupScreen() {
 
               <Input
                 label="Business Name"
-                placeholder="e.g. Acme Services"
+                placeholder="Enter B"
                 value={form.businessName}
                 onChangeText={(t) => updateForm("businessName", t)}
                 editable={!isReadonly}
@@ -242,6 +244,7 @@ export default function BusinessSetupScreen() {
             options={BUSINESS_TYPES}
             onSelect={(value) => updateForm("businessType", value)}
           />
+          </KeyboardAvoidingView>
         </SafeAreaView>
       </GradientBackground>
     </RoleAccessGuard>

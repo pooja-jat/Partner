@@ -55,13 +55,15 @@ export default function PassbookScreen() {
 
         <View style={styles.tabContainer}>
           <View style={styles.tabToggle}>
-            <TouchableOpacity 
+            <TouchableOpacity
+              activeOpacity={0.85}
               style={[styles.tabButton, activeTab === 'bank' && styles.tabButtonActive]}
               onPress={() => setActiveTab('bank')}
             >
               <Text style={[styles.tabText, activeTab === 'bank' && styles.tabTextActive]}>Bank</Text>
             </TouchableOpacity>
-            <TouchableOpacity 
+            <TouchableOpacity
+              activeOpacity={0.85}
               style={[styles.tabButton, activeTab === 'booking' && styles.tabButtonActive]}
               onPress={() => setActiveTab('booking')}
             >

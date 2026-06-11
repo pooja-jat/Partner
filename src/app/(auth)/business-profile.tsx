@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, Text, TouchableOpacity, ScrollView, Platform } from 'react-native';
+import { View, StyleSheet, Text, TouchableOpacity, ScrollView, Platform, KeyboardAvoidingView, Alert } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSafeRouter } from '@/hooks/useSafeRouter';
 import { GradientBackground } from '@/components/ui/GradientBackground';
@@ -54,6 +55,24 @@ export default function BusinessProfileScreen() {
     }
   };
 
+  const [uploadedDoc, setUploadedDoc] = useState(false);
+
+  const handleDocumentPick = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission Required', 'Please allow gallery access to upload document.');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      quality: 0.8,
+    });
+    if (!result.canceled) {
+      setUploadedDoc(true);
+    }
+  };
+
   const handleSave = async () => {
     if (isApproved) {
       router.back();
@@ -66,6 +85,7 @@ export default function BusinessProfileScreen() {
     <RoleAccessGuard allowedRoles={['BSP', 'BS']}>
       <GradientBackground style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <View style={styles.topSection}>
           <TouchableOpacity onPress={handleBack} style={styles.backButton}>
             <BackArrowIcon size={24} color="#0F172A" />
@@ -82,7 +102,7 @@ export default function BusinessProfileScreen() {
             <Input
               label="Business Name"
               required={true}
-              placeholder="e.g. Acme Corp"
+              placeholder="Enter Business Name"
               value={form.businessName}
               onChangeText={(t) => updateForm('businessName', t)}
             />
@@ -90,7 +110,7 @@ export default function BusinessProfileScreen() {
             <Input
               label="GST Number"
               required={true}
-              placeholder="e.g. 22AAAAA0000A1Z5"
+              placeholder="Enter GST Number "
               value={form.gstNumber}
               onChangeText={(t) => updateForm('gstNumber', t)}
             />
@@ -98,7 +118,7 @@ export default function BusinessProfileScreen() {
             <Input
               label="Business PAN"
               required={true}
-              placeholder="e.g. ABCDE1234F"
+              placeholder="Enter Business PAN"
               value={form.businessPan}
               onChangeText={(t) => updateForm('businessPan', t)}
             />
@@ -107,10 +127,12 @@ export default function BusinessProfileScreen() {
             <View style={styles.divider} />
 
             <Text style={styles.uploadLabel}>Business Registration Document</Text>
-            <ImageUploadCard 
+            <ImageUploadCard
               label="Tap to upload"
               subLabel="PNG, JPG up to 5MB"
-              onPress={() => router.push('/(dashboard)/coming-soon')}
+              uploaded={uploadedDoc}
+              dummyImage={require('@/assets/dummy/aadhaar-front.png')}
+              onPress={handleDocumentPick}
               style={[styles.uploadCard, { backgroundColor: '#FFFFFF' }]}
             />
 
@@ -123,6 +145,7 @@ export default function BusinessProfileScreen() {
 
           </ScrollView>
         </Card>
+        </KeyboardAvoidingView>
       </SafeAreaView>
     </GradientBackground>
     </RoleAccessGuard>

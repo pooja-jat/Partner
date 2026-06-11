@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   TextInput,
   Platform,
+  Modal,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useSafeRouter } from "@/hooks/useSafeRouter";
@@ -87,6 +88,9 @@ const ServiceIconWrapper = ({ serviceName }: { serviceName: string }) => {
   );
 };
 
+type ServiceFilter = 'All' | 'AC' | 'Plumbing' | 'Electrical';
+type DateFilter = 'All' | 'Today' | 'This Week' | 'This Month';
+
 export default function QuotationRequestsScreen() {
   const router = useSafeRouter();
   const [activeTab, setActiveTab] = useState<
@@ -94,6 +98,13 @@ export default function QuotationRequestsScreen() {
   >("Pending");
   const [searchQuery, setSearchQuery] = useState("");
   const [requests, setRequests] = useState<any[]>([]);
+  const [filterModalVisible, setFilterModalVisible] = useState(false);
+  const [serviceFilter, setServiceFilter] = useState<ServiceFilter>('All');
+  const [dateFilter, setDateFilter] = useState<DateFilter>('All');
+  const [pendingService, setPendingService] = useState<ServiceFilter>('All');
+  const [pendingDate, setPendingDate] = useState<DateFilter>('All');
+
+  const activeFilterCount = (serviceFilter !== 'All' ? 1 : 0) + (dateFilter !== 'All' ? 1 : 0);
 
   useEffect(() => {
     const loadRequests = async () => {
@@ -177,18 +188,45 @@ export default function QuotationRequestsScreen() {
 
       // Filter by Tab
       if (activeTab === "Pending") {
-        return ["pending_quote", "quoted"].includes(req.status);
+        if (!["pending_quote", "quoted"].includes(req.status)) return false;
       } else if (activeTab === "Approved") {
-        return ["approved", "completed"].includes(req.status);
+        if (!["approved", "completed"].includes(req.status)) return false;
       } else {
-        return req.status === "rejected";
+        if (req.status !== "rejected") return false;
       }
+
+      // Filter by Service Type
+      if (serviceFilter !== 'All') {
+        const name = req.serviceName.toLowerCase();
+        if (serviceFilter === 'AC' && !name.includes('ac')) return false;
+        if (serviceFilter === 'Plumbing' && !(name.includes('plumb') || name.includes('pipe') || name.includes('leak'))) return false;
+        if (serviceFilter === 'Electrical' && !(name.includes('electr') || name.includes('wir'))) return false;
+      }
+
+      // Filter by Date
+      if (dateFilter !== 'All') {
+        const now = new Date();
+        const reqDate = new Date(req.date);
+        if (isNaN(reqDate.getTime())) return true;
+        if (dateFilter === 'Today') {
+          if (reqDate.toDateString() !== now.toDateString()) return false;
+        } else if (dateFilter === 'This Week') {
+          const weekAgo = new Date(now);
+          weekAgo.setDate(now.getDate() - 7);
+          if (reqDate < weekAgo) return false;
+        } else if (dateFilter === 'This Month') {
+          if (reqDate.getMonth() !== now.getMonth() || reqDate.getFullYear() !== now.getFullYear()) return false;
+        }
+      }
+
+      return true;
     });
   };
 
   const filtered = getFilteredRequests();
 
   return (
+    <>
     <GradientBackground style={styles.container}>
       <SafeAreaView style={styles.safeArea} edges={["top", "left", "right"]}>
         {/* Design Header */}
@@ -241,8 +279,20 @@ export default function QuotationRequestsScreen() {
               onChangeText={setSearchQuery}
             />
           </View>
-          <TouchableOpacity style={styles.filterBtn}>
-            <FilterIcon size={18} color="#1A0FA3" />
+          <TouchableOpacity
+            style={[styles.filterBtn, activeFilterCount > 0 && styles.filterBtnActive]}
+            onPress={() => {
+              setPendingService(serviceFilter);
+              setPendingDate(dateFilter);
+              setFilterModalVisible(true);
+            }}
+          >
+            <FilterIcon size={18} color={activeFilterCount > 0 ? "#FFFFFF" : "#1A0FA3"} />
+            {activeFilterCount > 0 && (
+              <View style={styles.filterBadge}>
+                <Text style={styles.filterBadgeText}>{activeFilterCount}</Text>
+              </View>
+            )}
           </TouchableOpacity>
         </View>
 
@@ -332,7 +382,76 @@ export default function QuotationRequestsScreen() {
           )}
         </ScrollView>
       </SafeAreaView>
+
     </GradientBackground>
+
+      {/* Filter Bottom Sheet Modal */}
+      <Modal
+        visible={filterModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setFilterModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <TouchableOpacity
+            style={styles.modalBackdrop}
+            activeOpacity={1}
+            onPress={() => setFilterModalVisible(false)}
+          />
+          <View style={styles.filterSheet}>
+            <View style={styles.sheetHandle} />
+            <View style={styles.sheetHeader}>
+              <Text style={styles.sheetTitle}>Filter Quotations</Text>
+              <TouchableOpacity onPress={() => {
+                setPendingService('All');
+                setPendingDate('All');
+              }}>
+                <Text style={styles.clearText}>Clear All</Text>
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.filterSectionLabel}>SERVICE TYPE</Text>
+            <View style={styles.filterChipsRow}>
+              {(['All', 'AC', 'Plumbing', 'Electrical'] as ServiceFilter[]).map((opt) => (
+                <TouchableOpacity
+                  key={opt}
+                  activeOpacity={1}
+                  style={[styles.filterChip, pendingService === opt && styles.filterChipActive]}
+                  onPress={() => setPendingService(opt)}
+                >
+                  <Text style={[styles.filterChipText, pendingService === opt && styles.filterChipTextActive]}>{opt}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <Text style={[styles.filterSectionLabel, { marginTop: 20 }]}>DATE</Text>
+            <View style={styles.filterChipsRow}>
+              {(['All', 'Today', 'This Week', 'This Month'] as DateFilter[]).map((opt) => (
+                <TouchableOpacity
+                  key={opt}
+                  activeOpacity={1}
+                  style={[styles.filterChip, pendingDate === opt && styles.filterChipActive]}
+                  onPress={() => setPendingDate(opt)}
+                >
+                  <Text style={[styles.filterChipText, pendingDate === opt && styles.filterChipTextActive]}>{opt}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <TouchableOpacity
+              style={styles.applyBtn}
+              onPress={() => {
+                setServiceFilter(pendingService);
+                setDateFilter(pendingDate);
+                setFilterModalVisible(false);
+              }}
+            >
+              <Text style={styles.applyBtnText}>Apply Filters</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+    </>
   );
 }
 
@@ -488,5 +607,110 @@ const styles = StyleSheet.create({
     color: "#64748B",
     marginTop: 40,
     fontSize: 13,
+  },
+
+  filterBtnActive: {
+    backgroundColor: "#1A0FA3",
+  },
+  filterBadge: {
+    position: "absolute",
+    top: -4,
+    right: -4,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: "#EF4444",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  filterBadgeText: {
+    fontSize: 9,
+    fontWeight: "800",
+    color: "#FFFFFF",
+  },
+
+  modalContainer: {
+    flex: 1,
+    justifyContent: "flex-end",
+  },
+  modalBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(0,0,0,0.4)",
+  },
+  filterSheet: {
+    backgroundColor: "#FFFFFF",
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 24,
+    paddingBottom: Platform.OS === "ios" ? 40 : 24,
+  },
+  sheetHandle: {
+    width: 40,
+    height: 4,
+    backgroundColor: "#E2E8F0",
+    borderRadius: 2,
+    alignSelf: "center",
+    marginBottom: 20,
+  },
+  sheetHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  sheetTitle: {
+    fontSize: 17,
+    fontWeight: "700",
+    color: "#0F172A",
+  },
+  clearText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#EF4444",
+  },
+  filterSectionLabel: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: "#94A3B8",
+    letterSpacing: 0.5,
+    marginBottom: 10,
+  },
+  filterChipsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  filterChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    backgroundColor: "#F8FAFC",
+  },
+  filterChipActive: {
+    backgroundColor: "#1A0FA3",
+    borderColor: "#1A0FA3",
+  },
+  filterChipText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#64748B",
+  },
+  filterChipTextActive: {
+    color: "#FFFFFF",
+  },
+  applyBtn: {
+    marginTop: 28,
+    height: 50,
+    backgroundColor: "#1A0FA3",
+    borderRadius: 16,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  applyBtnText: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#FFFFFF",
   },
 });

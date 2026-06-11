@@ -23,13 +23,15 @@ export default function RateCardScreen() {
         </View>
 
         <View style={styles.tabContainer}>
-          <TouchableOpacity 
+          <TouchableOpacity
+            activeOpacity={0.85}
             style={[styles.tab, activeTab === 'Service' && styles.tabActive]}
             onPress={() => setActiveTab('Service')}
           >
             <Text style={[styles.tabText, activeTab === 'Service' && styles.tabTextActive]}>Service</Text>
           </TouchableOpacity>
-          <TouchableOpacity 
+          <TouchableOpacity
+            activeOpacity={0.85}
             style={[styles.tab, activeTab === 'Instant' && styles.tabActive]}
             onPress={() => setActiveTab('Instant')}
           >

@@ -119,21 +119,24 @@ export default function IncentivesScreen() {
             )}
 
             <View style={styles.tabsRow}>
-              <TouchableOpacity 
-                style={[styles.tabBtn, activeTab === 'daily' && styles.activeTabBtn]} 
+              <TouchableOpacity
+                activeOpacity={0.85}
+                style={[styles.tabBtn, activeTab === 'daily' && styles.activeTabBtn]}
                 onPress={() => setActiveTab('daily')}
               >
                 <Text style={activeTab === 'daily' ? styles.activeTabText : styles.inactiveTabText}>Daily</Text>
               </TouchableOpacity>
               
-              <TouchableOpacity 
+              <TouchableOpacity
+                activeOpacity={0.85}
                 style={[styles.tabBtn, activeTab === 'weekly' && styles.activeTabBtn]}
                 onPress={() => setActiveTab('weekly')}
               >
                 <Text style={activeTab === 'weekly' ? styles.activeTabText : styles.inactiveTabText}>Weekly</Text>
               </TouchableOpacity>
               
-              <TouchableOpacity 
+              <TouchableOpacity
+                activeOpacity={0.85}
                 style={[styles.tabBtn, activeTab === 'bonus' && styles.activeTabBtn]}
                 onPress={() => setActiveTab('bonus')}
               >

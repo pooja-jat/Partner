@@ -126,6 +126,7 @@ export default function BranchListScreen() {
               {['All', 'Active', 'Inactive'].map((tab) => (
                 <TouchableOpacity
                   key={tab}
+                  activeOpacity={0.85}
                   style={[styles.tab, filter === tab && (isBSP ? styles.activeTabBSP : styles.activeTab)]}
                   onPress={() => setFilter(tab as any)}
                 >
@@ -300,6 +301,6 @@ const styles = StyleSheet.create({
   deleteActions: { flexDirection: 'row', gap: 12 },
   cancelBtn: { flex: 1, paddingVertical: 14, borderRadius: 12, borderWidth: 1, borderColor: '#E2E8F0', alignItems: 'center' },
   cancelBtnText: { fontSize: 14, fontWeight: '600', color: '#64748B' },
-  deleteBtn: { flex: 1, paddingVertical: 14, borderRadius: 12, backgroundColor: '#EF4444', alignItems: 'center' },
+  deleteBtn: { flex: 1, paddingVertical: 14, borderRadius: 12, backgroundColor: 'rgba(26, 15, 163, 1.00)', alignItems: 'center' },
   deleteBtnText: { fontSize: 14, fontWeight: '700', color: '#FFFFFF' },
 });

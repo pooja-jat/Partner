@@ -311,9 +311,6 @@ export default function DashboardLayout() {
         options={{ href: null }}
       />
       <Tabs.Screen name="seller" options={{ href: null }} />
-      <Tabs.Screen name="services" options={{ href: null }} />
-      <Tabs.Screen name="bookings/[id]" options={{ href: null }} />
-      <Tabs.Screen name="bookings/assign-booking" options={{ href: null }} />
       <Tabs.Screen name="work-progress-photos" options={{ href: null }} />
       <Tabs.Screen name="seller/material-dispatch" options={{ href: null }} />
       <Tabs.Screen name="seller/quotation-details" options={{ href: null }} />

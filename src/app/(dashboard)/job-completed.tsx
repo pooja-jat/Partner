@@ -196,12 +196,13 @@ export default function JobCompletedScreen() {
 
       </SafeAreaView>
 
-      <ReviewModal 
+      <ReviewModal
         visible={reviewModalVisible}
         onClose={() => setReviewModalVisible(false)}
         onSubmit={(rating, review) => {
           console.log('Submitted review:', rating, review);
           setReviewModalVisible(false);
+          router.replace('/(dashboard)');
         }}
       />
 

@@ -90,7 +90,8 @@ interface BookingDetails {
 export default function BookingsScreen() {
   useAndroidBack();
   const router = useSafeRouter();
-  const [isOnDuty, setIsOnDuty] = useState(false);
+  const [isOnDuty, setIsOnDuty] = useState(true);
+  const [rejectedIds, setRejectedIds] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -114,38 +115,35 @@ export default function BookingsScreen() {
         const s = await StorageService.getUserSession();
         setSession(s);
 
-        let bks = await StorageService.getBookings();
-        if (bks.length === 0 || bks.length < 5) {
-          const dummies: Booking[] = [
-            {
-              bookingId: '#BK123456', userId: 'U1', serviceId: 'S1', branchId: 'BR1', employeeId: undefined, profAccepted: undefined,
-              status: 'pending', paymentStatus: 'unpaid', paymentMethod: 'online', paymentLinkGenerated: false,
-              checkInCode: '1234', completionOtp: '123456', scheduledTime: '5 May 2024 (Today)\n10:00 AM', location: 'A-101, Green Residency, Sector 45, Noida, UP - 201301', serviceRadius: 10
-            },
-            {
-              bookingId: '#BK123457', userId: 'U2', serviceId: 'S2', branchId: 'BR1', employeeId: undefined, profAccepted: undefined,
-              status: 'accepted', paymentStatus: 'paid', paymentMethod: 'online', paymentLinkGenerated: false,
-              checkInCode: '4321', completionOtp: '654321', scheduledTime: '6 May 2024 (Tomorrow)\n11:30 AM', location: 'B-205, Sunshine Apartments, Sector 50, Noida, UP - 201301', serviceRadius: 15
-            },
-            {
-              bookingId: '#BK123458', userId: 'U3', serviceId: 'S3', branchId: 'BR1', employeeId: 'EMP1', profAccepted: false,
-              status: 'accepted', paymentStatus: 'paid', paymentMethod: 'online', paymentLinkGenerated: true,
-              checkInCode: '1111', completionOtp: '222222', scheduledTime: '7 May 2024\n04:00 PM', location: 'C-205, Galaxy Tower, Sector 76, Noida, UP - 201301', serviceRadius: 20
-            },
-            {
-              bookingId: '#BK123459', userId: 'U4', serviceId: 'S1', branchId: 'BR1', employeeId: 'EMP1', profAccepted: true,
-              status: 'accepted', paymentStatus: 'paid', paymentMethod: 'online', paymentLinkGenerated: false,
-              checkInCode: '5678', completionOtp: '987654', scheduledTime: '8 May 2024\n09:00 AM', location: 'D-312, Stellar Park, Sector 62, Noida, UP - 201301', serviceRadius: 12
-            },
-            {
-              bookingId: '#BK123460', userId: 'U5', serviceId: 'S2', branchId: 'BR1', employeeId: 'EMP1', profAccepted: true,
-              status: 'closed', paymentStatus: 'paid', paymentMethod: 'online', paymentLinkGenerated: false,
-              checkInCode: '9999', completionOtp: '888888', scheduledTime: '9 May 2024\n04:30 PM', location: 'E-401, Purvanchal Royal Park, Sector 137, Noida, UP - 201301', serviceRadius: 18
-            }
-          ];
-          await StorageService.setItem('BOOKINGS', dummies);
-          bks = dummies;
-        }
+        const freshDummies: Booking[] = [
+          {
+            bookingId: '#BK123456', userId: 'U1', serviceId: 'S1', branchId: 'BR1', employeeId: undefined, profAccepted: undefined,
+            status: 'accepted', paymentStatus: 'unpaid', paymentMethod: 'online', paymentLinkGenerated: false,
+            checkInCode: '1234', completionOtp: '123456', scheduledTime: '5 May 2024 (Today)\n10:00 AM', location: 'A-101, Green Residency, Sector 45, Noida, UP - 201301', serviceRadius: 10
+          },
+          {
+            bookingId: '#BK123457', userId: 'U2', serviceId: 'S2', branchId: 'BR1', employeeId: undefined, profAccepted: undefined,
+            status: 'accepted', paymentStatus: 'paid', paymentMethod: 'online', paymentLinkGenerated: false,
+            checkInCode: '4321', completionOtp: '654321', scheduledTime: '6 May 2024 (Tomorrow)\n11:30 AM', location: 'B-205, Sunshine Apartments, Sector 50, Noida, UP - 201301', serviceRadius: 15
+          },
+          {
+            bookingId: '#BK123458', userId: 'U3', serviceId: 'S3', branchId: 'BR1', employeeId: 'EMP1', profAccepted: false,
+            status: 'accepted', paymentStatus: 'paid', paymentMethod: 'online', paymentLinkGenerated: true,
+            checkInCode: '1111', completionOtp: '222222', scheduledTime: '7 May 2024\n04:00 PM', location: 'C-205, Galaxy Tower, Sector 76, Noida, UP - 201301', serviceRadius: 20
+          },
+          {
+            bookingId: '#BK123459', userId: 'U4', serviceId: 'S1', branchId: 'BR1', employeeId: 'EMP1', profAccepted: true,
+            status: 'accepted', paymentStatus: 'paid', paymentMethod: 'online', paymentLinkGenerated: false,
+            checkInCode: '5678', completionOtp: '987654', scheduledTime: '8 May 2024\n09:00 AM', location: 'D-312, Stellar Park, Sector 62, Noida, UP - 201301', serviceRadius: 12
+          },
+          {
+            bookingId: '#BK123460', userId: 'U5', serviceId: 'S2', branchId: 'BR1', employeeId: 'EMP1', profAccepted: true,
+            status: 'accepted', paymentStatus: 'paid', paymentMethod: 'online', paymentLinkGenerated: false,
+            checkInCode: '9999', completionOtp: '888888', scheduledTime: '9 May 2024\n04:30 PM', location: 'E-401, Purvanchal Royal Park, Sector 137, Noida, UP - 201301', serviceRadius: 18
+          }
+        ];
+        await StorageService.setItem('BOOKINGS', freshDummies);
+        let bks = freshDummies;
 
         if (s?.role === 'ISP') {
           bks = bks.filter(b => b.serviceRadius <= 25);
@@ -204,20 +202,35 @@ export default function BookingsScreen() {
   const handleDutyToggle = (value: boolean) => {
     setIsOnDuty(value);
     if (value && bookings.length > 0) {
-      setPopupBooking(bookings[0]);
-      setBookingPopupVisible(true);
+      const available = bookings.filter(b => !rejectedIds.includes(b.bookingId));
+      if (available.length > 0) {
+        setPopupBooking(available[0]);
+        setBookingPopupVisible(true);
+      }
     }
   };
 
-  const handleAccept = () => {
-    setBookingPopupVisible(false);
+  const handleAccept = async () => {
+    if (popupBooking) {
+      const updated = { ...popupBooking, status: 'accepted' as const };
+      await StorageService.saveBooking(updated);
+      setBookings(prev => prev.map(b => b.bookingId === updated.bookingId ? updated : b));
+      setBookingPopupVisible(false);
+      router.push(`/(dashboard)/bookings/${popupBooking.bookingId.replace('#', '')}` as any);
+    } else {
+      setBookingPopupVisible(false);
+    }
   };
 
   const handleReject = () => {
+    if (popupBooking) {
+      setRejectedIds(prev => [...prev, popupBooking.bookingId]);
+    }
     setBookingPopupVisible(false);
   };
 
   const filteredBookings = bookings.filter(booking => {
+    if (rejectedIds.includes(booking.bookingId)) return false;
     const details = getBookingDisplayDetails(booking);
     const matchesSearch =
       booking.bookingId.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -226,7 +239,7 @@ export default function BookingsScreen() {
 
     const matchesTab =
       activeTab === 'All' ||
-      (activeTab === 'On the way' && (booking.status === 'accepted' || booking.status === 'checked_in')) ||
+      (activeTab === 'On the way' && (booking.status === 'on_the_way' || booking.status === 'accepted' || booking.status === 'checked_in')) ||
       (activeTab === 'Upcoming' && booking.status === 'pending');
 
     const matchesPaymentStatus =
@@ -238,8 +251,7 @@ export default function BookingsScreen() {
 
     const matchesPaymentType =
       selectedPaymentType === 'All' ||
-      (selectedPaymentType === 'Online' && booking.paymentMethod === 'online') ||
-      (selectedPaymentType === 'Cash' && booking.paymentMethod === 'cash');
+      (selectedPaymentType === 'Online' && booking.paymentMethod === 'online');
 
     return matchesSearch && matchesTab && matchesPaymentStatus && matchesPaymentType;
   });
@@ -256,7 +268,7 @@ export default function BookingsScreen() {
             <BackArrowIcon size={24} color="#0F172A" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>
-            {isOnDuty ? `${filteredBookings.length} Orders` : '0 Orders'}
+            {`${isOnDuty ? filteredBookings.length : 0} Bookings`}
           </Text>
           <TouchableOpacity
             style={[styles.dutyBadge, isOnDuty ? styles.dutyBadgeOn : styles.dutyBadgeOff]}
@@ -272,7 +284,7 @@ export default function BookingsScreen() {
         {!isOnDuty ? (
           /* Off Duty Empty State */
           <View style={styles.offDutyContainer}>
-            <Text style={styles.offDutyText}>Go On-Duty to receive orders.</Text>
+            <Text style={styles.offDutyText}>Go On-Duty to receive bookings.</Text>
             <View style={styles.offDutySwitchRow}>
               <Text style={styles.offDutySwitchLabel}>OFF DUTY</Text>
               <Switch
@@ -313,6 +325,7 @@ export default function BookingsScreen() {
                   return (
                     <TouchableOpacity
                       key={tab.id}
+                      activeOpacity={0.85}
                       style={[styles.tabBtn, isActive ? styles.tabBtnActive : styles.tabBtnInactive]}
                       onPress={() => setActiveTab(tab.id)}
                     >
@@ -381,7 +394,14 @@ export default function BookingsScreen() {
 
                     <TouchableOpacity
                       style={styles.viewBtn}
-                      onPress={() => router.push(`/(dashboard)/bookings/${booking.bookingId.replace('#', '')}` as any)}
+                      onPress={async () => {
+                        if (booking.status !== 'on_the_way' && booking.status !== 'checked_in' && booking.status !== 'started' && booking.status !== 'completed' && booking.status !== 'closed') {
+                          const updated = { ...booking, status: 'on_the_way' as const };
+                          await StorageService.saveBooking(updated);
+                          setBookings(prev => prev.map(b => b.bookingId === booking.bookingId ? updated : b));
+                        }
+                        router.push(`/(dashboard)/bookings/${booking.bookingId.replace('#', '')}` as any);
+                      }}
                     >
                       <Text style={styles.viewBtnText}>View</Text>
                     </TouchableOpacity>
@@ -420,7 +440,6 @@ export default function BookingsScreen() {
             <View style={styles.popupDivider} />
 
             <View style={styles.popupActionsRow}>
-              <View style={styles.popupDotIndicator} />
               <View style={styles.popupBtnGroup}>
                 <TouchableOpacity style={styles.popupRejectBtn} onPress={handleReject}>
                   <Text style={styles.popupRejectText}>−</Text>
@@ -452,6 +471,7 @@ export default function BookingsScreen() {
                 return (
                   <TouchableOpacity
                     key={status}
+                    activeOpacity={0.85}
                     style={[styles.chip, isSelected ? styles.chipSelected : styles.chipUnselected]}
                     onPress={() => setSelectedPaymentStatus(status)}
                   >
@@ -476,7 +496,7 @@ export default function BookingsScreen() {
 
             {showPaymentTypeDropdown && (
               <View style={styles.dropdownMenu}>
-                {['All', 'Online', 'Cash'].map(type => (
+                {['All', 'Online'].map(type => (
                   <TouchableOpacity
                     key={type}
                     style={styles.dropdownItem}

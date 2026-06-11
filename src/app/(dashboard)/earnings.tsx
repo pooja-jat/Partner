@@ -58,14 +58,16 @@ export default function EarningsScreen() {
         <View style={styles.contentArea}>
           
           <View style={styles.tabsRow}>
-            <TouchableOpacity 
-              style={[styles.tabBtn, activeTab === 'all' && styles.activeTabBtn]} 
+            <TouchableOpacity
+              activeOpacity={0.85}
+              style={[styles.tabBtn, activeTab === 'all' && styles.activeTabBtn]}
               onPress={() => setActiveTab('all')}
             >
               <Text style={activeTab === 'all' ? styles.activeTabText : styles.inactiveTabText}>All Earnings</Text>
             </TouchableOpacity>
             
-            <TouchableOpacity 
+            <TouchableOpacity
+              activeOpacity={0.85}
               style={[styles.tabBtn, activeTab === 'wallet' && styles.activeTabBtn]}
               onPress={() => setActiveTab('wallet')}
             >

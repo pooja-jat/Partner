@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, StyleSheet, Modal, TouchableOpacity, TextInput, Platform, KeyboardAvoidingView } from 'react-native';
+import { View, Text, StyleSheet, Modal, TouchableOpacity, TextInput, Platform, KeyboardAvoidingView, ScrollView, Pressable } from 'react-native';
 import Svg, { Path, Rect, Circle } from 'react-native-svg';
 
 interface OTPModalProps {
@@ -37,36 +37,31 @@ const PhoneShakeIcon = ({ color = '#94A3B8' }) => (
 );
 
 export const OTPModal: React.FC<OTPModalProps> = ({ visible, onClose, onVerified, expectedOtp, length = 4 }) => {
-  const [otp, setOtp] = useState<string[]>(Array(length).fill(''));
+  const [otpValue, setOtpValue] = useState('');
+  const [isFocused, setIsFocused] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
-  const inputs = useRef<Array<TextInput | null>>([]);
+  const inputRef = useRef<TextInput>(null);
 
   React.useEffect(() => {
     if (visible) {
-      setOtp(Array(length).fill(''));
+      setOtpValue('');
       setErrorMsg('');
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 400);
     }
   }, [visible, length]);
 
-  const handleOtpChange = (text: string, index: number) => {
+  const handleOtpChange = (text: string) => {
     setErrorMsg('');
-    const newOtp = [...otp];
-    newOtp[index] = text;
-    setOtp(newOtp);
-
-    if (text && index < length - 1) {
-      inputs.current[index + 1]?.focus();
+    const cleaned = text.replace(/[^0-9]/g, '').slice(0, length);
+    setOtpValue(cleaned);
+    if (cleaned.length === length) {
+      setTimeout(() => handleVerifyOtp(cleaned), 100);
     }
   };
 
-  const handleKeyPress = (e: any, index: number) => {
-    if (e.nativeEvent.key === 'Backspace' && !otp[index] && index > 0) {
-      inputs.current[index - 1]?.focus();
-    }
-  };
-
-  const handleVerify = () => {
-    const entered = otp.join('');
+  const handleVerifyOtp = (entered: string) => {
     const isDummyOtp = entered === '1234' || entered === '123456' || entered.startsWith('1234');
     if (expectedOtp && entered !== expectedOtp && !isDummyOtp) {
       setErrorMsg('Invalid code, try again');
@@ -75,9 +70,46 @@ export const OTPModal: React.FC<OTPModalProps> = ({ visible, onClose, onVerified
     onVerified();
   };
 
+  const handleVerify = () => {
+    handleVerifyOtp(otpValue);
+  };
+
+  const renderCells = () => {
+    const cells = [];
+    for (let i = 0; i < length; i++) {
+      const char = otpValue[i] || '';
+      const isCurrentActive = isFocused && otpValue.length === i;
+      const isLastActive = isFocused && i === length - 1 && otpValue.length === length;
+      const active = isCurrentActive || isLastActive;
+      const isFilled = char !== '';
+      cells.push(
+        <View
+          key={i}
+          style={[
+            styles.otpCell,
+            (isFilled || active) && styles.otpCellFilled,
+            active && styles.otpCellActive,
+          ]}
+        >
+          <Text style={styles.otpCellText}>{char}</Text>
+        </View>
+      );
+    }
+    return cells;
+  };
+
   return (
-    <Modal visible={visible} animationType="fade" transparent>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.overlay}>
+    <Modal visible={visible} animationType="fade" transparent statusBarTranslucent>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.overlay}
+        keyboardVerticalOffset={Platform.OS === 'android' ? 24 : 0}
+      >
+        <ScrollView
+          contentContainerStyle={styles.scrollContainer}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
         <View style={styles.modalCard}>
           
           <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
@@ -109,21 +141,23 @@ export const OTPModal: React.FC<OTPModalProps> = ({ visible, onClose, onVerified
 
           {errorMsg ? <Text style={{color: 'red', marginBottom: 12, fontSize: 12}}>{errorMsg}</Text> : null}
 
-          <View style={styles.otpRow}>
-            {otp.map((digit, idx) => (
-              <TextInput
-                key={idx}
-                ref={(el) => { inputs.current[idx] = el; }}
-                style={[styles.otpInput, digit !== '' && styles.otpInputFilled]}
-                value={digit}
-                onChangeText={(text) => handleOtpChange(text.replace(/[^0-9]/g, '').slice(-1), idx)}
-                onKeyPress={(e) => handleKeyPress(e, idx)}
-                keyboardType="number-pad"
-                maxLength={1}
-                selectTextOnFocus
-              />
-            ))}
-          </View>
+          <TextInput
+            ref={inputRef}
+            value={otpValue}
+            onChangeText={handleOtpChange}
+            keyboardType="number-pad"
+            maxLength={length}
+            style={styles.hiddenInput}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
+            textContentType="oneTimeCode"
+            autoFocus
+            caretHidden
+            showSoftInputOnFocus
+          />
+          <Pressable onPress={() => inputRef.current?.focus()} style={styles.otpRow}>
+            {renderCells()}
+          </Pressable>
 
           <View style={styles.resendRow}>
             <Text style={styles.resendLabel}>Didn't get OTP? </Text>
@@ -143,14 +177,16 @@ export const OTPModal: React.FC<OTPModalProps> = ({ visible, onClose, onVerified
           </TouchableOpacity>
 
         </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 20 },
-  modalCard: { backgroundColor: '#FFFFFF', borderRadius: 24, padding: 24, width: '100%', alignItems: 'center' },
+  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)' },
+  scrollContainer: { flexGrow: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
+  modalCard: { backgroundColor: '#FFFFFF', borderRadius: 24, padding: 24, width: '100%', alignItems: 'center', position: 'relative' },
   
   closeBtn: { position: 'absolute', top: 16, right: 16, padding: 4, zIndex: 10 },
 
@@ -165,9 +201,12 @@ const styles = StyleSheet.create({
   subText: { fontSize: 12, color: '#64748B', marginBottom: 4 },
   titleText: { fontSize: 16, fontWeight: '700', color: '#0F172A', marginBottom: 24 },
 
-  otpRow: { flexDirection: 'row', gap: 12, marginBottom: 24 },
-  otpInput: { width: 50, height: 50, borderRadius: 16, backgroundColor: '#F8FAFC', textAlign: 'center', fontSize: 20, fontWeight: '700', color: '#0F172A', borderWidth: 1, borderColor: '#F8FAFC' },
-  otpInputFilled: { backgroundColor: '#FFFFFF', borderColor: 'rgba(26, 15, 163, 1.00)' },
+  otpRow: { flexDirection: 'row', gap: 12, marginBottom: 24, position: 'relative', justifyContent: 'center' },
+  otpCell: { width: 50, height: 56, borderRadius: 12, borderBottomWidth: 2, borderColor: '#CBD5E1', justifyContent: 'center', alignItems: 'center' },
+  otpCellFilled: { borderWidth: 1.5, borderColor: '#0F172A', borderRadius: 12, borderBottomWidth: 1.5, backgroundColor: '#FFFFFF' },
+  otpCellActive: { borderColor: 'rgba(26, 15, 163, 1.00)', borderWidth: 2, borderBottomWidth: 2 },
+  otpCellText: { fontSize: 22, fontWeight: '700', color: '#0F172A' },
+  hiddenInput: { position: 'absolute', width: 1, height: 1, opacity: 0.01, color: 'transparent', backgroundColor: 'transparent' },
 
   resendRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 24 },
   resendLabel: { fontSize: 11, color: '#94A3B8' },

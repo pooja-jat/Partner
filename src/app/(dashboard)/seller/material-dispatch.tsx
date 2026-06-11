@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Image, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Image, Platform, KeyboardAvoidingView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSafeRouter } from '@/hooks/useSafeRouter';
 import { useLocalSearchParams } from 'expo-router';
@@ -121,7 +121,8 @@ export default function MaterialDispatchScreen() {
   return (
     <GradientBackground style={styles.container}>
       <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
-        
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+
         {/* Step-specific layout rendering */}
 
         {step === 'accept_order' && (
@@ -355,7 +356,7 @@ export default function MaterialDispatchScreen() {
             </ScrollView>
           </View>
         )}
-
+        </KeyboardAvoidingView>
       </SafeAreaView>
     </GradientBackground>
   );

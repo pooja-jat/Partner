@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Modal, TouchableOpacity, ScrollView, KeyboardAv
 import { Button } from '@/components/ui/Button';
 import { Checkbox } from '@/components/ui/Checkbox';
 import { Switch } from '@/components/ui/Switch';
-import { ChevronDownIcon, CloseIcon } from '@/components/ui/Icons';
+import { CloseIcon, ChevronDownIcon } from '@/components/ui/Icons';
 import Svg, { Path } from 'react-native-svg';
 
 interface ServiceOption {
@@ -115,10 +115,13 @@ export const MapServicesModal: React.FC<MapServicesModalProps> = ({ visible, onC
 
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Select Branch</Text>
-              <TouchableOpacity style={styles.dropdownBox}>
-                <Text style={styles.dropdownText}>{branch}</Text>
-                <ChevronDownIcon size={20} color="#64748B" />
-              </TouchableOpacity>
+              <TextInput
+                style={styles.inputBox}
+                value={branch}
+                onChangeText={setBranch}
+                placeholder="Enter branch name"
+                placeholderTextColor="#94A3B8"
+              />
             </View>
 
             <View style={styles.section}>
@@ -210,6 +213,7 @@ const styles = StyleSheet.create({
   section: { marginBottom: 24 },
   sectionTitle: { fontSize: 14, fontWeight: '700', color: '#0F172A', marginBottom: 12 },
   
+  inputBox: { borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 12, paddingHorizontal: 16, height: 48, backgroundColor: '#FFFFFF', fontSize: 14, color: '#0F172A' },
   dropdownBox: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 12, paddingHorizontal: 16, height: 48, backgroundColor: '#FFFFFF' },
   dropdownText: { fontSize: 14, color: '#0F172A', fontWeight: '500' },
   

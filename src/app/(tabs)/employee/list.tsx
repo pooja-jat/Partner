@@ -38,6 +38,14 @@ const PayoutIcon = () => (
     <Path d="M12 1V23M17 5H9.5C8.57174 5 7.6815 5.36875 7.02513 6.02513C6.36875 6.6815 6 7.57174 6 8.5C6 9.42826 6.36875 10.3185 7.02513 10.9749C7.6815 11.6313 8.57174 12 9.5 12H14.5C15.4283 12 16.3185 12.3687 16.9749 13.0251C17.6313 13.6815 18 14.5717 18 15.5C18 16.4283 17.6313 17.3185 16.9749 17.9749C16.3185 18.6313 15.4283 19 14.5 19H6" stroke="#16A34A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
   </Svg>
 );
+
+const DeleteIcon = () => (
+  <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
+    <Path d="M3 6H5H21" stroke="#EF4444" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    <Path d="M8 6V4C8 3.46957 8.21071 2.96086 8.58579 2.58579C8.96086 2.21071 9.46957 2 10 2H14C14.5304 2 15.0391 2.21071 15.4142 2.58579C15.7893 2.96086 16 3.46957 16 4V6M19 6L18.1 20.1C18.0428 20.6234 17.7877 21.1062 17.3872 21.4497C16.9867 21.7931 16.4709 21.9726 15.944 21.9516L8.056 21.9516C7.52907 21.9726 7.01331 21.7931 6.6128 21.4497C6.21229 21.1062 5.95718 20.6234 5.9 20.1L5 6H19Z" stroke="#EF4444" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    <Path d="M10 11V17M14 11V17" stroke="#EF4444" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+  </Svg>
+);
 import { Employee } from '@/types';
 import { useAndroidBack } from '@/hooks/useAndroidBack';
 import { RoleAccessGuard } from '@/components/common/RoleAccessGuard';
@@ -108,23 +116,22 @@ export default function EmployeeListScreen() {
           {item.isActive ? 'Active' : 'Inactive'}
         </Text>
       </View>
-      
+
       <View style={styles.actionsRow}>
         <TouchableOpacity style={styles.actionButton} onPress={() => handleView(item)}>
           <ViewIcon />
-          <Text style={styles.actionButtonText}>View</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.actionButton} onPress={() => handleEdit(item)}>
           <EditIcon />
-          <Text style={styles.actionButtonText}>Edit</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.actionButton} onPress={() => handleBookings(item)}>
           <BookingIcon />
-          <Text style={styles.actionButtonText}>Booking</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.actionButton} onPress={() => router.push('/(tabs)/employee/payouts')}>
           <PayoutIcon />
-          <Text style={styles.actionButtonText}>Payout</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.actionButton} onPress={() => {}}>
+          <DeleteIcon />
         </TouchableOpacity>
       </View>
     </View>

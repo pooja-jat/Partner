@@ -81,7 +81,10 @@ export default function WorkProgressPhotosScreen() {
               ))}
 
               {photos.length < 4 && (
-                <TouchableOpacity style={styles.addPhotoBtn} onPress={handleAddPhoto}>
+                <TouchableOpacity
+                  style={[styles.addPhotoBtn, photos.length === 0 && styles.addPhotoBtnFull]}
+                  onPress={handleAddPhoto}
+                >
                   <CameraOutlineIcon />
                   <Text style={styles.addPhotoText}>Capture Photo</Text>
                 </TouchableOpacity>
@@ -131,8 +134,9 @@ const styles = StyleSheet.create({
     web: { boxShadow: '0px 2px 4px rgba(0,0,0,0.1)' },
   }) },
 
-  addPhotoBtn: { width: '47%', aspectRatio: 1, borderRadius: 16, backgroundColor: '#F8FAFC', borderWidth: 1, borderStyle: 'dashed', borderColor: '#CBD5E1', justifyContent: 'center', alignItems: 'center' },
-  addPhotoText: { color: 'rgba(26, 15, 163, 1.00)', fontSize: 11, fontWeight: '700', marginTop: 8 },
+  addPhotoBtn: { width: '47%', aspectRatio: 1, borderRadius: 16, backgroundColor: '#F8FAFC', borderWidth: 1, borderStyle: 'dashed', borderColor: '#CBD5E1', justifyContent: 'center', alignItems: 'center', flexDirection: 'column' },
+  addPhotoBtnFull: { width: '100%', aspectRatio: undefined, paddingVertical: 48 },
+  addPhotoText: { color: 'rgba(26, 15, 163, 1.00)', fontSize: 11, fontWeight: '700', marginTop: 8, textAlign: 'center' },
 
   footerSpacing: { height: 120 }, // Leaves room for the absolute actions footer so content is not cut off
 

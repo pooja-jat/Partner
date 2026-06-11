@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Platform, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Platform, TouchableOpacity, KeyboardAvoidingView, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSafeRouter } from '@/hooks/useSafeRouter';
 import { GradientBackground } from '@/components/ui/GradientBackground';
@@ -14,6 +14,7 @@ import { StorageService } from '@/services/storage.service';
 import { useAuthStore } from '@/store/authStore';
 import { SelectOptionsModal } from '@/components/common/SelectOptionsModal';
 import { completeStepAndNavigate } from '@/utils/onboarding';
+import * as ImagePicker from 'expo-image-picker';
 
 const DOCUMENT_TYPES = [
   { label: 'Aadhaar Card', value: 'Aadhaar Card' },
@@ -53,6 +54,70 @@ export default function UploadKycDocument() {
   const [docType, setDocType] = useState('National ID Card');
   const [docNumber, setDocNumber] = useState('');
   const [docModalVisible, setDocModalVisible] = useState(false);
+  const [uploadedFront, setUploadedFront] = useState<string | null>(null);
+  const [uploadedBack, setUploadedBack] = useState<string | null>(null);
+  const [uploadedSelfie, setUploadedSelfie] = useState<string | null>(null);
+  const [uploadedVideo, setUploadedVideo] = useState<string | null>(null);
+
+  const requestPermission = async (type: 'camera' | 'gallery') => {
+    if (type === 'camera') {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      return status === 'granted';
+    } else {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      return status === 'granted';
+    }
+  };
+
+  const handleDocumentImagePick = async (side: 'front' | 'back') => {
+    const granted = await requestPermission('gallery');
+    if (!granted) {
+      Alert.alert('Permission Required', 'Please allow gallery access to upload document.');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      quality: 0.8,
+    });
+    if (!result.canceled) {
+      if (side === 'front') setUploadedFront(result.assets[0].uri);
+      else setUploadedBack(result.assets[0].uri);
+    }
+  };
+
+  const handleSelfiePick = async () => {
+    const granted = await requestPermission('camera');
+    if (!granted) {
+      Alert.alert('Permission Required', 'Please allow camera access to take a selfie.');
+      return;
+    }
+    const result = await ImagePicker.launchCameraAsync({
+      cameraType: ImagePicker.CameraType.front,
+      allowsEditing: true,
+      quality: 0.8,
+    });
+    if (!result.canceled) {
+      setUploadedSelfie(result.assets[0].uri);
+    }
+  };
+
+  const handleVideoKyc = async () => {
+    const granted = await requestPermission('camera');
+    if (!granted) {
+      Alert.alert('Permission Required', 'Please allow camera access to record video KYC.');
+      return;
+    }
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Videos,
+      cameraType: ImagePicker.CameraType.front,
+      videoMaxDuration: 30,
+      quality: ImagePicker.UIImagePickerControllerQualityType.Medium,
+    });
+    if (!result.canceled) {
+      setUploadedVideo(result.assets[0].uri);
+    }
+  };
 
   const [isLoading, setIsLoading] = useState(false);
   const role = useAuthStore(state => state.role);
@@ -78,6 +143,7 @@ export default function UploadKycDocument() {
   return (
     <GradientBackground style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => {
             if (isApproved) {
@@ -123,7 +189,7 @@ export default function UploadKycDocument() {
           <Input
             label="Document Number"
             required={true}
-            placeholder="e.g. A12345678"
+            placeholder="Enter Document Number"
             value={docNumber}
             onChangeText={setDocNumber}
           />
@@ -133,34 +199,42 @@ export default function UploadKycDocument() {
           <Text style={styles.sectionDesc}>Ensure all text is clearly visible and there is no glare.</Text>
 
           <Text style={styles.uploadLabel}>Front Side</Text>
-          <ImageUploadCard 
+          <ImageUploadCard
             label="Tap to upload"
             subLabel="PNG, JPG up to 5MB"
-            onPress={() => router.push('/(dashboard)/coming-soon')}
+            uploaded={!!uploadedFront}
+            uploadedUri={uploadedFront ?? undefined}
+            onPress={() => handleDocumentImagePick('front')}
             style={[styles.uploadCard, { backgroundColor: '#FFFFFF' }]}
           />
 
           <Text style={styles.uploadLabel}>Back Side</Text>
-          <ImageUploadCard 
+          <ImageUploadCard
             label="Tap to upload"
             subLabel="PNG, JPG up to 5MB"
-            onPress={() => router.push('/(dashboard)/coming-soon')}
+            uploaded={!!uploadedBack}
+            uploadedUri={uploadedBack ?? undefined}
+            onPress={() => handleDocumentImagePick('back')}
             style={[styles.uploadCard, { backgroundColor: '#FFFFFF' }]}
           />
 
           <Text style={styles.uploadLabel}>Selfie Photo</Text>
-          <ImageUploadCard 
+          <ImageUploadCard
             label="Tap to take photo"
             subLabel="Clear face visibility required"
-            onPress={() => router.push('/(dashboard)/coming-soon')}
+            uploaded={!!uploadedSelfie}
+            uploadedUri={uploadedSelfie ?? undefined}
+            onPress={handleSelfiePick}
             style={[styles.uploadCard, { backgroundColor: '#FFFFFF' }]}
           />
 
           <Text style={styles.uploadLabel}>Video KYC</Text>
-          <ImageUploadCard 
+          <ImageUploadCard
             label="Tap to record video"
             subLabel="Read the script shown on screen"
-            onPress={() => router.push('/(dashboard)/coming-soon')}
+            uploaded={!!uploadedVideo}
+            uploadedUri={uploadedVideo ?? undefined}
+            onPress={handleVideoKyc}
             style={[styles.uploadCard, { backgroundColor: '#FFFFFF' }]}
           />
 
@@ -181,6 +255,7 @@ export default function UploadKycDocument() {
             options={DOCUMENT_TYPES}
             onSelect={(value) => setDocType(value)}
           />
+        </KeyboardAvoidingView>
       </SafeAreaView>
     </GradientBackground>
   );

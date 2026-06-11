@@ -139,8 +139,8 @@ const styles = StyleSheet.create({
   photoGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
   photoBox: { width: '47%', aspectRatio: 1, borderRadius: 16, backgroundColor: '#F1F5F9' },
   
-  addPhotoBtn: { width: '47%', aspectRatio: 1, borderRadius: 16, backgroundColor: '#F8FAFC', justifyContent: 'center', alignItems: 'center' },
-  addPhotoText: { color: '#3B82F6', fontSize: 11, fontWeight: '700', marginTop: 8 },
+  addPhotoBtn: { width: '47%', aspectRatio: 1, borderRadius: 16, backgroundColor: '#F8FAFC', borderWidth: 1, borderStyle: 'dashed', borderColor: '#CBD5E1', justifyContent: 'center', alignItems: 'center', flexDirection: 'column' },
+  addPhotoText: { color: '#3B82F6', fontSize: 11, fontWeight: '700', marginTop: 8, textAlign: 'center' },
 
   divider: { height: 1, backgroundColor: '#F8FAFC', marginVertical: 24 },
 

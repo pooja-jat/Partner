@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, TextInput } from 'react-native';
 import { Button } from '@/components/ui/Button';
 import { Switch } from '@/components/ui/Switch';
-import { ChevronDownIcon, CloseIcon, SearchIcon, LocationPinIcon } from '@/components/ui/Icons';
+import { CloseIcon, SearchIcon, LocationPinIcon } from '@/components/ui/Icons';
 
 interface DefineOperationalAreaModalProps {
   visible: boolean;
@@ -26,10 +26,15 @@ export const DefineOperationalAreaModal: React.FC<DefineOperationalAreaModalProp
 
   return (
     <Modal visible={visible} animationType="slide" transparent>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlay}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.modalOverlay}
+      >
         <View style={styles.modalContent}>
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-            
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.scrollContent}
+          >
             <View style={styles.header}>
               <View style={styles.headerTopRow}>
                 <Text style={styles.title}>Define Service Area</Text>
@@ -37,7 +42,9 @@ export const DefineOperationalAreaModal: React.FC<DefineOperationalAreaModalProp
                   <CloseIcon size={16} color="#64748B" />
                 </TouchableOpacity>
               </View>
-              <Text style={styles.subtitle}>Set the locations and radius where you provide services.</Text>
+              <Text style={styles.subtitle}>
+                Set the locations and radius where you provide services.
+              </Text>
             </View>
 
             {!hideBranch && (
@@ -58,9 +65,14 @@ export const DefineOperationalAreaModal: React.FC<DefineOperationalAreaModalProp
                 <Text style={styles.label}>Service Radius</Text>
                 <Text style={styles.radiusValue}>{radius} km</Text>
               </View>
-              
+
               <View style={styles.sliderTrack}>
-                <View style={[styles.sliderFill, { width: `${(radius / 50) * 100}%` }]} />
+                <View
+                  style={[
+                    styles.sliderFill,
+                    { width: `${(radius / 50) * 100}%` },
+                  ]}
+                />
               </View>
               <View style={styles.sliderLabels}>
                 <Text style={styles.sliderLabelText}>1 km</Text>
@@ -71,34 +83,48 @@ export const DefineOperationalAreaModal: React.FC<DefineOperationalAreaModalProp
             <View style={styles.rowSection}>
               <View style={styles.halfSection}>
                 <Text style={styles.label}>Country</Text>
-                <TouchableOpacity style={styles.dropdownBox}>
-                  <Text style={styles.dropdownText}>United States</Text>
-                  <ChevronDownIcon size={20} color="#64748B" />
-                </TouchableOpacity>
+                <TextInput style={styles.inputBox} placeholder="Enter Country" placeholderTextColor="#94A3B8" />
               </View>
               <View style={styles.halfSection}>
                 <Text style={styles.label}>State</Text>
-                <TouchableOpacity style={styles.dropdownBox}>
-                  <Text style={styles.dropdownText}>California</Text>
-                  <ChevronDownIcon size={20} color="#64748B" />
-                </TouchableOpacity>
+                <TextInput style={styles.inputBox} placeholder="Enter State" placeholderTextColor="#94A3B8" />
               </View>
             </View>
 
             <View style={styles.section}>
               <Text style={styles.label}>Location Type</Text>
               <View style={styles.segmentedControl}>
-                <TouchableOpacity 
-                  style={[styles.segment, locationType === 'Urban' && styles.segmentActive]}
-                  onPress={() => setLocationType('Urban')}
+                <TouchableOpacity
+                  style={[
+                    styles.segment,
+                    locationType === "Urban" && styles.segmentActive,
+                  ]}
+                  onPress={() => setLocationType("Urban")}
                 >
-                  <Text style={[styles.segmentText, locationType === 'Urban' && styles.segmentTextActive]}>Urban</Text>
+                  <Text
+                    style={[
+                      styles.segmentText,
+                      locationType === "Urban" && styles.segmentTextActive,
+                    ]}
+                  >
+                    Urban
+                  </Text>
                 </TouchableOpacity>
-                <TouchableOpacity 
-                  style={[styles.segment, locationType === 'Rural' && styles.segmentActive]}
-                  onPress={() => setLocationType('Rural')}
+                <TouchableOpacity
+                  style={[
+                    styles.segment,
+                    locationType === "Rural" && styles.segmentActive,
+                  ]}
+                  onPress={() => setLocationType("Rural")}
                 >
-                  <Text style={[styles.segmentText, locationType === 'Rural' && styles.segmentTextActive]}>Rural</Text>
+                  <Text
+                    style={[
+                      styles.segmentText,
+                      locationType === "Rural" && styles.segmentTextActive,
+                    ]}
+                  >
+                    Rural
+                  </Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -106,54 +132,53 @@ export const DefineOperationalAreaModal: React.FC<DefineOperationalAreaModalProp
             <View style={styles.rowSection}>
               <View style={styles.halfSection}>
                 <Text style={styles.label}>City</Text>
-                <TouchableOpacity style={[styles.dropdownBox, styles.dropdownActive]}>
-                  <Text style={styles.dropdownText}>San Francisco</Text>
-                  <ChevronDownIcon size={20} color="#64748B" />
-                </TouchableOpacity>
+                <TextInput style={styles.inputBox} placeholder="Enter City" placeholderTextColor="#94A3B8" />
               </View>
               <View style={styles.halfSection}>
-                <Text style={styles.labelDisabled}>District</Text>
-                <TouchableOpacity style={[styles.dropdownBox, styles.dropdownDisabled]} disabled>
-                  <Text style={styles.dropdownTextDisabled}>N/A (Rural only)</Text>
-                  <ChevronDownIcon size={20} color="#CBD5E1" />
-                </TouchableOpacity>
+                <Text style={styles.label}>District</Text>
+                <TextInput style={styles.inputBox} placeholder="Enter District" placeholderTextColor="#94A3B8" />
               </View>
             </View>
 
             <View style={styles.section}>
               <View style={styles.searchBox}>
                 <SearchIcon size={20} color="#64748B" />
-                <TextInput 
+                <TextInput
                   style={styles.searchInput}
                   placeholder="Search for your location/society/ap..."
                   placeholderTextColor="#94A3B8"
                 />
               </View>
-              
+
               <TouchableOpacity style={styles.currentLocationBtn}>
                 <LocationPinIcon size={18} color="#4338CA" />
-                <Text style={styles.currentLocationText}>Use current location</Text>
+                <Text style={styles.currentLocationText}>
+                  Use current location
+                </Text>
               </TouchableOpacity>
             </View>
 
-            {mode === 'update' && (
+            {mode === "update" && (
               <View style={styles.statusSection}>
                 <View style={styles.statusTextContainer}>
                   <Text style={styles.statusTitle}>Employee Status</Text>
-                  <Text style={styles.statusSubtitle}>Toggle to active / inactive</Text>
+                  <Text style={styles.statusSubtitle}>
+                    Toggle to active / inactive
+                  </Text>
                 </View>
                 <Switch value={isActive} onValueChange={setIsActive} />
               </View>
             )}
-
           </ScrollView>
 
           <View style={styles.footer}>
-            <Button 
-              title={mode === 'update' ? "Update Service Area" : "Save Service Area"} 
-              onPress={handleSubmit} 
-              variant="primary" 
-              style={{ backgroundColor: 'rgba(26, 15, 163, 1.00)' }}
+            <Button
+              title={
+                mode === "update" ? "Update Service Area" : "Save Service Area"
+              }
+              onPress={handleSubmit}
+              variant="primary"
+              style={{ backgroundColor: "rgba(26, 15, 163, 1.00)" }}
             />
           </View>
         </View>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform, Image, KeyboardAvoidingView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSafeRouter } from '@/hooks/useSafeRouter';
 import { GradientBackground } from '@/components/ui/GradientBackground';
@@ -40,7 +40,8 @@ export default function EmergencyContactsScreen() {
   return (
     <GradientBackground style={styles.container}>
       <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
-        
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.push('/(dashboard)/profile')} style={styles.backButton}>
             <BackArrowIcon size={24} color="#0F172A" />
@@ -101,6 +102,7 @@ export default function EmergencyContactsScreen() {
           </View>
 
         </ScrollView>
+        </KeyboardAvoidingView>
       </SafeAreaView>
 
       <SearchContactsModal 

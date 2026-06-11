@@ -1,6 +1,7 @@
 import { useSafeRouter } from '@/hooks/useSafeRouter';
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, Text, TouchableOpacity, ScrollView, Platform, Switch, KeyboardAvoidingView } from 'react-native';
+import { View, StyleSheet, Text, TouchableOpacity, ScrollView, Platform, Switch, KeyboardAvoidingView, Alert, Image } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 import {  useLocalSearchParams } from 'expo-router';
 import { GradientBackground } from '@/components/ui/GradientBackground';
 import { Card } from '@/components/ui/Card';
@@ -20,6 +21,7 @@ export default function CreateProfileScreen() {
   const { mode } = useLocalSearchParams<{ mode?: string }>();
   const isReadOnly = mode === 'view';
 
+  const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const [modalType, setModalType] = useState<string | null>(null);
   const [datePickerVisible, setDatePickerVisible] = useState(false);
   const [dateValue, setDateValue] = useState(new Date());
@@ -92,6 +94,24 @@ export default function CreateProfileScreen() {
     loadProfile();
   }, []);
 
+  const handlePickPhoto = async () => {
+    if (isReadOnly) return;
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission Required', 'Please allow gallery access to upload a profile photo.');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+    if (!result.canceled) {
+      setProfilePhoto(result.assets[0].uri);
+    }
+  };
+
   const handleBack = () => {
     if (isApproved) {
       router.back();
@@ -119,209 +139,234 @@ export default function CreateProfileScreen() {
           <TouchableOpacity onPress={handleBack} style={styles.backButton}>
             <BackArrowIcon size={24} color="#0F172A" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>{isApproved ? 'Edit Profile' : 'Create Profile'}</Text>
+          <Text style={styles.headerTitle}>
+            {isApproved ? "Edit Profile" : "Create Profile"}
+          </Text>
         </View>
 
         <KeyboardAvoidingView
           style={{ flex: 1 }}
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
         >
-        <Card style={styles.card} variant="default">
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.scrollContent}
-            keyboardShouldPersistTaps="handled"
-          >
-            
-            {/* Upload Photo Section */}
-            <View style={styles.uploadSection}>
-              <View style={styles.uploadCircle}>
-                <UploadIcon size={24} color="#94A3B8" />
-                <Text style={styles.uploadText}>UPLOAD</Text>
-                
-                <View style={styles.plusBadge}>
-                  <PlusIcon size={12} color="#FFFFFF" />
+          <Card style={styles.card} variant="default">
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.scrollContent}
+              keyboardShouldPersistTaps="handled"
+            >
+              {/* Upload Photo Section */}
+              <View style={styles.uploadSection}>
+                <TouchableOpacity
+                  onPress={handlePickPhoto}
+                  activeOpacity={0.8}
+                  style={styles.uploadCircle}
+                >
+                  {profilePhoto ? (
+                    <Image
+                      source={{ uri: profilePhoto }}
+                      style={styles.profileImage}
+                    />
+                  ) : (
+                    <>
+                      <UploadIcon size={24} color="#94A3B8" />
+                      <Text style={styles.uploadText}>UPLOAD</Text>
+                    </>
+                  )}
+                  <View style={styles.plusBadge}>
+                    <PlusIcon size={12} color="#FFFFFF" />
+                  </View>
+                </TouchableOpacity>
+                <Text style={styles.uploadSubtitle}>
+                  Add a professional photo for your ID
+                </Text>
+              </View>
+
+              {/* Personal Details */}
+              <Text style={styles.sectionTitle}>Personal Details</Text>
+              <View style={styles.divider} />
+
+              <View style={styles.row}>
+                <View style={styles.flex1}>
+                  <Input
+                    label="First Name"
+                    placeholder="First Name"
+                    value={form.firstName}
+                    editable={!isReadOnly}
+                    pointerEvents={isReadOnly ? "none" : "auto"}
+                    onChangeText={(t) => updateForm("firstName", t)}
+                  />
+                </View>
+                <View style={styles.flex1}>
+                  <Input
+                    label="Last Name"
+                    placeholder="Last Name"
+                    value={form.lastName}
+                    editable={!isReadOnly}
+                    pointerEvents={isReadOnly ? "none" : "auto"}
+                    onChangeText={(t) => updateForm("lastName", t)}
+                  />
                 </View>
               </View>
-              <Text style={styles.uploadSubtitle}>Add a professional photo for your ID</Text>
-            </View>
 
-            {/* Personal Details */}
-            <Text style={styles.sectionTitle}>Personal Details</Text>
-            <View style={styles.divider} />
-
-            <View style={styles.row}>
-              <View style={styles.flex1}>
-                <Input
-                  label="First Name"
-                  placeholder="John"
-                  value={form.firstName}
-                  editable={!isReadOnly}
-                  pointerEvents={isReadOnly ? 'none' : 'auto'}
-                  onChangeText={(t) => updateForm('firstName', t)}
-                />
-              </View>
-              <View style={styles.flex1}>
-                <Input
-                  label="Last Name"
-                  placeholder="Doe"
-                  value={form.lastName}
-                  editable={!isReadOnly}
-                  pointerEvents={isReadOnly ? 'none' : 'auto'}
-                  onChangeText={(t) => updateForm('lastName', t)}
-                />
-              </View>
-            </View>
-
-            <Input
-              label="Email Address"
-              placeholder="john.doe@example.com"
-              keyboardType="email-address"
-              value={form.email}
-              editable={!isReadOnly}
-              pointerEvents={isReadOnly ? 'none' : 'auto'}
-              onChangeText={(t) => updateForm('email', t)}
-            />
-
-            <View style={styles.toggleContainer}>
-              <View style={styles.toggleTextContainer}>
-                <Text style={styles.toggleTitle}>Use as WhatsApp Number</Text>
-                <Text style={styles.toggleSubtitle}>Get important alerts via WhatsApp</Text>
-              </View>
-              <Switch
-                value={form.useWhatsApp}
-                onValueChange={(v) => updateForm('useWhatsApp', v)}
-                trackColor={{ false: '#E2E8F0', true: COLORS.primary }}
-                thumbColor="#FFFFFF"
-                disabled={isReadOnly}
-              />
-            </View>
-
-            <View style={styles.row}>
-              <View style={styles.flex1}>
-                <TouchableOpacity activeOpacity={0.7} onPress={() => !isReadOnly && setDatePickerVisible(true)}>
-                  <Input
-                    label="Date of Birth"
-                    placeholder="DD/MM/YYYY"
-                    value={form.dob}
-                    editable={false}
-                    pointerEvents="none"
-                  />
-                </TouchableOpacity>
-              </View>
-              <View style={styles.flex1}>
-                <TouchableOpacity activeOpacity={0.7} onPress={() => !isReadOnly && setModalType('gender')} disabled={isReadOnly}>
-                  <Input
-                    label="Gender"
-                    value={form.gender}
-                    placeholder="Select"
-                    editable={false}
-                    pointerEvents="none"
-                    style={{ marginBottom: 12 }}
-                    rightIcon={<ChevronDownIcon size={20} color="#64748B" />}
-                  />
-                </TouchableOpacity>
-              </View>
-            </View>
-
-            {/* Business & Location */}
-            <Text style={[styles.sectionTitle, { marginTop: 8 }]}>
-              {userRole === 'ISP' ? 'Location Details' : 'Business & Location'}
-            </Text>
-            <View style={styles.divider} />
-
-            {userRole !== 'ISP' && (
               <Input
-                label="Business Name"
-                placeholder="e.g. John Logistics"
-                value={form.businessName}
+                label="Email Address"
+                placeholder="Enter your email"
+                keyboardType="email-address"
+                value={form.email}
                 editable={!isReadOnly}
-                pointerEvents={isReadOnly ? 'none' : 'auto'}
-                onChangeText={(t) => updateForm('businessName', t)}
+                pointerEvents={isReadOnly ? "none" : "auto"}
+                onChangeText={(t) => updateForm("email", t)}
               />
-            )}
 
-            <Input
-              label="Full Address"
-              placeholder="Street address, apartment, suite"
-              value={form.address}
-              editable={!isReadOnly}
-              pointerEvents={isReadOnly ? 'none' : 'auto'}
-              onChangeText={(t) => updateForm('address', t)}
-            />
-
-            <View style={styles.row}>
-              <View style={styles.flex1}>
-                <Input
-                  label="Country"
-                  value={form.country}
-                  placeholder="Enter country"
-                  editable={!isReadOnly}
-                  pointerEvents={isReadOnly ? 'none' : 'auto'}
-                  onChangeText={(t) => updateForm('country', t)}
-                  style={{ marginBottom: 12 }}
+              <View style={styles.toggleContainer}>
+                <View style={styles.toggleTextContainer}>
+                  <Text style={styles.toggleTitle}>Use as WhatsApp Number</Text>
+                  <Text style={styles.toggleSubtitle}>
+                    Get important alerts via WhatsApp
+                  </Text>
+                </View>
+                <Switch
+                  value={form.useWhatsApp}
+                  onValueChange={(v) => updateForm("useWhatsApp", v)}
+                  trackColor={{ false: "#E2E8F0", true: COLORS.primary }}
+                  thumbColor="#FFFFFF"
+                  disabled={isReadOnly}
                 />
               </View>
-              <View style={styles.flex1}>
-                <Input
-                  label="State"
-                  value={form.state}
-                  placeholder="Enter state"
-                  editable={!isReadOnly}
-                  pointerEvents={isReadOnly ? 'none' : 'auto'}
-                  onChangeText={(t) => updateForm('state', t)}
-                  style={{ marginBottom: 12 }}
-                />
-              </View>
-            </View>
 
-            <View style={styles.row}>
-              <View style={styles.flex1}>
-                <Input
-                  label="District"
-                  value={form.district}
-                  placeholder="Enter district"
-                  editable={!isReadOnly}
-                  pointerEvents={isReadOnly ? 'none' : 'auto'}
-                  onChangeText={(t) => updateForm('district', t)}
-                  style={{ marginBottom: 12 }}
-                />
+              <View style={styles.row}>
+                <View style={styles.flex1}>
+                  <TouchableOpacity
+                    activeOpacity={0.7}
+                    onPress={() => !isReadOnly && setDatePickerVisible(true)}
+                  >
+                    <Input
+                      label="Date of Birth"
+                      placeholder="DD/MM/YYYY"
+                      value={form.dob}
+                      editable={false}
+                      pointerEvents="none"
+                    />
+                  </TouchableOpacity>
+                </View>
+                <View style={styles.flex1}>
+                  <TouchableOpacity
+                    activeOpacity={0.7}
+                    onPress={() => !isReadOnly && setModalType("gender")}
+                    disabled={isReadOnly}
+                  >
+                    <Input
+                      label="Gender"
+                      value={form.gender}
+                      placeholder="Select"
+                      editable={false}
+                      pointerEvents="none"
+                      style={{ marginBottom: 12 }}
+                      rightIcon={<ChevronDownIcon size={20} color="#64748B" />}
+                    />
+                  </TouchableOpacity>
+                </View>
               </View>
-              <View style={styles.flex1}>
+
+              {/* Business & Location */}
+              <Text style={[styles.sectionTitle, { marginTop: 8 }]}>
+                {userRole === "ISP"
+                  ? "Location Details"
+                  : "Business & Location"}
+              </Text>
+              <View style={styles.divider} />
+
+              {userRole !== "ISP" && (
                 <Input
-                  label="City"
-                  value={form.city}
-                  placeholder="Enter city"
+                  label="Business Name"
+                  placeholder="Business Name"
+                  value={form.businessName}
                   editable={!isReadOnly}
-                  pointerEvents={isReadOnly ? 'none' : 'auto'}
-                  onChangeText={(t) => updateForm('city', t)}
-                  style={{ marginBottom: 12 }}
+                  pointerEvents={isReadOnly ? "none" : "auto"}
+                  onChangeText={(t) => updateForm("businessName", t)}
                 />
-              </View>
-            </View>
+              )}
 
-            <Input
-              label="Pincode / ZIP"
-              placeholder="123456"
-              keyboardType="number-pad"
-              value={form.pincode}
-              editable={!isReadOnly}
-              pointerEvents={isReadOnly ? 'none' : 'auto'}
-              onChangeText={(t) => updateForm('pincode', t)}
-            />
-
-            {!isReadOnly && (
-              <Button
-                title={isApproved ? "Save Changes" : "Save and Continue"}
-                onPress={handleSave}
-                variant="primary"
-                style={styles.saveBtn}
+              <Input
+                label="Full Address"
+                placeholder="Street address, apartment, suite"
+                value={form.address}
+                editable={!isReadOnly}
+                pointerEvents={isReadOnly ? "none" : "auto"}
+                onChangeText={(t) => updateForm("address", t)}
               />
-            )}
 
-          </ScrollView>
-        </Card>
+              <View style={styles.row}>
+                <View style={styles.flex1}>
+                  <Input
+                    label="Country"
+                    value={form.country}
+                    placeholder="Enter country"
+                    editable={!isReadOnly}
+                    pointerEvents={isReadOnly ? "none" : "auto"}
+                    onChangeText={(t) => updateForm("country", t)}
+                    style={{ marginBottom: 12 }}
+                  />
+                </View>
+                <View style={styles.flex1}>
+                  <Input
+                    label="State"
+                    value={form.state}
+                    placeholder="Enter state"
+                    editable={!isReadOnly}
+                    pointerEvents={isReadOnly ? "none" : "auto"}
+                    onChangeText={(t) => updateForm("state", t)}
+                    style={{ marginBottom: 12 }}
+                  />
+                </View>
+              </View>
+
+              <View style={styles.row}>
+                <View style={styles.flex1}>
+                  <Input
+                    label="District"
+                    value={form.district}
+                    placeholder="Enter district"
+                    editable={!isReadOnly}
+                    pointerEvents={isReadOnly ? "none" : "auto"}
+                    onChangeText={(t) => updateForm("district", t)}
+                    style={{ marginBottom: 12 }}
+                  />
+                </View>
+                <View style={styles.flex1}>
+                  <Input
+                    label="City"
+                    value={form.city}
+                    placeholder="Enter city"
+                    editable={!isReadOnly}
+                    pointerEvents={isReadOnly ? "none" : "auto"}
+                    onChangeText={(t) => updateForm("city", t)}
+                    style={{ marginBottom: 12 }}
+                  />
+                </View>
+              </View>
+
+              <Input
+                label="Pincode / ZIP"
+                placeholder="123456"
+                keyboardType="number-pad"
+                value={form.pincode}
+                editable={!isReadOnly}
+                pointerEvents={isReadOnly ? "none" : "auto"}
+                onChangeText={(t) => updateForm("pincode", t)}
+              />
+
+              {!isReadOnly && (
+                <Button
+                  title={isApproved ? "Save Changes" : "Save and Continue"}
+                  onPress={handleSave}
+                  variant="primary"
+                  style={styles.saveBtn}
+                />
+              )}
+            </ScrollView>
+          </Card>
         </KeyboardAvoidingView>
       </SafeAreaView>
 
@@ -409,6 +454,11 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#94A3B8',
     marginTop: 4,
+  },
+  profileImage: {
+    width: 78,
+    height: 78,
+    borderRadius: 39,
   },
   plusBadge: {
     position: 'absolute',

@@ -1,6 +1,6 @@
 import { useSafeRouter } from '@/hooks/useSafeRouter';
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Platform, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Platform, TouchableOpacity, KeyboardAvoidingView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {  useLocalSearchParams } from 'expo-router';
 import { GradientBackground } from '@/components/ui/GradientBackground';
@@ -57,6 +57,8 @@ export default function DocumentUploadScreen() {
   const [docNumber, setDocNumber] = useState('');
   const [bizName, setBizName] = useState(isBusiness ? 'e.g. Acme Corp' : '');
   const [docModalVisible, setDocModalVisible] = useState(false);
+  const [uploadedFront, setUploadedFront] = useState(false);
+  const [uploadedBack, setUploadedBack] = useState(false);
 
   const handleSubmit = async () => {
     let key = 'otherDocs';
@@ -90,120 +92,155 @@ export default function DocumentUploadScreen() {
   return (
     <GradientBackground style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <BackArrowIcon size={24} color="#0F172A" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>
-            {isBusiness ? 'Upload Business Document' : 'Upload KYC Document'}
-          </Text>
-        </View>
-
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-          <View style={styles.card}>
-            
-            {/* Top Info Section */}
-            <View style={styles.topSection}>
-              <View style={styles.iconWrapper}>
-                {isBusiness ? (
-                  <BuildingIcon size={24} color="#4338CA" />
-                ) : (
-                  <ShieldCheckIcon size={24} color="#4338CA" />
-                )}
-              </View>
-              <Text style={styles.verifyTitle}>
-                {isBusiness ? 'Business Verification' : 'Verify Your Identity'}
-              </Text>
-              <Text style={styles.verifyDesc}>
-                {isBusiness 
-                  ? 'Upload official business documents to verify your business profile and unlock all features.'
-                  : 'Please provide your official identification document to complete your partner profile.'}
-              </Text>
-              <View style={styles.pendingPill}>
-                <ClockCircleIcon size={14} color="#4338CA" />
-                <Text style={styles.pendingPillText}>Pending Verification</Text>
-              </View>
-            </View>
-
-            {error === 'true' && (
-              <View style={{ marginBottom: 16 }}>
-                <InfoAlert message="Your uploaded document was rejected. Please upload a clearer copy." />
-              </View>
-            )}
-
-            {/* Document Info */}
-            <Text style={styles.sectionTitle}>
-              {isBusiness ? 'BUSINESS DETAILS' : 'DOCUMENT INFO'}
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={{ flex: 1 }}
+        >
+          <View style={styles.header}>
+            <TouchableOpacity
+              onPress={() => router.back()}
+              style={styles.backButton}
+            >
+              <BackArrowIcon size={24} color="#0F172A" />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>
+              {isBusiness ? "Upload Business Document" : "Upload KYC Document"}
             </Text>
-            
-            {isBusiness && (
+          </View>
+
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.scrollContent}
+          >
+            <View style={styles.card}>
+              {/* Top Info Section */}
+              <View style={styles.topSection}>
+                <View style={styles.iconWrapper}>
+                  {isBusiness ? (
+                    <BuildingIcon size={24} color="#4338CA" />
+                  ) : (
+                    <ShieldCheckIcon size={24} color="#4338CA" />
+                  )}
+                </View>
+                <Text style={styles.verifyTitle}>
+                  {isBusiness
+                    ? "Business Verification"
+                    : "Verify Your Identity"}
+                </Text>
+                <Text style={styles.verifyDesc}>
+                  {isBusiness
+                    ? "Upload official business documents to verify your business profile and unlock all features."
+                    : "Please provide your official identification document to complete your partner profile."}
+                </Text>
+                <View style={styles.pendingPill}>
+                  <ClockCircleIcon size={14} color="#4338CA" />
+                  <Text style={styles.pendingPillText}>
+                    Pending Verification
+                  </Text>
+                </View>
+              </View>
+
+              {error === "true" && (
+                <View style={{ marginBottom: 16 }}>
+                  <InfoAlert message="Your uploaded document was rejected. Please upload a clearer copy." />
+                </View>
+              )}
+
+              {/* Document Info */}
+              <Text style={styles.sectionTitle}>
+                {isBusiness ? "BUSINESS DETAILS" : "DOCUMENT INFO"}
+              </Text>
+
+              {isBusiness && (
+                <Input
+                  label="Business Name *"
+                  placeholder="Enter Business Name"
+                  value={bizName}
+                  onChangeText={setBizName}
+                  editable={!isReadonly}
+                />
+              )}
+
+              <SelectInput
+                label="Document Type *"
+                placeholder="Select"
+                value={docType}
+                onPress={() => setDocModalVisible(true)}
+                disabled={isReadonly}
+              />
+
               <Input
-                label="Business Name *"
-                placeholder="e.g. Acme Corp"
-                value={bizName}
-                onChangeText={setBizName}
+                label="Document Number *"
+                placeholder={
+                  isBusiness ? "Enter Document Number" : "Enter Document Number"
+                }
+                value={docNumber}
+                onChangeText={setDocNumber}
                 editable={!isReadonly}
               />
-            )}
 
-            <SelectInput
-              label="Document Type *"
-              placeholder="Select"
-              value={docType}
-              onPress={() => setDocModalVisible(true)} 
-              disabled={isReadonly}
-            />
+              {/* Document Images */}
+              <Text style={[styles.sectionTitle, { marginTop: 8 }]}>
+                DOCUMENT IMAGES
+              </Text>
+              <Text style={styles.sectionDesc}>
+                {isBusiness
+                  ? "Please provide clear images of your official business documents."
+                  : "Ensure all text is clearly visible and there is no glare."}
+              </Text>
 
-            <Input
-              label="Document Number *"
-              placeholder={isBusiness ? "e.g. BL-987654321" : "e.g. A12345678"}
-              value={docNumber}
-              onChangeText={setDocNumber}
-              editable={!isReadonly}
-            />
-
-            {/* Document Images */}
-            <Text style={[styles.sectionTitle, { marginTop: 8 }]}>DOCUMENT IMAGES</Text>
-            <Text style={styles.sectionDesc}>
-              {isBusiness 
-                ? 'Please provide clear images of your official business documents.' 
-                : 'Ensure all text is clearly visible and there is no glare.'}
-            </Text>
-
-            <Text style={styles.uploadLabel}>{isBusiness ? 'Front Image' : 'Front Side'}</Text>
-            <ImageUploadCard 
-              label={isReadonly ? "Uploaded" : "Tap to upload"}
-              subLabel={isReadonly ? "" : "PNG, JPG up to 5MB"}
-              onPress={() => router.push('/(dashboard)/coming-soon')}
-              style={styles.uploadCard}
-            />
-
-            <Text style={styles.uploadLabel}>{isBusiness ? 'Back Image' : 'Back Side'}</Text>
-            <ImageUploadCard 
-              label={isReadonly ? "Uploaded" : "Tap to upload"}
-              subLabel={isReadonly ? "" : "PNG, JPG up to 5MB"}
-              onPress={() => router.push('/(dashboard)/coming-soon')}
-              style={styles.uploadCard}
-            />
-
-            {!isReadonly && (
-              <Button 
-                title={isApproved ? "Save Changes" : (isBusiness ? "Submit Documents" : "Submit for Verification")} 
-                onPress={handleSubmit} 
-                variant="primary" 
-                style={styles.submitBtn} 
+              <Text style={styles.uploadLabel}>
+                {isBusiness ? "Front Image" : "Front Side"}
+              </Text>
+              <ImageUploadCard
+                label="Tap to upload"
+                subLabel="PNG, JPG up to 5MB"
+                uploaded={isReadonly || uploadedFront}
+                dummyImage={require("@/assets/dummy/aadhaar-front.png")}
+                onPress={() => {
+                  if (!isReadonly) setUploadedFront((v) => !v);
+                }}
+                style={styles.uploadCard}
               />
-            )}
 
-          </View>
-        </ScrollView>
-      <SelectOptionsModal
-        visible={docModalVisible}
-        onClose={() => setDocModalVisible(false)}
-        title="Select Document Type"
-        options={isBusiness ? BIZ_DOCUMENT_TYPES : DOCUMENT_TYPES}
-        onSelect={(value) => setDocType(value)}
-      />
+              <Text style={styles.uploadLabel}>
+                {isBusiness ? "Back Image" : "Back Side"}
+              </Text>
+              <ImageUploadCard
+                label="Tap to upload"
+                subLabel="PNG, JPG up to 5MB"
+                uploaded={isReadonly || uploadedBack}
+                dummyImage={require("@/assets/dummy/aadhaar-back.png")}
+                onPress={() => {
+                  if (!isReadonly) setUploadedBack((v) => !v);
+                }}
+                style={styles.uploadCard}
+              />
+
+              {!isReadonly && (
+                <Button
+                  title={
+                    isApproved
+                      ? "Save Changes"
+                      : isBusiness
+                        ? "Submit Documents"
+                        : "Submit for Verification"
+                  }
+                  onPress={handleSubmit}
+                  variant="primary"
+                  style={styles.submitBtn}
+                />
+              )}
+            </View>
+          </ScrollView>
+          <SelectOptionsModal
+            visible={docModalVisible}
+            onClose={() => setDocModalVisible(false)}
+            title="Select Document Type"
+            options={isBusiness ? BIZ_DOCUMENT_TYPES : DOCUMENT_TYPES}
+            onSelect={(value) => setDocType(value)}
+          />
+        </KeyboardAvoidingView>
       </SafeAreaView>
     </GradientBackground>
   );

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Platform, KeyboardAvoidingView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSafeRouter } from '@/hooks/useSafeRouter';
 import { GradientBackground } from '@/components/ui/GradientBackground';
@@ -24,7 +24,8 @@ export default function PaymentMethodScreen() {
   return (
     <GradientBackground style={styles.container}>
       <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
-        
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.push('/(dashboard)/profile')} style={styles.backButton}>
             <BackArrowIcon size={24} color="#0F172A" />
@@ -53,14 +54,16 @@ export default function PaymentMethodScreen() {
             {/* Tab Switcher - only show if not verified (or we can show it but disabled) */}
             {!isVerified && (
               <View style={styles.tabContainer}>
-                <TouchableOpacity 
-                  style={[styles.tabBtn, activeTab === 'bank' && styles.activeTabBtn]} 
+                <TouchableOpacity
+                  activeOpacity={0.85}
+                  style={[styles.tabBtn, activeTab === 'bank' && styles.activeTabBtn]}
                   onPress={() => setActiveTab('bank')}
                 >
                   <Text style={[styles.tabText, activeTab === 'bank' && styles.activeTabText]}>Bank Account</Text>
                 </TouchableOpacity>
-                <TouchableOpacity 
-                  style={[styles.tabBtn, activeTab === 'upi' && styles.activeTabBtn]} 
+                <TouchableOpacity
+                  activeOpacity={0.85}
+                  style={[styles.tabBtn, activeTab === 'upi' && styles.activeTabBtn]}
                   onPress={() => setActiveTab('upi')}
                 >
                   <Text style={[styles.tabText, activeTab === 'upi' && styles.activeTabText]}>UPI ID</Text>
@@ -165,7 +168,7 @@ export default function PaymentMethodScreen() {
 
           </View>
         </ScrollView>
-
+        </KeyboardAvoidingView>
       </SafeAreaView>
     </GradientBackground>
   );
