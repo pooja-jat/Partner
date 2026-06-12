@@ -126,7 +126,7 @@ export default function BusinessSetupScreen() {
 
               <Input
                 label="Business Name"
-                placeholder="Enter B"
+                placeholder="Enter business name"
                 value={form.businessName}
                 onChangeText={(t) => updateForm("businessName", t)}
                 editable={!isReadonly}

@@ -1,5 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform, Clipboard, Share, Linking, ToastAndroid, Alert } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
+
+const ArrowRightIcon = ({ size = 18, color = '#FFFFFF' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M5 12H19M19 12L12 5M19 12L12 19" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+);
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSafeRouter } from '@/hooks/useSafeRouter';
 import { GradientBackground } from '@/components/ui/GradientBackground';
@@ -33,6 +40,56 @@ export default function ReferralScreen() {
   const [selectedPlatform, setSelectedPlatform] = useState<any>(null);
 
   const isInfluencer = role === 'Influencer';
+  const [codeCopied, setCodeCopied] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
+
+  const REFERRAL_CODE = 'USER4582';
+  const TRACKING_LINK = 'book.app/ref/alex_creator';
+
+  const showCopiedToast = (msg: string) => {
+    if (Platform.OS === 'android') {
+      ToastAndroid.show(msg, ToastAndroid.SHORT);
+    }
+  };
+
+  const handleCopyCode = async () => {
+    Clipboard.setString(REFERRAL_CODE);
+    setCodeCopied(true);
+    showCopiedToast('Referral code copied!');
+    setTimeout(() => setCodeCopied(false), 2000);
+  };
+
+  const handleCopyLink = async () => {
+    Clipboard.setString(`https://${TRACKING_LINK}`);
+    setLinkCopied(true);
+    showCopiedToast('Link copied!');
+    setTimeout(() => setLinkCopied(false), 2000);
+  };
+
+  const handleShareCode = async () => {
+    try {
+      await Share.share({
+        message: `Use my referral code ${REFERRAL_CODE} to get rewards on Hozify! Book your first service: https://${TRACKING_LINK}`,
+        url: `https://${TRACKING_LINK}`,
+        title: 'Join Hozify with my referral code',
+      });
+    } catch {}
+  };
+
+  const handleSocialShare = (platform: string) => {
+    const text = encodeURIComponent(`Use my referral code ${REFERRAL_CODE} to get rewards on Hozify!`);
+    const url = encodeURIComponent(`https://${TRACKING_LINK}`);
+    const urls: Record<string, string> = {
+      Instagram: 'https://www.instagram.com/',
+      YouTube: 'https://www.youtube.com/',
+      Twitter: `https://twitter.com/intent/tweet?text=${text}%20${url}`,
+      WhatsApp: `whatsapp://send?text=${text}%20${url}`,
+      QRCode: '',
+    };
+    const target = urls[platform];
+    if (!target) return;
+    Linking.openURL(target).catch(() => {});
+  };
 
   const handleGenerate = () => {
     // Generate code logic
@@ -70,13 +127,15 @@ export default function ReferralScreen() {
         </View>
 
         <View style={styles.segmentedControl}>
-          <TouchableOpacity 
+          <TouchableOpacity
+            activeOpacity={1}
             style={[styles.segment, !isInfluencer && styles.segmentActive]}
             onPress={() => setRole('User')}
           >
             <Text style={[styles.segmentText, !isInfluencer && styles.segmentTextActive]}>Partner</Text>
           </TouchableOpacity>
-          <TouchableOpacity 
+          <TouchableOpacity
+            activeOpacity={1}
             style={[styles.segment, isInfluencer && styles.segmentActive]}
             onPress={() => setRole('Influencer')}
           >
@@ -119,9 +178,9 @@ export default function ReferralScreen() {
                         <Text style={styles.codeLabel}>Your Referral Code</Text>
                         <Text style={styles.codeText}>USER4582</Text>
                       </View>
-                      <TouchableOpacity style={styles.copyBtn}>
-                        <CopyIcon size={16} color="#64748B" />
-                        <Text style={styles.copyBtnText}>Copy Code</Text>
+                      <TouchableOpacity activeOpacity={0.7} style={[styles.copyBtn, codeCopied && styles.copyBtnCopied]} onPress={handleCopyCode}>
+                        <CopyIcon size={16} color={codeCopied ? '#16A34A' : '#64748B'} />
+                        <Text style={[styles.copyBtnText, codeCopied && styles.copyBtnTextCopied]}>{codeCopied ? 'Copied!' : 'Copy Code'}</Text>
                       </TouchableOpacity>
                     </View>
                   </View>
@@ -158,55 +217,40 @@ export default function ReferralScreen() {
                         <Text style={styles.linkLabel}>Your tracking link</Text>
                         <Text style={styles.linkUrlText}>book.app/ref/alex_creator</Text>
                       </View>
-                      <TouchableOpacity style={styles.linkCopyBtn}>
+                      <TouchableOpacity activeOpacity={0.7} style={[styles.linkCopyBtn, linkCopied && styles.linkCopyBtnCopied]} onPress={handleCopyLink}>
                         <CopyIcon size={18} color="#FFFFFF" />
                       </TouchableOpacity>
                     </View>
 
                     <View style={styles.socialIconsRow}>
-                      <View style={styles.socialItem}>
-                        <View style={[styles.socialIconCircle, { backgroundColor: '#FCE7F3' }]}>
-                          <InstagramIcon size={20} color="#EC4899" />
-                        </View>
-                        <Text style={styles.socialText}>Instagram</Text>
-                      </View>
-                      <View style={styles.socialItem}>
-                        <View style={[styles.socialIconCircle, { backgroundColor: '#FEE2E2' }]}>
-                          <YouTubeIcon size={20} color="#EF4444" />
-                        </View>
-                        <Text style={styles.socialText}>YouTube</Text>
-                      </View>
-                      <View style={styles.socialItem}>
-                        <View style={[styles.socialIconCircle, { backgroundColor: '#F1F5F9' }]}>
-                          <TwitterIcon size={20} color="#0F172A" />
-                        </View>
-                        <Text style={styles.socialText}>X (Twitter)</Text>
-                      </View>
-                      <View style={styles.socialItem}>
-                        <View style={[styles.socialIconCircle, { backgroundColor: '#DCFCE7' }]}>
-                          <WhatsAppIcon size={20} color="#22C55E" />
-                        </View>
-                        <Text style={styles.socialText}>WhatsApp</Text>
-                      </View>
-                      <View style={styles.socialItem}>
-                        <View style={[styles.socialIconCircle, { backgroundColor: '#F1F5F9' }]}>
-                          <QRCodeIcon size={20} color="#0F172A" />
-                        </View>
-                        <Text style={styles.socialText}>QR Code</Text>
-                      </View>
+                      {[
+                        { key: 'Instagram', icon: <InstagramIcon size={20} color="#EC4899" />, bg: '#FCE7F3', label: 'Instagram' },
+                        { key: 'YouTube', icon: <YouTubeIcon size={20} color="#EF4444" />, bg: '#FEE2E2', label: 'YouTube' },
+                        { key: 'Twitter', icon: <TwitterIcon size={20} color="#0F172A" />, bg: '#F1F5F9', label: 'X (Twitter)' },
+                        { key: 'WhatsApp', icon: <WhatsAppIcon size={20} color="#22C55E" />, bg: '#DCFCE7', label: 'WhatsApp' },
+                        { key: 'QRCode', icon: <QRCodeIcon size={20} color="#0F172A" />, bg: '#F1F5F9', label: 'QR Code' },
+                      ].map(item => (
+                        <TouchableOpacity key={item.key} activeOpacity={0.7} style={styles.socialItem} onPress={() => handleSocialShare(item.key)}>
+                          <View style={[styles.socialIconCircle, { backgroundColor: item.bg }]}>
+                            {item.icon}
+                          </View>
+                          <Text style={styles.socialText}>{item.label}</Text>
+                        </TouchableOpacity>
+                      ))}
                     </View>
                   </View>
 
                   <View style={styles.actionButtonsRow}>
-                    <TouchableOpacity style={styles.shareActionBtn}>
+                    <TouchableOpacity activeOpacity={0.7} style={styles.shareActionBtn} onPress={handleShareCode}>
                       <ShareIcon size={18} color="rgba(26, 15, 163, 1.00)" />
                       <Text style={styles.shareActionText}>Share Your Code</Text>
                     </TouchableOpacity>
-                    <Button 
-                      title="Refer Now ->" 
-                      onPress={() => router.push('/(dashboard)/coming-soon')} 
-                      variant="primary" 
+                    <Button
+                      title="Refer Now"
+                      onPress={() => router.push('/(dashboard)/coming-soon')}
+                      variant="primary"
                       style={{ backgroundColor: 'rgba(26, 15, 163, 1.00)', flex: 1, marginTop: 12 }}
+                      icon={<ArrowRightIcon />}
                     />
                   </View>
                   
@@ -339,11 +383,12 @@ export default function ReferralScreen() {
                     </View>
                   ))}
 
-                  <Button 
-                    title="Add Another Platforms ->" 
-                    onPress={() => setAddPlatformModalVisible(true)} 
-                    variant="primary" 
+                  <Button
+                    title="Add Another Platforms"
+                    onPress={() => setAddPlatformModalVisible(true)}
+                    variant="primary"
                     style={{ backgroundColor: 'rgba(26, 15, 163, 1.00)', marginTop: 16 }}
+                    icon={<ArrowRightIcon />}
                   />
                 </View>
               )}
@@ -428,7 +473,9 @@ const styles = StyleSheet.create({
   codeLabel: { fontSize: 11, color: '#64748B', marginBottom: 4 },
   codeText: { fontSize: 18, fontWeight: '700', color: '#4338CA' },
   copyBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: 1, borderColor: '#F1F5F9', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 },
+  copyBtnCopied: { borderColor: '#16A34A', backgroundColor: '#F0FDF4' },
   copyBtnText: { fontSize: 11, color: '#64748B', fontWeight: '500' },
+  copyBtnTextCopied: { color: '#16A34A' },
 
   inviteCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16 },
   inviteIconBox: { width: 32, height: 32, borderRadius: 8, backgroundColor: '#EEF2FF', justifyContent: 'center', alignItems: 'center', marginRight: 12 },
@@ -450,6 +497,7 @@ const styles = StyleSheet.create({
   linkLabel: { fontSize: 10, color: '#64748B', marginBottom: 2 },
   linkUrlText: { fontSize: 12, color: '#3B82F6' },
   linkCopyBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#3B82F6', justifyContent: 'center', alignItems: 'center' },
+  linkCopyBtnCopied: { backgroundColor: '#16A34A' },
   
   socialIconsRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
   socialItem: { alignItems: 'center', width: 50 },

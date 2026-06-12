@@ -58,7 +58,7 @@ export const RewardSelectionModal: React.FC<RewardSelectionModalProps> = ({ visi
             <View style={styles.header}>
               <View style={styles.headerTopRow}>
                 <Text style={styles.title}>Select your reward</Text>
-                <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
+                <TouchableOpacity activeOpacity={0.7} onPress={onClose} style={styles.closeBtn}>
                   <CloseIcon size={16} color="#64748B" />
                 </TouchableOpacity>
               </View>
@@ -67,8 +67,9 @@ export const RewardSelectionModal: React.FC<RewardSelectionModalProps> = ({ visi
 
             <View style={styles.rewardsList}>
               {REWARDS.map((reward) => (
-                <TouchableOpacity 
-                  key={reward.id} 
+                <TouchableOpacity
+                  key={reward.id}
+                  activeOpacity={0.85}
                   style={[styles.rewardCard, selected === reward.id && styles.rewardCardSelected]}
                   onPress={() => handleSelect(reward)}
                 >

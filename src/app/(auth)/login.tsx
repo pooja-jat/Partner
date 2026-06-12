@@ -5,7 +5,6 @@ import { Image } from 'expo-image';
 import { useAuthStore } from '@/store/authStore';
 import { GradientBackground } from '@/components/ui/GradientBackground';
 import { Card } from '@/components/ui/Card';
-import { Input } from '@/components/ui/Input';
 import { PhoneInput } from '@/components/ui/PhoneInput';
 import { Button } from '@/components/ui/Button';
 import { HelpModal } from '@/components/ui/HelpModal';
@@ -13,6 +12,7 @@ import { Loader } from '@/components/ui/Loader';
 import { validatePhone, parsePhoneNumber } from '@/utils/validation';
 import { useAndroidBack } from '@/hooks/useAndroidBack';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { RightArrowIcon } from '@/components/ui/Icons';
 
 export default function LoginScreen() {
   useAndroidBack(() => {
@@ -24,7 +24,6 @@ export default function LoginScreen() {
   const [phone, setPhone] = useState('');
   const [showHelp, setShowHelp] = useState(false);
 
-  // When OTP is sent, advance to OTP entry screen
   useEffect(() => {
     if (otpSent) {
       router.replace('/(auth)/otp');
@@ -34,7 +33,6 @@ export default function LoginScreen() {
   const handleSend = async () => {
     clearError();
     const { localNumber } = parsePhoneNumber(phone);
-    // Validate length 10
     if (localNumber.length !== 10) {
       useAuthStore.setState({ error: 'Please enter a valid 10‑digit mobile number' });
       return;
@@ -46,41 +44,42 @@ export default function LoginScreen() {
     await sendOtp(phone);
   };
 
-  const handleHelp = () => setShowHelp(true);
-
   return (
     <Pressable onPress={Keyboard.dismiss} accessible={false} style={{ flex: 1 }}>
       <GradientBackground style={styles.container}>
-        <SafeAreaView style={{ flex: 1 }}>
-          <KeyboardAvoidingView
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={{ flex: 1 }}
-          >
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+          <SafeAreaView style={styles.safeArea}>
             <ScrollView
               contentContainerStyle={styles.scrollContainer}
               bounces={false}
               keyboardShouldPersistTaps="handled"
               showsVerticalScrollIndicator={false}
             >
+              {/* Top section — logo + help button */}
               <View style={styles.topSection}>
                 <View style={styles.headerRow}>
                   <View style={{ flex: 1 }} />
-                  <Button title="Help" onPress={handleHelp} variant="gradient" size="sm" />
+                  <Button title="Help" onPress={() => setShowHelp(true)} variant="gradient" size="sm" style={styles.helpButton} />
                 </View>
-
                 <View style={styles.logoWrapper}>
-                  <Image 
-                    source={require('../../../assets/images/logo.png')} 
+                  <Image
+                    source={require('../../../assets/images/logo.png')}
                     style={styles.icon}
                     contentFit="contain"
                   />
                 </View>
               </View>
 
+              {/* Bottom card — matches OTP screen card style */}
               <Card style={styles.card} variant="default">
+                <View style={styles.cardHeader}>
+                  <Text style={styles.cardTitle}>
+                    What's your mobile number<Text style={styles.asterisk}>**</Text>
+                  </Text>
+                  <Text style={styles.cardSubtitle}>We'll send you a verification code</Text>
+                </View>
+
                 <PhoneInput
-                  label="What's your mobile number*"
-                  required
                   value={phone}
                   onChangeText={(text) => {
                     clearError();
@@ -90,15 +89,22 @@ export default function LoginScreen() {
                   error={error}
                 />
 
-                <Button title="Next ➔" onPress={handleSend} isLoading={isLoading} variant="primary" />
+                <Button
+                  title="Next"
+                  onPress={handleSend}
+                  isLoading={isLoading}
+                  variant="primary"
+                  icon={<RightArrowIcon size={20} />}
+                  style={styles.nextButton}
+                />
 
                 <Text style={styles.termsText}>
                   By continuing, you confirm that you are 18 years of age and agree to the Terms & Conditions and Privacy Policy
                 </Text>
               </Card>
             </ScrollView>
-          </KeyboardAvoidingView>
-        </SafeAreaView>
+          </SafeAreaView>
+        </KeyboardAvoidingView>
 
         <HelpModal visible={showHelp} onClose={() => setShowHelp(false)} />
         <Loader visible={isLoading} message="Sending OTP…" />
@@ -111,48 +117,73 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  safeArea: {
+    flex: 1,
+  },
   scrollContainer: {
     flexGrow: 1,
-    justifyContent: 'space-between', // Push top section up and card down
+    justifyContent: 'space-between',
   },
   topSection: {
     paddingHorizontal: 24,
-    paddingTop: 60, // Give some space for safe area / status bar
+    paddingTop: 20,
+    paddingBottom: 24,
     flex: 1,
   },
   headerRow: {
     flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'flex-start',
     marginBottom: 40,
   },
-  card: {
-    width: '100%',
-    padding: 24,
-    paddingBottom: 60, // Extra padding at bottom for keyboard/safe area
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
-    borderBottomLeftRadius: 0,
-    borderBottomRightRadius: 0,
-    boxShadow: '0px -2px 8px rgba(0, 0, 0, 0.08)',
-    elevation: 2,
+  helpButton: {
+    paddingHorizontal: 20,
   },
   logoWrapper: {
     alignItems: 'center',
-    gap: 12,
+    justifyContent: 'center',
+    flex: 1,
   },
   icon: {
-    width: 140,
-    height: 140,
+    width: 160,
+    height: 160,
   },
-  logo: {
-    width: 120,
-    height: 50,
+  card: {
+    width: '90%',
+    alignSelf: 'center',
+    marginTop: 20,
+    padding: 24,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    boxShadow: '0px 8px 16px rgba(0, 0, 0, 0.1)',
+    elevation: 5,
+    marginBottom: 20,
+  },
+  cardHeader: {
+    marginBottom: 20,
+  },
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#0F172A',
+    marginBottom: 4,
+  },
+  asterisk: {
+    color: '#EF4444',
+  },
+  cardSubtitle: {
+    fontSize: 14,
+    color: '#64748B',
+  },
+  nextButton: {
+    marginTop: 8,
+    marginBottom: 8,
   },
   termsText: {
     fontSize: 12,
-    color: '#64748B', // Slate 500
+    color: '#94A3B8',
     textAlign: 'center',
-    marginTop: 20,
+    marginTop: 16,
     lineHeight: 18,
-  }
+  },
 });

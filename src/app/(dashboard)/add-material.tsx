@@ -143,7 +143,7 @@ export default function AddMaterialScreen() {
                   <Text style={styles.inputLabel}>ITEM NAME</Text>
                   <TextInput
                     style={styles.textInput}
-                    placeholder="e.g. Gas Pipe"
+                    placeholder="Enter item name"
                     placeholderTextColor="#94A3B8"
                     value={newItemName}
                     onChangeText={setNewItemName}
@@ -152,7 +152,7 @@ export default function AddMaterialScreen() {
                   <Text style={styles.inputLabel}>BRAND (OPTIONAL)</Text>
                   <TextInput
                     style={styles.textInput}
-                    placeholder="e.g. Premier CPVC"
+                    placeholder="Enter brand name"
                     placeholderTextColor="#94A3B8"
                     value={newItemBrand}
                     onChangeText={setNewItemBrand}

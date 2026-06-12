@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { Input } from '@/components/ui/Input';
 import { PhoneInput } from '@/components/ui/PhoneInput';
@@ -21,9 +21,10 @@ interface BranchFormProps {
   initialData?: Branch;
   onSubmit: (data: Omit<Branch, 'id'>) => void;
   mode: 'create' | 'update';
+  visible?: boolean;
 }
 
-export function BranchForm({ initialData, onSubmit, mode }: BranchFormProps) {
+export function BranchForm({ initialData, onSubmit, mode, visible }: BranchFormProps) {
   const [name, setName] = useState(initialData?.name || '');
   const [managerName, setManagerName] = useState(initialData?.managerName || '');
   const [email, setEmail] = useState(initialData?.email || '');
@@ -32,6 +33,16 @@ export function BranchForm({ initialData, onSubmit, mode }: BranchFormProps) {
   const [isActive, setIsActive] = useState(initialData?.isActive ?? true);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [managerModalVisible, setManagerModalVisible] = useState(false);
+
+  useEffect(() => {
+    setName(initialData?.name || '');
+    setManagerName(initialData?.managerName || '');
+    setEmail(initialData?.email || '');
+    setMobile(initialData?.mobile || '');
+    setAddress(initialData?.address || '');
+    setIsActive(initialData?.isActive ?? true);
+    setErrors({});
+  }, [visible, initialData]);
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
@@ -80,7 +91,7 @@ export function BranchForm({ initialData, onSubmit, mode }: BranchFormProps) {
           required
           value={name}
           onChangeText={setName}
-          placeholder="e.g. Downtown Hub"
+          placeholder="Enter branch name"
           error={errors.name}
           style={{ marginBottom: 0 }}
         />

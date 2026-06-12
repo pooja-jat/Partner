@@ -56,66 +56,20 @@ export default function UploadKycDocument() {
   const [docModalVisible, setDocModalVisible] = useState(false);
   const [uploadedFront, setUploadedFront] = useState<string | null>(null);
   const [uploadedBack, setUploadedBack] = useState<string | null>(null);
-  const [uploadedSelfie, setUploadedSelfie] = useState<string | null>(null);
-  const [uploadedVideo, setUploadedVideo] = useState<string | null>(null);
-
-  const requestPermission = async (type: 'camera' | 'gallery') => {
-    if (type === 'camera') {
-      const { status } = await ImagePicker.requestCameraPermissionsAsync();
-      return status === 'granted';
-    } else {
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      return status === 'granted';
-    }
-  };
-
   const handleDocumentImagePick = async (side: 'front' | 'back') => {
-    const granted = await requestPermission('gallery');
-    if (!granted) {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
       Alert.alert('Permission Required', 'Please allow gallery access to upload document.');
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images'],
       allowsEditing: true,
       quality: 0.8,
     });
     if (!result.canceled) {
       if (side === 'front') setUploadedFront(result.assets[0].uri);
       else setUploadedBack(result.assets[0].uri);
-    }
-  };
-
-  const handleSelfiePick = async () => {
-    const granted = await requestPermission('camera');
-    if (!granted) {
-      Alert.alert('Permission Required', 'Please allow camera access to take a selfie.');
-      return;
-    }
-    const result = await ImagePicker.launchCameraAsync({
-      cameraType: ImagePicker.CameraType.front,
-      allowsEditing: true,
-      quality: 0.8,
-    });
-    if (!result.canceled) {
-      setUploadedSelfie(result.assets[0].uri);
-    }
-  };
-
-  const handleVideoKyc = async () => {
-    const granted = await requestPermission('camera');
-    if (!granted) {
-      Alert.alert('Permission Required', 'Please allow camera access to record video KYC.');
-      return;
-    }
-    const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Videos,
-      cameraType: ImagePicker.CameraType.front,
-      videoMaxDuration: 30,
-      quality: ImagePicker.UIImagePickerControllerQualityType.Medium,
-    });
-    if (!result.canceled) {
-      setUploadedVideo(result.assets[0].uri);
     }
   };
 
@@ -215,26 +169,6 @@ export default function UploadKycDocument() {
             uploaded={!!uploadedBack}
             uploadedUri={uploadedBack ?? undefined}
             onPress={() => handleDocumentImagePick('back')}
-            style={[styles.uploadCard, { backgroundColor: '#FFFFFF' }]}
-          />
-
-          <Text style={styles.uploadLabel}>Selfie Photo</Text>
-          <ImageUploadCard
-            label="Tap to take photo"
-            subLabel="Clear face visibility required"
-            uploaded={!!uploadedSelfie}
-            uploadedUri={uploadedSelfie ?? undefined}
-            onPress={handleSelfiePick}
-            style={[styles.uploadCard, { backgroundColor: '#FFFFFF' }]}
-          />
-
-          <Text style={styles.uploadLabel}>Video KYC</Text>
-          <ImageUploadCard
-            label="Tap to record video"
-            subLabel="Read the script shown on screen"
-            uploaded={!!uploadedVideo}
-            uploadedUri={uploadedVideo ?? undefined}
-            onPress={handleVideoKyc}
             style={[styles.uploadCard, { backgroundColor: '#FFFFFF' }]}
           />
 

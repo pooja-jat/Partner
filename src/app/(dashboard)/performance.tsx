@@ -31,66 +31,6 @@ const SERVICES = [
   "Carpentry",
 ];
 
-type HistoryTab = "Completed" | "Pending" | "Canceled";
-
-const BOOKING_HISTORY = [
-  {
-    id: "B001",
-    service: "AC Repair",
-    date: "Oct 13, 2023",
-    amount: "₹500",
-    status: "Completed",
-  },
-  {
-    id: "B002",
-    service: "AC gas filling",
-    date: "Oct 13, 2023",
-    amount: "₹500",
-    status: "Completed",
-  },
-  {
-    id: "B003",
-    service: "AC pump Change",
-    date: "Oct 12, 2023",
-    amount: "₹200",
-    status: "Completed",
-  },
-  {
-    id: "B004",
-    service: "AC Air Filter Change",
-    date: "Oct 12, 2023",
-    amount: "₹200",
-    status: "Completed",
-  },
-  {
-    id: "B005",
-    service: "AC Repair",
-    date: "Oct 11, 2023",
-    amount: "₹350",
-    status: "Pending",
-  },
-  {
-    id: "B006",
-    service: "Washing Machine",
-    date: "Oct 11, 2023",
-    amount: "₹400",
-    status: "Pending",
-  },
-  {
-    id: "B007",
-    service: "RO Installation",
-    date: "Oct 10, 2023",
-    amount: "₹600",
-    status: "Canceled",
-  },
-  {
-    id: "B008",
-    service: "AC Servicing",
-    date: "Oct 10, 2023",
-    amount: "₹300",
-    status: "Canceled",
-  },
-];
 
 const Dropdown = ({
   value,
@@ -232,7 +172,7 @@ const ProgressCircle = ({
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-function getDateWindow(centerDate: Date) {
+function getDayWindow(centerDate: Date) {
   const result = [];
   for (let i = -1; i <= 1; i++) {
     const d = new Date(centerDate);
@@ -240,6 +180,36 @@ function getDateWindow(centerDate: Date) {
     result.push(d);
   }
   return result;
+}
+
+function getWeekDays(weekStart: Date) {
+  const result = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(weekStart);
+    d.setDate(weekStart.getDate() + i);
+    result.push(d);
+  }
+  return result;
+}
+
+function getWeekStart(date: Date) {
+  const d = new Date(date);
+  const day = d.getDay();
+  d.setDate(d.getDate() - day);
+  return d;
+}
+
+function getMonthDays(year: number, month: number) {
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const cells: (Date | null)[] = [];
+  for (let i = 0; i < firstDay; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(new Date(year, month, d));
+  return cells;
+}
+
+function isSameDay(a: Date, b: Date) {
+  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 }
 
 export default function PerformanceScreen() {
@@ -250,27 +220,16 @@ export default function PerformanceScreen() {
   const [activeTab, setActiveTab] = useState("Day");
   const [branchFilter, setBranchFilter] = useState("All Branches");
   const [empFilter, setEmpFilter] = useState("All Employees");
-  const [serviceFilter, setServiceFilter] = useState("All Services");
-  const [historyTab, setHistoryTab] = useState<HistoryTab>("Completed");
   const [bsTypeFilter, setBsTypeFilter] = useState<"Quotations" | "Orders">("Quotations");
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [viewMonth, setViewMonth] = useState(new Date());
 
-  const completedCount = BOOKING_HISTORY.filter(
-    (b) => b.status === "Completed",
-  ).length;
-  const pendingCount = BOOKING_HISTORY.filter(
-    (b) => b.status === "Pending",
-  ).length;
+  const completedCount = 4;
+  const pendingCount = 2;
 
-  const filteredHistory = BOOKING_HISTORY.filter(
-    (b) => b.status === historyTab,
-  );
-
-  const STATUS_COLOR: Record<HistoryTab, { bg: string; text: string }> = {
-    Completed: { bg: "#DCFCE7", text: "#16A34A" },
-    Pending: { bg: "#FEF9C3", text: "#CA8A04" },
-    Canceled: { bg: "#FEE2E2", text: "#DC2626" },
-  };
+  const weekStart = getWeekStart(selectedDate);
+  const weekDays = getWeekDays(weekStart);
+  const monthCells = getMonthDays(viewMonth.getFullYear(), viewMonth.getMonth());
 
   return (
     <GradientBackground style={styles.container}>
@@ -368,49 +327,162 @@ export default function PerformanceScreen() {
               ))}
             </View>
 
-            {/* Date scroller */}
-            <View style={styles.dateScrollRow}>
-              <TouchableOpacity
-                style={styles.dateArrow}
-                onPress={() => {
-                  const d = new Date(selectedDate);
-                  d.setDate(d.getDate() - 1);
-                  setSelectedDate(d);
-                }}
-                activeOpacity={0.7}
-              >
-                <ChevronLeft />
-              </TouchableOpacity>
-              {getDateWindow(selectedDate).map((date, idx) => {
-                const isActive = idx === 1;
-                return (
+            {/* Date scroller — Day view */}
+            {activeTab === "Day" && (
+              <View style={styles.dateScrollRow}>
+                <TouchableOpacity
+                  style={styles.dateArrow}
+                  onPress={() => {
+                    const d = new Date(selectedDate);
+                    d.setDate(d.getDate() - 1);
+                    setSelectedDate(d);
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <ChevronLeft />
+                </TouchableOpacity>
+                {getDayWindow(selectedDate).map((date, idx) => {
+                  const isActive = idx === 1;
+                  return (
+                    <TouchableOpacity
+                      key={idx}
+                      style={isActive ? styles.datePillActive : styles.datePill}
+                      onPress={() => setSelectedDate(date)}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={isActive ? styles.dateDayActive : styles.dateDay}>
+                        {DAY_NAMES[date.getDay()]}
+                      </Text>
+                      <Text style={isActive ? styles.dateNumActive : styles.dateNum}>
+                        {String(date.getDate()).padStart(2, '0')}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+                <TouchableOpacity
+                  style={styles.dateArrow}
+                  onPress={() => {
+                    const d = new Date(selectedDate);
+                    d.setDate(d.getDate() + 1);
+                    setSelectedDate(d);
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <ChevronRight />
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {/* Week view */}
+            {activeTab === "Week" && (
+              <View>
+                <View style={styles.dateScrollRow}>
                   <TouchableOpacity
-                    key={idx}
-                    style={isActive ? styles.datePillActive : styles.datePill}
-                    onPress={() => setSelectedDate(date)}
-                    activeOpacity={0.8}
+                    style={styles.dateArrow}
+                    onPress={() => {
+                      const d = new Date(selectedDate);
+                      d.setDate(d.getDate() - 7);
+                      setSelectedDate(d);
+                    }}
+                    activeOpacity={0.7}
                   >
-                    <Text style={isActive ? styles.dateDayActive : styles.dateDay}>
-                      {DAY_NAMES[date.getDay()]}
-                    </Text>
-                    <Text style={isActive ? styles.dateNumActive : styles.dateNum}>
-                      {String(date.getDate()).padStart(2, '0')}
-                    </Text>
+                    <ChevronLeft />
                   </TouchableOpacity>
-                );
-              })}
-              <TouchableOpacity
-                style={styles.dateArrow}
-                onPress={() => {
-                  const d = new Date(selectedDate);
-                  d.setDate(d.getDate() + 1);
-                  setSelectedDate(d);
-                }}
-                activeOpacity={0.7}
-              >
-                <ChevronRight />
-              </TouchableOpacity>
-            </View>
+                  <Text style={styles.weekRangeText}>
+                    {`${String(weekDays[0].getDate()).padStart(2,'0')} ${MONTH_NAMES[weekDays[0].getMonth()]} – ${String(weekDays[6].getDate()).padStart(2,'0')} ${MONTH_NAMES[weekDays[6].getMonth()]} ${weekDays[6].getFullYear()}`}
+                  </Text>
+                  <TouchableOpacity
+                    style={styles.dateArrow}
+                    onPress={() => {
+                      const d = new Date(selectedDate);
+                      d.setDate(d.getDate() + 7);
+                      setSelectedDate(d);
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <ChevronRight />
+                  </TouchableOpacity>
+                </View>
+                <View style={styles.weekDaysRow}>
+                  {weekDays.map((date, idx) => {
+                    const isActive = isSameDay(date, selectedDate);
+                    return (
+                      <TouchableOpacity
+                        key={idx}
+                        style={[styles.weekPill, isActive && styles.weekPillActive]}
+                        onPress={() => setSelectedDate(date)}
+                        activeOpacity={0.8}
+                      >
+                        <Text style={[styles.weekPillDay, isActive && styles.weekPillDayActive]}>
+                          {DAY_NAMES[date.getDay()]}
+                        </Text>
+                        <Text style={[styles.weekPillNum, isActive && styles.weekPillNumActive]}>
+                          {String(date.getDate()).padStart(2, '0')}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
+            )}
+
+            {/* Month view */}
+            {activeTab === "Month" && (
+              <View>
+                <View style={styles.dateScrollRow}>
+                  <TouchableOpacity
+                    style={styles.dateArrow}
+                    onPress={() => {
+                      const d = new Date(viewMonth);
+                      d.setMonth(d.getMonth() - 1);
+                      setViewMonth(d);
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <ChevronLeft />
+                  </TouchableOpacity>
+                  <Text style={styles.weekRangeText}>
+                    {`${MONTH_NAMES[viewMonth.getMonth()]} ${viewMonth.getFullYear()}`}
+                  </Text>
+                  <TouchableOpacity
+                    style={styles.dateArrow}
+                    onPress={() => {
+                      const d = new Date(viewMonth);
+                      d.setMonth(d.getMonth() + 1);
+                      setViewMonth(d);
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <ChevronRight />
+                  </TouchableOpacity>
+                </View>
+                <View style={styles.monthDayNamesRow}>
+                  {DAY_NAMES.map((n) => (
+                    <Text key={n} style={styles.monthDayName}>{n}</Text>
+                  ))}
+                </View>
+                <View style={styles.monthGrid}>
+                  {monthCells.map((date, idx) => {
+                    if (!date) return <View key={idx} style={styles.monthCell} />;
+                    const isActive = isSameDay(date, selectedDate);
+                    return (
+                      <TouchableOpacity
+                        key={idx}
+                        style={styles.monthCell}
+                        onPress={() => setSelectedDate(date)}
+                        activeOpacity={0.8}
+                      >
+                        <View style={[styles.monthCellInner, isActive && styles.monthCellInnerActive]}>
+                          <Text style={[styles.monthCellText, isActive && styles.monthCellTextActive]}>
+                            {date.getDate()}
+                          </Text>
+                        </View>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
+            )}
 
             {/* Stat boxes: only for BS */}
             {role === "BS" && (
@@ -433,13 +505,8 @@ export default function PerformanceScreen() {
             <Text style={styles.acceptTitle}>Accept 20 Orders</Text>
             <Text style={styles.acceptSub}>to see your performance</Text>
 
-            {role !== "BS" && (
-              <View style={styles.infoBanner}>
-                <Text style={styles.infoBannerText}>
-                  Bike Lite, Parcel and Bike only
-                </Text>
-              </View>
-            )}
+            
+        
 
             {/* By Category */}
             <Text style={styles.sectionTitle}>By Category</Text>
@@ -477,68 +544,6 @@ export default function PerformanceScreen() {
             </View>
           </View>
 
-          {/* Booking History section */}
-          <View style={styles.historySection}>
-            <Text style={styles.historySectionTitle}>Booking History</Text>
-
-            {/* Completed / Pending / Canceled tabs */}
-            <View style={styles.historyTabsRow}>
-              {(["Completed", "Pending", "Canceled"] as HistoryTab[]).map(
-                (tab) => (
-                  <TouchableOpacity
-                    key={tab}
-                    style={[
-                      styles.historyTab,
-                      historyTab === tab && styles.historyTabActive,
-                    ]}
-                    onPress={() => setHistoryTab(tab)}
-                    activeOpacity={1}
-                  >
-                    <Text
-                      style={[
-                        styles.historyTabText,
-                        historyTab === tab && styles.historyTabTextActive,
-                      ]}
-                    >
-                      {tab}
-                    </Text>
-                  </TouchableOpacity>
-                ),
-              )}
-            </View>
-
-            {/* Booking list */}
-            {filteredHistory.length === 0 ? (
-              <View style={styles.emptyBox}>
-                <Text style={styles.emptyText}>No {historyTab} bookings</Text>
-              </View>
-            ) : (
-              filteredHistory.map((b) => {
-                const col = STATUS_COLOR[b.status as HistoryTab];
-                return (
-                  <View key={b.id} style={styles.bookingCard}>
-                    <View style={styles.bookingCardLeft}>
-                      <Text style={styles.bookingService}>{b.service}</Text>
-                      <Text style={styles.bookingDate}>{b.date}</Text>
-                    </View>
-                    <View style={styles.bookingCardRight}>
-                      <Text style={styles.bookingAmount}>{b.amount}</Text>
-                      <View
-                        style={[
-                          styles.statusBadge,
-                          { backgroundColor: col.bg },
-                        ]}
-                      >
-                        <Text style={[styles.statusText, { color: col.text }]}>
-                          {b.status}
-                        </Text>
-                      </View>
-                    </View>
-                  </View>
-                );
-              })
-            )}
-          </View>
         </ScrollView>
       </SafeAreaView>
     </GradientBackground>
@@ -730,55 +735,67 @@ const styles = StyleSheet.create({
   overviewLabel: { fontSize: 11, color: "#94A3B8", marginLeft: 6 },
   overviewValue: { fontSize: 18, fontWeight: "800", color: "#0F172A" },
 
-  // Booking History section
-  historySection: { backgroundColor: "#FFFFFF", borderRadius: 24, padding: 20 },
-  historySectionTitle: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: "#0F172A",
-    marginBottom: 16,
-  },
-
-  historyTabsRow: {
-    flexDirection: "row",
-    backgroundColor: "#F1F5F9",
-    borderRadius: 12,
-    padding: 4,
-    marginBottom: 16,
-  },
-  historyTab: {
+  weekRangeText: {
     flex: 1,
-    paddingVertical: 8,
-    alignItems: "center",
-    borderRadius: 8,
-  },
-  historyTabActive: { backgroundColor: PRIMARY },
-  historyTabText: { fontSize: 12, fontWeight: "600", color: "#64748B" },
-  historyTabTextActive: { color: "#FFFFFF" },
-
-  bookingCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: "#F1F5F9",
-  },
-  bookingCardLeft: { flex: 1 },
-  bookingService: {
+    textAlign: "center",
     fontSize: 13,
     fontWeight: "600",
     color: "#0F172A",
+  },
+  weekDaysRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 20,
+  },
+  weekPill: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 12,
+    alignItems: "center",
+    backgroundColor: "#F8FAFC",
+    marginHorizontal: 2,
+  },
+  weekPillActive: {
+    backgroundColor: PRIMARY,
+  },
+  weekPillDay: { fontSize: 10, color: "#64748B", marginBottom: 4 },
+  weekPillDayActive: { color: "#E2E8F0" },
+  weekPillNum: { fontSize: 13, fontWeight: "700", color: "#0F172A" },
+  weekPillNumActive: { color: "#FFFFFF" },
+  monthDayNamesRow: {
+    flexDirection: "row",
     marginBottom: 4,
   },
-  bookingDate: { fontSize: 11, color: "#94A3B8" },
-  bookingCardRight: { alignItems: "flex-end", gap: 6 },
-  bookingAmount: { fontSize: 14, fontWeight: "700", color: PRIMARY },
-  statusBadge: { paddingHorizontal: 10, paddingVertical: 3, borderRadius: 20 },
-  statusText: { fontSize: 10, fontWeight: "700" },
-
-  emptyBox: { paddingVertical: 32, alignItems: "center" },
-  emptyText: { fontSize: 13, color: "#94A3B8" },
+  monthDayName: {
+    width: `${100 / 7}%` as any,
+    textAlign: "center",
+    fontSize: 10,
+    fontWeight: "600",
+    color: "#94A3B8",
+    paddingVertical: 4,
+  },
+  monthGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginBottom: 20,
+  },
+  monthCell: {
+    width: `${100 / 7}%` as any,
+    aspectRatio: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  monthCellActive: {},
+  monthCellInner: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  monthCellInnerActive: { backgroundColor: PRIMARY },
+  monthCellText: { fontSize: 12, color: "#0F172A", fontWeight: "500" },
+  monthCellTextActive: { color: "#FFFFFF", fontWeight: "700" },
 
   bsFilterRow: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 16, zIndex: 20 },
   bsDropdownWrap: { flex: 1 },

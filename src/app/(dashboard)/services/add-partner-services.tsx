@@ -59,21 +59,21 @@ export default function AddPartnerServicesScreen() {
             <SelectInput 
               label="Category" 
               value={form.category} 
-              placeholder="e.g. Appliance Repair"
+              placeholder="Select category"
               onPress={() => updateForm('category', 'Appliance Repair')} 
             />
             
             <SelectInput 
               label="Sub Category" 
               value={form.subCategory} 
-              placeholder="e.g. AC Repair"
+              placeholder="Select sub category"
               onPress={() => updateForm('subCategory', 'AC Repair')} 
             />
 
             <Input
               label="Service Name"
               required
-              placeholder="e.g. Split AC Servicing"
+              placeholder="Enter service name"
               value={form.service}
               onChangeText={(t) => updateForm('service', t)}
             />

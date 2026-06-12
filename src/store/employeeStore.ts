@@ -19,9 +19,40 @@ export const useEmployeeStore = create<EmployeeState>((set, get) => ({
     try {
       const json = await AsyncStorage.getItem('employees');
       if (json) {
-        set({ employees: JSON.parse(json) });
+        let parsed: Employee[] = JSON.parse(json);
+        let updated = false;
+
+        const earningsMap: Record<string, { total: string; remaining: string }> = {
+          EMP1: { total: '₹18,500.00', remaining: '₹4,250.00' },
+          EMP2: { total: '₹15,200.00', remaining: '₹3,100.00' },
+          EMP3: { total: '₹12,400.00', remaining: '₹2,800.00' },
+        };
+
+        parsed = parsed.map(emp => {
+          let empUpdated = false;
+          let newEmp = { ...emp };
+
+          if (!newEmp.totalEarning) {
+            newEmp.totalEarning = earningsMap[newEmp.id]?.total || '₹6,400.00';
+            empUpdated = true;
+          }
+          if (!newEmp.remainingEarning) {
+            newEmp.remainingEarning = earningsMap[newEmp.id]?.remaining || '₹1,200.00';
+            empUpdated = true;
+          }
+          if (empUpdated) {
+            updated = true;
+          }
+          return newEmp;
+        });
+
+        if (updated) {
+          await AsyncStorage.setItem('employees', JSON.stringify(parsed));
+        }
+
+        set({ employees: parsed });
       } else {
-        const defaultEmployees = [
+        const defaultEmployees: Employee[] = [
           { 
             id: 'EMP1', 
             name: 'Rahul Kumar', 
@@ -31,7 +62,10 @@ export const useEmployeeStore = create<EmployeeState>((set, get) => ({
             subService: 'Split AC Servicing', 
             experience: '5 years', 
             mobileNumber: '9876543215', 
-            isActive: true 
+            isActive: true,
+            createdAt: '08 May 2024',
+            totalEarning: '₹18,500.00',
+            remainingEarning: '₹4,250.00'
           },
           { 
             id: 'EMP2', 
@@ -42,7 +76,10 @@ export const useEmployeeStore = create<EmployeeState>((set, get) => ({
             subService: 'RO Installation', 
             experience: '4 years', 
             mobileNumber: '9876543216', 
-            isActive: true 
+            isActive: true,
+            createdAt: '08 May 2024',
+            totalEarning: '₹15,200.00',
+            remainingEarning: '₹3,100.00'
           },
           { 
             id: 'EMP3', 
@@ -53,7 +90,10 @@ export const useEmployeeStore = create<EmployeeState>((set, get) => ({
             subService: 'Fully Automatic Top Load Repair', 
             experience: '3 years', 
             mobileNumber: '9876543217', 
-            isActive: true 
+            isActive: true,
+            createdAt: '08 May 2024',
+            totalEarning: '₹12,400.00',
+            remainingEarning: '₹2,800.00'
           }
         ];
         set({ employees: defaultEmployees });
@@ -68,6 +108,9 @@ export const useEmployeeStore = create<EmployeeState>((set, get) => ({
     const newEmployee: Employee = {
       ...employeeData,
       id: Date.now().toString(),
+      createdAt: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }),
+      totalEarning: '₹0.00',
+      remainingEarning: '₹0.00',
     };
     const updatedEmployees = [...get().employees, newEmployee];
     set({ employees: updatedEmployees });

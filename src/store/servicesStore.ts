@@ -14,6 +14,8 @@ export interface ServiceCategory {
   active: boolean;
   dateAdded: string;
   subServices: SubService[];
+  providerName?: string;
+  branchName?: string;
 }
 
 interface ServicesState {

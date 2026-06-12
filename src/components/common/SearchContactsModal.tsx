@@ -1,18 +1,18 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Modal, TouchableOpacity, TextInput, ScrollView, Image } from 'react-native';
+import { View, Text, StyleSheet, Modal, TouchableOpacity, TextInput, ScrollView } from 'react-native';
 import Svg, { Path, Rect } from 'react-native-svg';
 
 interface Contact {
   id: string;
   name: string;
   phone: string;
-  initial: string;
-  selected?: boolean;
 }
 
 interface SearchContactsModalProps {
   visible: boolean;
   onClose: () => void;
+  onAdd?: (contacts: Contact[]) => void;
+  existingIds?: string[];
 }
 
 const SearchIcon = ({ color = '#0F172A' }) => (
@@ -29,7 +29,7 @@ const CloseIcon = ({ color = '#FFFFFF' }) => (
 
 const CheckboxIcon = ({ checked = false, color = 'rgba(26, 15, 163, 1.00)' }) => (
   <Svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-    <Rect x="3" y="3" width="18" height="18" rx="4" fill={checked ? color : 'transparent'} stroke={checked ? color : '#F1F5F9'} strokeWidth="2" />
+    <Rect x="3" y="3" width="18" height="18" rx="4" fill={checked ? color : 'transparent'} stroke={checked ? color : '#CBD5E1'} strokeWidth="2" />
     {checked && <Path d="M8 12L11 15L16 9" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />}
   </Svg>
 );
@@ -40,53 +40,102 @@ const CloseModalIcon = ({ color = '#0F172A' }) => (
   </Svg>
 );
 
-export const SearchContactsModal: React.FC<SearchContactsModalProps> = ({ visible, onClose }) => {
-  const [contacts, setContacts] = useState<Contact[]>([
-    { id: '1', name: 'A D Packaging Oil', phone: '9099022114', initial: 'A', selected: true },
-    { id: '2', name: 'AJio Delevery', phone: '9110792602', initial: 'A', selected: true },
-    { id: '3', name: '8003281009', phone: '8003281009', initial: '8', selected: false },
-  ]);
+// These IDs are separate from emergency-contacts DEFAULT_CONTACTS ids
+const ALL_CONTACTS: Contact[] = [
+  { id: 'c1', name: 'Rahul Sharma', phone: '9876543210' },
+  { id: 'c2', name: 'Priya Verma', phone: '8765432109' },
+  { id: 'c3', name: 'Amit Kumar', phone: '7654321098' },
+  { id: 'c4', name: 'Sunita Devi', phone: '9988776655' },
+  { id: 'c5', name: 'Vijay Singh', phone: '9012345678' },
+  { id: 'c6', name: 'Meena Gupta', phone: '8901234567' },
+  { id: 'c7', name: 'Ravi Patel', phone: '7890123456' },
+  { id: 'c8', name: 'Kavita Joshi', phone: '6789012345' },
+];
 
-  const selectedContacts = contacts.filter(c => c.selected);
+const AVATAR_COLORS = ['#4F46E5', '#0891B2', '#059669', '#D97706', '#DC2626', '#7C3AED', '#DB2777', '#0284C7'];
+
+const InitialAvatar = ({ name, id }: { name: string; id: string }) => {
+  const idx = parseInt(id.replace('c', ''), 10) - 1;
+  const bg = AVATAR_COLORS[idx % AVATAR_COLORS.length];
+  const initials = name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
+  return (
+    <View style={[avatarStyle.circle, { backgroundColor: bg }]}>
+      <Text style={avatarStyle.text}>{initials}</Text>
+    </View>
+  );
+};
+
+const avatarStyle = StyleSheet.create({
+  circle: { width: 40, height: 40, borderRadius: 20, marginRight: 12, justifyContent: 'center', alignItems: 'center' },
+  text: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' },
+});
+
+export const SearchContactsModal: React.FC<SearchContactsModalProps> = ({
+  visible,
+  onClose,
+  onAdd,
+  existingIds = [],
+}) => {
+  const [search, setSearch] = useState('');
+  const [selected, setSelected] = useState<string[]>([]);
+
+  React.useEffect(() => {
+    if (visible) {
+      setSelected([]);
+      setSearch('');
+    }
+  }, [visible]);
+
+  const filtered = ALL_CONTACTS.filter(
+    c =>
+      !existingIds.includes(c.id) &&
+      (c.name.toLowerCase().includes(search.toLowerCase()) || c.phone.includes(search))
+  );
 
   const toggleSelect = (id: string) => {
-    setContacts(contacts.map(c => {
-      if (c.id === id) {
-        // Enforce max 4
-        if (!c.selected && selectedContacts.length >= 4) return c;
-        return { ...c, selected: !c.selected };
-      }
-      return c;
-    }));
+    setSelected(prev => {
+      if (prev.includes(id)) return prev.filter(x => x !== id);
+      if (prev.length + existingIds.length >= 4) return prev;
+      return [...prev, id];
+    });
   };
 
+  const handleAdd = () => {
+    const added = ALL_CONTACTS.filter(c => selected.includes(c.id));
+    onAdd?.(added);
+    onClose();
+  };
+
+  const selectedContacts = ALL_CONTACTS.filter(c => selected.includes(c.id));
+
   return (
-    <Modal visible={visible} animationType="slide" transparent>
+    <Modal visible={visible} animationType="slide" transparent statusBarTranslucent>
       <View style={styles.overlay}>
         <View style={styles.sheetContainer}>
-          
-          <TouchableOpacity style={styles.closeBtn} onPress={onClose}>
+
+          <TouchableOpacity activeOpacity={0.7} style={styles.closeBtn} onPress={onClose}>
             <CloseModalIcon />
           </TouchableOpacity>
 
           <View style={styles.searchContainer}>
             <SearchIcon />
-            <TextInput 
+            <TextInput
               placeholder="Search contacts"
               style={styles.searchInput}
               placeholderTextColor="#64748B"
+              value={search}
+              onChangeText={setSearch}
             />
           </View>
 
           <Text style={styles.limitText}>You can add upto 4 contacts only</Text>
 
-          {/* Selected Pills */}
           {selectedContacts.length > 0 && (
             <View style={styles.pillContainer}>
               {selectedContacts.map(c => (
                 <View key={`pill-${c.id}`} style={styles.pill}>
-                  <Text style={styles.pillText}>{c.phone.substring(0,8)}...</Text>
-                  <TouchableOpacity onPress={() => toggleSelect(c.id)} style={styles.pillClose}>
+                  <Text style={styles.pillText}>{c.name}</Text>
+                  <TouchableOpacity activeOpacity={0.7} onPress={() => toggleSelect(c.id)} style={styles.pillClose}>
                     <CloseIcon />
                   </TouchableOpacity>
                 </View>
@@ -94,54 +143,109 @@ export const SearchContactsModal: React.FC<SearchContactsModalProps> = ({ visibl
             </View>
           )}
 
-          {/* Contact List */}
-          <ScrollView showsVerticalScrollIndicator={false} style={styles.listContainer}>
-            {contacts.map((contact) => (
-              <TouchableOpacity key={contact.id} style={styles.contactRow} onPress={() => toggleSelect(contact.id)}>
-                <Image source={{ uri: `https://i.pravatar.cc/150?u=${contact.id}` }} style={styles.avatarImage} />
+          <ScrollView showsVerticalScrollIndicator={false} style={styles.listContainer} keyboardShouldPersistTaps="handled">
+            {filtered.length === 0 && (
+              <Text style={styles.emptyText}>No contacts found</Text>
+            )}
+            {filtered.map(contact => (
+              <TouchableOpacity
+                key={contact.id}
+                activeOpacity={1}
+                style={[styles.contactRow, selected.includes(contact.id) && styles.contactRowSelected]}
+                onPress={() => toggleSelect(contact.id)}
+              >
+                <InitialAvatar name={contact.name} id={contact.id} />
                 <View style={styles.contactInfo}>
                   <Text style={styles.contactName}>{contact.name}</Text>
                   <Text style={styles.contactPhone}>{contact.phone}</Text>
                 </View>
-                <CheckboxIcon checked={contact.selected} />
+                <CheckboxIcon checked={selected.includes(contact.id)} />
               </TouchableOpacity>
             ))}
           </ScrollView>
 
-          <TouchableOpacity style={styles.addBtn} onPress={onClose}>
-            <Text style={styles.addBtnText}>ADD</Text>
+          <TouchableOpacity
+            activeOpacity={0.8}
+            style={[styles.addBtn, selected.length === 0 && styles.addBtnDisabled]}
+            onPress={handleAdd}
+            disabled={selected.length === 0}
+          >
+            <Text style={styles.addBtnText}>
+              {selected.length > 0 ? `ADD (${selected.length})` : 'ADD'}
+            </Text>
           </TouchableOpacity>
 
         </View>
       </View>
     </Modal>
   );
-}
+};
 
 const styles = StyleSheet.create({
   overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
-  sheetContainer: { backgroundColor: '#FFFFFF', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, height: '80%' },
-  
+  sheetContainer: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 20,
+    height: '80%',
+  },
+
   closeBtn: { alignSelf: 'flex-end', padding: 8 },
 
-  searchContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F8FAFC', borderRadius: 20, paddingHorizontal: 16, paddingVertical: 12, marginBottom: 16 },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F8FAFC',
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginBottom: 16,
+  },
   searchInput: { flex: 1, marginLeft: 8, fontSize: 13, color: '#0F172A' },
 
-  limitText: { fontSize: 11, color: '#94A3B8', marginBottom: 16 },
+  limitText: { fontSize: 11, color: '#94A3B8', marginBottom: 12 },
 
-  pillContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 24 },
-  pill: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(26, 15, 163, 1.00)', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, gap: 8 },
-  pillText: { color: '#FFFFFF', fontSize: 11, fontWeight: '500' },
-  pillClose: { opacity: 0.8 },
+  pillContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 },
+  pill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(26, 15, 163, 1.00)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    gap: 6,
+  },
+  pillText: { color: '#FFFFFF', fontSize: 11, fontWeight: '600' },
+  pillClose: { padding: 2 },
 
   listContainer: { flex: 1 },
-  contactRow: { flexDirection: 'row', alignItems: 'center', padding: 12, borderWidth: 1, borderColor: '#F8FAFC', borderRadius: 16, marginBottom: 8 },
-  avatarImage: { width: 40, height: 40, borderRadius: 20, marginRight: 12 },
-  avatarText: { fontSize: 16, fontWeight: '700', color: '#0F172A' },
+  contactRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+    borderRadius: 16,
+    marginBottom: 8,
+    backgroundColor: '#FFFFFF',
+  },
+  contactRowSelected: {
+    borderColor: 'rgba(26, 15, 163, 0.3)',
+    backgroundColor: '#F5F3FF',
+  },
   contactInfo: { flex: 1 },
   contactName: { fontSize: 13, fontWeight: '700', color: '#0F172A', marginBottom: 2 },
   contactPhone: { fontSize: 11, color: '#94A3B8' },
 
-  addBtn: { backgroundColor: 'rgba(26, 15, 163, 1.00)', paddingVertical: 16, borderRadius: 12, alignItems: 'center', marginTop: 16 },
+  addBtn: {
+    backgroundColor: 'rgba(26, 15, 163, 1.00)',
+    paddingVertical: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginTop: 12,
+  },
+  addBtnDisabled: { backgroundColor: '#CBD5E1' },
   addBtnText: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' },
+  emptyText: { textAlign: 'center', color: '#94A3B8', fontSize: 13, marginTop: 24 },
 });

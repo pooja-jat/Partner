@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, Platform, Modal, Switch } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSafeRouter } from '@/hooks/useSafeRouter';
 import { GradientBackground } from '@/components/ui/GradientBackground';
 import { BackArrowIcon } from '@/components/ui/Icons';
@@ -26,6 +26,15 @@ const FilterIcon = ({ size = 18, color = 'rgba(26, 15, 163, 1.00)' }) => (
 const CarIcon = ({ size = 16, color = '#64748B' }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3C13 6.8 11.8 6 10.5 6H5C3.9 6 3 6.9 3 8v8c0 .6.4 1 1 1h2m3 0h6m5-5H3M7.5 20a2.5 2.5 0 100-5 2.5 2.5 0 000 5zm10 0a2.5 2.5 0 100-5 2.5 2.5 0 000 5z" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+);
+
+const BikeIcon = ({ size = 22, color = '#334155' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M5.5 17a2.5 2.5 0 100-5 2.5 2.5 0 000 5zm13 0a2.5 2.5 0 100-5 2.5 2.5 0 000 5z" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    <Path d="M8 17l1-4h5l2-4h2M10 9l1 4" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    <Path d="M14 5h3l1.5 3" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    <Circle cx="17" cy="5" r="1" fill={color} />
   </Svg>
 );
 
@@ -90,6 +99,7 @@ interface BookingDetails {
 export default function BookingsScreen() {
   useAndroidBack();
   const router = useSafeRouter();
+  const insets = useSafeAreaInsets();
   const [isOnDuty, setIsOnDuty] = useState(true);
   const [rejectedIds, setRejectedIds] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState('All');
@@ -102,6 +112,8 @@ export default function BookingsScreen() {
   const [showPaymentTypeDropdown, setShowPaymentTypeDropdown] = useState(false);
   const [bookingPopupVisible, setBookingPopupVisible] = useState(false);
   const [popupBooking, setPopupBooking] = useState<Booking | null>(null);
+  const [acceptedIds, setAcceptedIds] = useState<string[]>([]);
+  const [sidebarView, setSidebarView] = useState<'new' | 'accepted' | 'rejected' | 'history'>('new');
 
   const TABS = [
     { id: 'All', label: 'All', icon: null },
@@ -115,7 +127,7 @@ export default function BookingsScreen() {
         const s = await StorageService.getUserSession();
         setSession(s);
 
-        const freshDummies: Booking[] = [
+        const defaultDummies: Booking[] = [
           {
             bookingId: '#BK123456', userId: 'U1', serviceId: 'S1', branchId: 'BR1', employeeId: undefined, profAccepted: undefined,
             status: 'accepted', paymentStatus: 'unpaid', paymentMethod: 'online', paymentLinkGenerated: false,
@@ -127,23 +139,95 @@ export default function BookingsScreen() {
             checkInCode: '4321', completionOtp: '654321', scheduledTime: '6 May 2024 (Tomorrow)\n11:30 AM', location: 'B-205, Sunshine Apartments, Sector 50, Noida, UP - 201301', serviceRadius: 15
           },
           {
-            bookingId: '#BK123458', userId: 'U3', serviceId: 'S3', branchId: 'BR1', employeeId: 'EMP1', profAccepted: false,
+            bookingId: '#BK123458', userId: 'U3', serviceId: 'S3', branchId: 'BR1', employeeId: undefined, profAccepted: undefined,
             status: 'accepted', paymentStatus: 'paid', paymentMethod: 'online', paymentLinkGenerated: true,
             checkInCode: '1111', completionOtp: '222222', scheduledTime: '7 May 2024\n04:00 PM', location: 'C-205, Galaxy Tower, Sector 76, Noida, UP - 201301', serviceRadius: 20
           },
           {
-            bookingId: '#BK123459', userId: 'U4', serviceId: 'S1', branchId: 'BR1', employeeId: 'EMP1', profAccepted: true,
+            bookingId: '#BK123459', userId: 'U4', serviceId: 'S1', branchId: 'BR1', employeeId: undefined, profAccepted: undefined,
             status: 'accepted', paymentStatus: 'paid', paymentMethod: 'online', paymentLinkGenerated: false,
             checkInCode: '5678', completionOtp: '987654', scheduledTime: '8 May 2024\n09:00 AM', location: 'D-312, Stellar Park, Sector 62, Noida, UP - 201301', serviceRadius: 12
           },
           {
-            bookingId: '#BK123460', userId: 'U5', serviceId: 'S2', branchId: 'BR1', employeeId: 'EMP1', profAccepted: true,
-            status: 'accepted', paymentStatus: 'paid', paymentMethod: 'online', paymentLinkGenerated: false,
-            checkInCode: '9999', completionOtp: '888888', scheduledTime: '9 May 2024\n04:30 PM', location: 'E-401, Purvanchal Royal Park, Sector 137, Noida, UP - 201301', serviceRadius: 18
+            bookingId: 'B001', userId: 'U1', serviceId: 'S3', branchId: 'BR1', employeeId: undefined, profAccepted: undefined,
+            status: 'completed', paymentStatus: 'paid', paymentMethod: 'online', paymentLinkGenerated: false,
+            checkInCode: '1234', completionOtp: '123456', scheduledTime: '7 May 2024\n04:00 PM', location: 'A-101, Green Residency, Sector 45, Noida, UP - 201301', serviceRadius: 10
+          },
+          {
+            bookingId: 'B002', userId: 'U2', serviceId: 'S1', branchId: 'BR1', employeeId: undefined, profAccepted: undefined,
+            status: 'completed', paymentStatus: 'paid', paymentMethod: 'online', paymentLinkGenerated: false,
+            checkInCode: '1234', completionOtp: '123456', scheduledTime: '8 May 2024\n09:00 AM', location: 'B-205, Sunshine Apartments, Sector 50, Noida, UP - 201301', serviceRadius: 15
+          },
+          {
+            bookingId: 'B003', userId: 'U3', serviceId: 'S3', branchId: 'BR1', employeeId: undefined, profAccepted: undefined,
+            status: 'completed', paymentStatus: 'paid', paymentMethod: 'online', paymentLinkGenerated: false,
+            checkInCode: '1234', completionOtp: '123456', scheduledTime: '8 May 2024\n11:30 AM', location: 'C-205, Galaxy Tower, Sector 76, Noida, UP - 201301', serviceRadius: 20
+          },
+          {
+            bookingId: 'B004', userId: 'U4', serviceId: 'S2', branchId: 'BR1', employeeId: undefined, profAccepted: undefined,
+            status: 'denied', paymentStatus: 'unpaid', paymentMethod: null, paymentLinkGenerated: false,
+            checkInCode: '1234', completionOtp: '123456', scheduledTime: '8 May 2024\n02:00 PM', location: 'D-312, Stellar Park, Sector 62, Noida, UP - 201301', serviceRadius: 12
+          },
+          {
+            bookingId: 'B005', userId: 'U5', serviceId: 'S1', branchId: 'BR1', employeeId: undefined, profAccepted: undefined,
+            status: 'denied', paymentStatus: 'unpaid', paymentMethod: null, paymentLinkGenerated: false,
+            checkInCode: '1234', completionOtp: '123456', scheduledTime: '8 May 2024\n03:30 PM', location: 'E-401, Green View Apartments, Sector 62, Noida, UP - 201301', serviceRadius: 10
+          },
+          {
+            bookingId: 'B006', userId: 'U2', serviceId: 'S2', branchId: 'BR1', employeeId: undefined, profAccepted: undefined,
+            status: 'completed', paymentStatus: 'paid', paymentMethod: 'online', paymentLinkGenerated: false,
+            checkInCode: '1234', completionOtp: '123456', scheduledTime: '11 Oct 2023\n11:30 AM', location: 'B-205, Sunshine Apartments, Sector 50, Noida, UP - 201301', serviceRadius: 15
+          },
+          {
+            bookingId: 'B007', userId: 'U3', serviceId: 'S3', branchId: 'BR1', employeeId: undefined, profAccepted: undefined,
+            status: 'denied', paymentStatus: 'unpaid', paymentMethod: null, paymentLinkGenerated: false,
+            checkInCode: '1234', completionOtp: '123456', scheduledTime: '10 Oct 2023\n04:00 PM', location: 'C-205, Galaxy Tower, Sector 76, Noida, UP - 201301', serviceRadius: 20
+          },
+          {
+            bookingId: 'B008', userId: 'U4', serviceId: 'S1', branchId: 'BR1', employeeId: undefined, profAccepted: undefined,
+            status: 'denied', paymentStatus: 'unpaid', paymentMethod: null, paymentLinkGenerated: false,
+            checkInCode: '1234', completionOtp: '123456', scheduledTime: '10 Oct 2023\n09:00 AM', location: 'D-312, Stellar Park, Sector 62, Noida, UP - 201301', serviceRadius: 12
+          },
+          {
+            bookingId: 'ORD001', userId: 'U1', serviceId: 'S1', branchId: 'BR1', employeeId: undefined, profAccepted: undefined,
+            status: 'completed', paymentStatus: 'paid', paymentMethod: 'online', paymentLinkGenerated: false,
+            checkInCode: '1234', completionOtp: '123456', scheduledTime: '7 May 2024\n04:00 PM', location: 'A-101, Green Residency, Sector 45, Noida, UP - 201301', serviceRadius: 10
+          },
+          {
+            bookingId: 'ORD002', userId: 'U2', serviceId: 'S1', branchId: 'BR1', employeeId: undefined, profAccepted: undefined,
+            status: 'completed', paymentStatus: 'paid', paymentMethod: 'online', paymentLinkGenerated: false,
+            checkInCode: '1234', completionOtp: '123456', scheduledTime: '8 May 2024\n09:00 AM', location: 'B-205, Sunshine Apartments, Sector 50, Noida, UP - 201301', serviceRadius: 15
+          },
+          {
+            bookingId: 'ORD003', userId: 'U3', serviceId: 'S3', branchId: 'BR1', employeeId: undefined, profAccepted: undefined,
+            status: 'denied', paymentStatus: 'unpaid', paymentMethod: null, paymentLinkGenerated: false,
+            checkInCode: '1234', completionOtp: '123456', scheduledTime: '8 May 2024\n02:00 PM', location: 'C-205, Galaxy Tower, Sector 76, Noida, UP - 201301', serviceRadius: 20
+          },
+          {
+            bookingId: 'ORD004', userId: 'U4', serviceId: 'S2', branchId: 'BR1', employeeId: undefined, profAccepted: undefined,
+            status: 'denied', paymentStatus: 'unpaid', paymentMethod: null, paymentLinkGenerated: false,
+            checkInCode: '1234', completionOtp: '123456', scheduledTime: '8 May 2024\n03:30 PM', location: 'D-312, Stellar Park, Sector 62, Noida, UP - 201301', serviceRadius: 12
           }
         ];
-        await StorageService.setItem('BOOKINGS', freshDummies);
-        let bks = freshDummies;
+
+        const SEED_VERSION = 'v5';
+        const seedKey = 'BOOKINGS_SEED_VERSION';
+        const currentVersion = await StorageService.getItem(seedKey);
+
+        let existing = await StorageService.getBookings();
+
+        if (currentVersion !== SEED_VERSION) {
+          // Seed version changed — wipe old data and start fresh
+          existing = [];
+          await StorageService.setItem(seedKey, SEED_VERSION);
+        }
+
+        const mergedBookings = defaultDummies.map(dummy => {
+          const saved = existing.find(b => b.bookingId === dummy.bookingId);
+          return saved ?? dummy;
+        });
+        await StorageService.setItem('BOOKINGS', mergedBookings);
+        let bks = mergedBookings;
 
         if (s?.role === 'ISP') {
           bks = bks.filter(b => b.serviceRadius <= 25);
@@ -202,9 +286,10 @@ export default function BookingsScreen() {
   const handleDutyToggle = (value: boolean) => {
     setIsOnDuty(value);
     if (value && bookings.length > 0) {
-      const available = bookings.filter(b => !rejectedIds.includes(b.bookingId));
+      const available = bookings.filter(b => !rejectedIds.includes(b.bookingId) && !acceptedIds.includes(b.bookingId));
       if (available.length > 0) {
         setPopupBooking(available[0]);
+        setSidebarView('new');
         setBookingPopupVisible(true);
       }
     }
@@ -212,11 +297,24 @@ export default function BookingsScreen() {
 
   const handleAccept = async () => {
     if (popupBooking) {
+      const acceptedId = popupBooking.bookingId;
       const updated = { ...popupBooking, status: 'accepted' as const };
       await StorageService.saveBooking(updated);
       setBookings(prev => prev.map(b => b.bookingId === updated.bookingId ? updated : b));
-      setBookingPopupVisible(false);
-      router.push(`/(dashboard)/bookings/${popupBooking.bookingId.replace('#', '')}` as any);
+      setAcceptedIds(prev => [...prev, acceptedId]);
+
+      router.push(`/(dashboard)/bookings/${acceptedId.replace('#', '')}` as any);
+
+      // Defer updating the state and hiding the modal until transition begins
+      setTimeout(() => {
+        const remaining = bookings.filter(b => 
+          !rejectedIds.includes(b.bookingId) && 
+          !acceptedIds.includes(b.bookingId) && 
+          b.bookingId !== acceptedId
+        );
+        setPopupBooking(remaining[0] ?? null);
+        setBookingPopupVisible(false);
+      }, 500);
     } else {
       setBookingPopupVisible(false);
     }
@@ -225,8 +323,10 @@ export default function BookingsScreen() {
   const handleReject = () => {
     if (popupBooking) {
       setRejectedIds(prev => [...prev, popupBooking.bookingId]);
+      // Move to next available new booking
+      const remaining = bookings.filter(b => !rejectedIds.includes(b.bookingId) && !acceptedIds.includes(b.bookingId) && b.bookingId !== popupBooking.bookingId);
+      setPopupBooking(remaining[0] ?? null);
     }
-    setBookingPopupVisible(false);
   };
 
   const filteredBookings = bookings.filter(booking => {
@@ -257,6 +357,10 @@ export default function BookingsScreen() {
   });
 
   const popupDetails = popupBooking ? getBookingDisplayDetails(popupBooking) : null;
+  const isSidebarViewEmpty =
+    (sidebarView === 'accepted' && bookings.filter(b => acceptedIds.includes(b.bookingId)).length === 0) ||
+    (sidebarView === 'rejected' && bookings.filter(b => rejectedIds.includes(b.bookingId)).length === 0) ||
+    (sidebarView === 'history');
 
   return (
     <GradientBackground style={styles.container}>
@@ -270,6 +374,17 @@ export default function BookingsScreen() {
           <Text style={styles.headerTitle}>
             {`${isOnDuty ? filteredBookings.length : 0} Bookings`}
           </Text>
+          {isOnDuty && bookings.length > 0 && (
+            <TouchableOpacity
+              style={styles.simulateBtn}
+              onPress={() => {
+                const available = bookings.filter(b => !rejectedIds.includes(b.bookingId));
+                if (available.length > 0) { setPopupBooking(available[0]); setBookingPopupVisible(true); }
+              }}
+            >
+              <Text style={styles.simulateBtnText}>Simulate</Text>
+            </TouchableOpacity>
+          )}
           <TouchableOpacity
             style={[styles.dutyBadge, isOnDuty ? styles.dutyBadgeOn : styles.dutyBadgeOff]}
             onPress={() => handleDutyToggle(!isOnDuty)}
@@ -392,19 +507,60 @@ export default function BookingsScreen() {
                       </View>
                     </View>
 
-                    <TouchableOpacity
-                      style={styles.viewBtn}
-                      onPress={async () => {
-                        if (booking.status !== 'on_the_way' && booking.status !== 'checked_in' && booking.status !== 'started' && booking.status !== 'completed' && booking.status !== 'closed') {
-                          const updated = { ...booking, status: 'on_the_way' as const };
-                          await StorageService.saveBooking(updated);
-                          setBookings(prev => prev.map(b => b.bookingId === booking.bookingId ? updated : b));
-                        }
-                        router.push(`/(dashboard)/bookings/${booking.bookingId.replace('#', '')}` as any);
-                      }}
-                    >
-                      <Text style={styles.viewBtnText}>View</Text>
-                    </TouchableOpacity>
+                    <View style={styles.cardActionsRow}>
+                      {booking.status === 'pending' ? (
+                        <>
+                          <TouchableOpacity
+                            style={styles.cardRejectBtn}
+                            onPress={() => {
+                              setRejectedIds(prev => [...prev, booking.bookingId]);
+                            }}
+                          >
+                            <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
+                              <Path d="M5 12H19" stroke="#EF4444" strokeWidth="2.5" strokeLinecap="round" />
+                            </Svg>
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            style={styles.cardAcceptBtn}
+                            onPress={async () => {
+                              const updated = { ...booking, status: 'accepted' as const };
+                              await StorageService.saveBooking(updated);
+                              setBookings(prev => prev.map(b => b.bookingId === booking.bookingId ? updated : b));
+                              router.push(`/(dashboard)/bookings/${booking.bookingId.replace('#', '')}` as any);
+                            }}
+                          >
+                            <Text style={styles.cardAcceptText}>Accept</Text>
+                          </TouchableOpacity>
+                        </>
+                      ) : (booking.status === 'accepted' || booking.status === 'on_the_way') ? (
+                        <TouchableOpacity
+                          style={styles.cardAcceptBtn}
+                          onPress={() => {
+                            router.push(`/(dashboard)/bookings/${booking.bookingId.replace('#', '')}` as any);
+                          }}
+                        >
+                          <Text style={styles.cardAcceptText}>Mark Arrived</Text>
+                        </TouchableOpacity>
+                      ) : (booking.status === 'checked_in' || booking.status === 'started') ? (
+                        <TouchableOpacity
+                          style={[styles.cardAcceptBtn, { backgroundColor: '#16A34A' }]}
+                          onPress={() => {
+                            router.push(`/(dashboard)/bookings/${booking.bookingId.replace('#', '')}` as any);
+                          }}
+                        >
+                          <Text style={styles.cardAcceptText}>Complete Service</Text>
+                        </TouchableOpacity>
+                      ) : (
+                        <TouchableOpacity
+                          style={styles.cardAcceptBtn}
+                          onPress={() => {
+                            router.push(`/(dashboard)/bookings/${booking.bookingId.replace('#', '')}` as any);
+                          }}
+                        >
+                          <Text style={styles.cardAcceptText}>View Details</Text>
+                        </TouchableOpacity>
+                      )}
+                    </View>
                   </TouchableOpacity>
                 );
               })}
@@ -413,44 +569,239 @@ export default function BookingsScreen() {
         )}
       </SafeAreaView>
 
-      {/* Booking Request Popup */}
-      <Modal visible={bookingPopupVisible} animationType="fade" transparent>
-        <View style={styles.popupOverlay}>
-          <View style={styles.bookingPopup}>
-            <TouchableOpacity style={styles.popupCloseBtn} onPress={handleReject}>
-              <Text style={styles.popupCloseX}>×</Text>
-            </TouchableOpacity>
+      {/* Live Booking Request Popup */}
+      <Modal visible={bookingPopupVisible} animationType="slide" transparent={false}>
+        <GradientBackground style={{ flex: 1 }}>
+          <View style={{ flex: 1, paddingTop: insets.top, paddingLeft: insets.left, paddingRight: insets.right }}>
+            {/* Header inside popup modal */}
+            <View style={styles.header}>
+              <TouchableOpacity onPress={() => setBookingPopupVisible(false)} style={styles.backButton}>
+                <BackArrowIcon size={24} color="#0F172A" />
+              </TouchableOpacity>
+              <Text style={styles.headerTitle}>{`${bookings.filter(b => !rejectedIds.includes(b.bookingId) && !acceptedIds.includes(b.bookingId)).length} Bookings`}</Text>
+              <TouchableOpacity style={styles.simulateBtn} onPress={() => {
+                const available = bookings.filter(b => !rejectedIds.includes(b.bookingId) && !acceptedIds.includes(b.bookingId));
+                if (available.length > 0) { setPopupBooking(available[0]); setSidebarView('new'); }
+              }}>
+                <Text style={styles.simulateBtnText}>Simulate</Text>
+              </TouchableOpacity>
+              <View style={[styles.dutyBadge, styles.dutyBadgeOn]}>
+                <View style={[styles.dutyDot, { backgroundColor: '#FFFFFF' }]} />
+                <Text style={[styles.dutyBadgeText, styles.dutyBadgeTextOn]}>ON DUTY</Text>
+              </View>
+            </View>
+        <View style={styles.popupWrapper}>
+          <View style={styles.popupRow}>
+            {/* Left sidebar */}
+            <View style={styles.popupSidebar}>
+              <ScrollView
+                style={{ flex: 1, width: '100%' }}
+                contentContainerStyle={[
+                  styles.popupSidebarContent,
+                  { paddingBottom: insets.bottom + 20 }
+                ]}
+                showsVerticalScrollIndicator={false}
+              >
+                {/* NEW + badge — grouped as a single container */}
+                <TouchableOpacity
+                  style={styles.sidebarTabNewContainer}
+                  onPress={() => {
+                    setSidebarView('new');
+                    const avail = bookings.filter(b => !rejectedIds.includes(b.bookingId) && !acceptedIds.includes(b.bookingId));
+                    setPopupBooking(avail[0] ?? null);
+                  }}
+                >
+                  <Text style={[styles.sidebarTabNewText, sidebarView === 'new' && { color: '#1A0FA3' }]}>NEW</Text>
+                  <View style={styles.sidebarNewBadge}>
+                    <Text style={styles.sidebarNewBadgeText}>
+                      {bookings.filter(b => !rejectedIds.includes(b.bookingId) && !acceptedIds.includes(b.bookingId)).length}
+                    </Text>
+                  </View>
+                </TouchableOpacity>
 
-            <Text style={styles.popupServiceName}>{popupDetails?.serviceName ?? 'Service'}</Text>
+                {/* Price bubbles — always visible */}
+                {bookings.filter(b => !rejectedIds.includes(b.bookingId) && !acceptedIds.includes(b.bookingId)).map((b) => {
+                  const d = getBookingDisplayDetails(b);
+                  const isSelected = b.bookingId === popupBooking?.bookingId;
+                  return (
+                    <TouchableOpacity
+                      key={b.bookingId}
+                      style={[styles.sidebarBubble, isSelected && styles.sidebarBubbleActive]}
+                      onPress={() => {
+                        setPopupBooking(b);
+                        setSidebarView('new');
+                      }}
+                    >
+                      <Text style={[styles.sidebarBubbleText, isSelected && styles.sidebarBubbleTextActive]}>
+                        {d.price}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
 
-            <View style={styles.popupDivider} />
-
-            <Text style={styles.popupSubTitle}>{popupDetails?.customerName}</Text>
-            {(popupDetails?.subServices ?? []).map((item, i) => (
-              <Text key={i} style={styles.popupSubItem}>• {item}</Text>
-            ))}
-
-            <View style={styles.popupDivider} />
-
-            <View style={styles.popupPriceRow}>
-              <Text style={styles.popupPrice}>{popupDetails?.price}</Text>
-              <Text style={styles.popupPaymentStatus}> ({popupDetails?.paymentLabel})</Text>
+                {/* Status icons */}
+                <TouchableOpacity style={styles.sidebarStatusItem} onPress={() => { setSidebarView('accepted'); const acc = bookings.filter(b => acceptedIds.includes(b.bookingId)); setPopupBooking(acc[0] ?? null); }}>
+                  <View style={[styles.sidebarStatusIcon, { borderColor: sidebarView === 'accepted' ? '#22C55E' : '#CBD5E1', backgroundColor: sidebarView === 'accepted' ? '#F0FDF4' : '#FFFFFF' }]}>
+                    <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
+                      <Path d="M20 6L9 17L4 12" stroke="#22C55E" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </Svg>
+                  </View>
+                  <Text style={[styles.sidebarStatusLabel, sidebarView === 'accepted' && { color: '#22C55E', fontWeight: '700' }]}>Accepted</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.sidebarStatusItem} onPress={() => { setSidebarView('rejected'); const rej = bookings.filter(b => rejectedIds.includes(b.bookingId)); setPopupBooking(rej[0] ?? null); }}>
+                  <View style={[styles.sidebarStatusIcon, { borderColor: sidebarView === 'rejected' ? '#EF4444' : '#CBD5E1', backgroundColor: sidebarView === 'rejected' ? '#FEF2F2' : '#FFFFFF' }]}>
+                    <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
+                      <Path d="M18 6L6 18M6 6L18 18" stroke="#EF4444" strokeWidth="2.5" strokeLinecap="round" />
+                    </Svg>
+                  </View>
+                  <Text style={[styles.sidebarStatusLabel, sidebarView === 'rejected' && { color: '#EF4444', fontWeight: '700' }]}>Rejected</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.sidebarStatusItem} onPress={() => { setSidebarView('history'); setPopupBooking(null); }}>
+                  <View style={[styles.sidebarStatusIcon, { borderColor: sidebarView === 'history' ? '#94A3B8' : '#CBD5E1' }]}>
+                    <ClockIcon size={16} color="#94A3B8" />
+                  </View>
+                  <Text style={[styles.sidebarStatusLabel, sidebarView === 'history' && { color: '#475569', fontWeight: '700' }]}>History</Text>
+                </TouchableOpacity>
+              </ScrollView>
             </View>
 
-            <View style={styles.popupDivider} />
+            {/* Right card */}
+            <View style={[
+              styles.popupCard,
+              (sidebarView === 'accepted' || sidebarView === 'rejected' || sidebarView === 'history') && { borderColor: '#E2E8F0' },
+              isSidebarViewEmpty && { flex: 0, flexGrow: 1, alignSelf: 'flex-start' },
+              { marginBottom: insets.bottom + 16 }
+            ]}>
+              {/* Accepted list view */}
+              {sidebarView === 'accepted' && (
+                bookings.filter(b => acceptedIds.includes(b.bookingId)).length === 0 ? (
+                  <View>
+                    <Text style={styles.popupListHeading}>Accepted Bookings</Text>
+                    <Text style={styles.popupEmptyText}>No accepted bookings yet</Text>
+                  </View>
+                ) : (
+                  <ScrollView showsVerticalScrollIndicator={false}>
+                    <Text style={styles.popupListHeading}>Accepted Bookings</Text>
+                    {bookings.filter(b => acceptedIds.includes(b.bookingId)).map(b => {
+                      const d = getBookingDisplayDetails(b);
+                      return (
+                        <TouchableOpacity
+                          key={b.bookingId}
+                          style={styles.popupListItem}
+                          onPress={() => {
+                            router.push(`/(dashboard)/bookings/${b.bookingId.replace('#', '')}` as any);
+                            setTimeout(() => {
+                              setBookingPopupVisible(false);
+                            }, 500);
+                          }}
+                        >
+                          <View style={styles.popupListItemLeft}>
+                            <Text style={styles.popupListItemName}>{d.serviceName}</Text>
+                            <Text style={styles.popupListItemSub}>{d.customerName}</Text>
+                          </View>
+                          <Text style={styles.popupListItemPrice}>{d.price}</Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </ScrollView>
+                )
+              )}
+              {/* Rejected list view */}
+              {sidebarView === 'rejected' && (
+                bookings.filter(b => rejectedIds.includes(b.bookingId)).length === 0 ? (
+                  <View>
+                    <Text style={styles.popupListHeading}>Rejected Bookings</Text>
+                    <Text style={styles.popupEmptyText}>No rejected bookings</Text>
+                  </View>
+                ) : (
+                  <ScrollView showsVerticalScrollIndicator={false}>
+                    <Text style={styles.popupListHeading}>Rejected Bookings</Text>
+                    {bookings.filter(b => rejectedIds.includes(b.bookingId)).map(b => {
+                      const d = getBookingDisplayDetails(b);
+                      return (
+                        <View key={b.bookingId} style={styles.popupListItem}>
+                          <View style={styles.popupListItemLeft}>
+                            <Text style={styles.popupListItemName}>{d.serviceName}</Text>
+                            <Text style={styles.popupListItemSub}>{d.customerName}</Text>
+                          </View>
+                          <Text style={[styles.popupListItemPrice, { color: '#EF4444' }]}>{d.price}</Text>
+                        </View>
+                      );
+                    })}
+                  </ScrollView>
+                )
+              )}
+              {/* History view */}
+              {sidebarView === 'history' && (
+                <View style={{ alignItems: 'center', paddingTop: 20 }}>
+                  <Text style={styles.popupListHeading}>History</Text>
+                  <Text style={styles.popupEmptyText}>No history available</Text>
+                </View>
+              )}
+              {/* New booking card */}
+              {sidebarView === 'new' && (!popupDetails ? null : <>
+              {/* Service Header */}
+              <View style={styles.cardHeader}>
+                <View style={[styles.serviceIconContainer, { backgroundColor: popupDetails.iconBg }]}>
+                  {popupDetails.serviceIcon}
+                </View>
+                <View style={styles.serviceTextCol}>
+                  <Text style={styles.serviceName}>{popupDetails.serviceName}</Text>
+                  <Text style={styles.idText}>ID: {popupBooking?.bookingId}</Text>
+                </View>
+                <View style={styles.distanceBadge}>
+                  <LocationIcon size={12} color="#3B82F6" />
+                  <Text style={styles.distanceText}>Distance: {((popupBooking?.serviceRadius ?? 0)).toFixed(1)}KM</Text>
+                </View>
+              </View>
 
-            <View style={styles.popupActionsRow}>
-              <View style={styles.popupBtnGroup}>
+              <View style={styles.divider} />
+
+              {/* Customer Info */}
+              <View style={styles.infoRow}>
+                <UserIcon size={16} color="#64748B" />
+                <Text style={styles.infoText}>{popupDetails.customerName}</Text>
+              </View>
+
+              {/* Location Address */}
+              <View style={styles.infoRowAlignTop}>
+                <LocationIcon size={16} color="#64748B" />
+                <Text style={styles.addressText}>{popupBooking?.location}</Text>
+              </View>
+
+              {/* Schedule and Payment Banner */}
+              <View style={styles.bottomBanner}>
+                <View>
+                  <Text style={styles.bannerLabel}>Schedule</Text>
+                  <Text style={styles.bannerValueDate}>{popupDetails.dateStr}</Text>
+                  <Text style={styles.bannerValueTime}>{popupDetails.timeStr}</Text>
+                </View>
+                <View style={styles.alignRight}>
+                  <Text style={styles.bannerLabel}>Payment</Text>
+                  <Text style={styles.bannerValuePrice}>{popupDetails.price}</Text>
+                  <Text style={[styles.paymentStatusText, { color: popupDetails.paymentColor }]}>
+                    {popupDetails.paymentLabel}
+                  </Text>
+                </View>
+              </View>
+
+              {/* Actions */}
+              <View style={[styles.popupActionsRow, { marginTop: 16 }]}>
                 <TouchableOpacity style={styles.popupRejectBtn} onPress={handleReject}>
-                  <Text style={styles.popupRejectText}>−</Text>
+                  <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
+                    <Path d="M5 12H19" stroke="#EF4444" strokeWidth="2.5" strokeLinecap="round" />
+                  </Svg>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.popupAcceptBtn} onPress={handleAccept}>
                   <Text style={styles.popupAcceptText}>Accept</Text>
                 </TouchableOpacity>
               </View>
+              </>)}
             </View>
           </View>
         </View>
+          </View>
+        </GradientBackground>
       </Modal>
 
       {/* Filter Modal */}
@@ -533,6 +884,8 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingTop: 16, paddingBottom: 12 },
   backButton: { marginRight: 12 },
   headerTitle: { flex: 1, fontSize: 16, fontWeight: '700', color: '#0F172A' },
+  simulateBtn: { borderWidth: 1.5, borderColor: 'rgba(26,15,163,1)', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 6, marginRight: 8 },
+  simulateBtnText: { fontSize: 12, fontWeight: '700', color: 'rgba(26,15,163,1)' },
   dutyBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, gap: 6 },
   dutyBadgeOn: { backgroundColor: '#22C55E' },
   dutyBadgeOff: { backgroundColor: '#F1F5F9', borderWidth: 1, borderColor: '#E2E8F0' },
@@ -596,28 +949,119 @@ const styles = StyleSheet.create({
   alignRight: { alignItems: 'flex-end' },
   bannerValuePrice: { fontSize: 16, fontWeight: '800', color: 'rgba(26, 15, 163, 1.00)', marginBottom: 2 },
   paymentStatusText: { fontSize: 9, fontWeight: '800' },
-  viewBtn: { marginTop: 12, backgroundColor: 'rgba(26, 15, 163, 1.00)', borderRadius: 12, paddingVertical: 12, alignItems: 'center', justifyContent: 'center' },
-  viewBtnText: { color: '#FFFFFF', fontSize: 13, fontWeight: '700' },
+  cardActionsRow: { flexDirection: 'row', alignItems: 'center', marginTop: 12, gap: 12 },
+  cardRejectBtn: { width: 48, height: 48, borderRadius: 24, borderWidth: 2, borderColor: '#EF4444', justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFFFFF' },
+  cardAcceptBtn: { flex: 1, height: 48, backgroundColor: 'rgba(26, 15, 163, 1.00)', borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+  cardAcceptText: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' },
 
-  // Booking popup
-  popupOverlay: { flex: 1, backgroundColor: 'rgba(15, 23, 42, 0.5)', justifyContent: 'center', alignItems: 'center' },
-  bookingPopup: { width: '88%', backgroundColor: '#FFFFFF', borderRadius: 20, padding: 20 },
-  popupCloseBtn: { position: 'absolute', top: 12, right: 16, zIndex: 10 },
-  popupCloseX: { fontSize: 26, color: '#94A3B8', lineHeight: 28 },
-  popupServiceName: { fontSize: 18, fontWeight: '700', color: '#0F172A', marginBottom: 4, marginTop: 4, paddingRight: 24 },
-  popupDivider: { height: 1, backgroundColor: '#F1F5F9', marginVertical: 12 },
-  popupSubTitle: { fontSize: 14, fontWeight: '600', color: '#0F172A', marginBottom: 6 },
-  popupSubItem: { fontSize: 13, color: '#334155', marginBottom: 4, paddingLeft: 4 },
-  popupPriceRow: { flexDirection: 'row', alignItems: 'center' },
-  popupPrice: { fontSize: 22, fontWeight: '800', color: '#22C55E' },
-  popupPaymentStatus: { fontSize: 14, color: '#64748B', fontWeight: '500' },
-  popupActionsRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 },
-  popupDotIndicator: { width: 12, height: 12, borderRadius: 6, backgroundColor: '#EF4444' },
-  popupBtnGroup: { flexDirection: 'row', gap: 12, alignItems: 'center' },
-  popupRejectBtn: { width: 44, height: 44, borderRadius: 22, borderWidth: 1.5, borderColor: '#E2E8F0', justifyContent: 'center', alignItems: 'center', backgroundColor: '#F8FAFC' },
-  popupRejectText: { fontSize: 22, color: '#64748B', lineHeight: 26 },
-  popupAcceptBtn: { backgroundColor: 'rgba(26, 15, 163, 1.00)', borderRadius: 24, paddingHorizontal: 32, paddingVertical: 12 },
-  popupAcceptText: { fontSize: 15, fontWeight: '700', color: '#FFFFFF' },
+  popupWrapper: {
+    flex: 1,
+    justifyContent: 'flex-start',
+    paddingTop: 20,
+  },
+  popupRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    flex: 1,
+  },
+
+  // Sidebar
+  popupSidebar: {
+    width: 88,
+    backgroundColor: 'rgba(219, 234, 254, 0.5)',
+    alignSelf: 'stretch',
+    borderRightWidth: 1,
+    borderRightColor: '#E2E8F0',
+  },
+  popupSidebarContent: {
+    alignItems: 'center',
+    paddingTop: 14,
+    gap: 28,
+  },
+  sidebarTabNewContainer: {
+    alignItems: 'center',
+    gap: 4,
+  },
+  sidebarTabNewText: { fontSize: 11, fontWeight: '800', color: '#475569', letterSpacing: 1 },
+  sidebarNewBadge: {
+    width: 38, height: 38, borderRadius: 19,
+    backgroundColor: '#EF4444', justifyContent: 'center', alignItems: 'center',
+  },
+  sidebarNewBadgeText: { color: '#FFFFFF', fontSize: 15, fontWeight: '800' },
+  sidebarBubble: {
+    width: 64, height: 64, borderRadius: 32,
+    backgroundColor: '#FFFFFF', justifyContent: 'center', alignItems: 'center',
+    borderWidth: 2, borderColor: '#E2E8F0',
+  },
+  sidebarBubbleActive: { borderColor: '#22C55E', borderWidth: 2.5 },
+  sidebarBubbleText: { fontSize: 12, fontWeight: '700', color: '#334155' },
+  sidebarBubbleTextActive: { color: '#1A0FA3' },
+  sidebarStatusItem: { alignItems: 'center', gap: 3 },
+  sidebarStatusIcon: {
+    width: 42, height: 42, borderRadius: 21,
+    borderWidth: 2, justifyContent: 'center', alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+  },
+  sidebarStatusLabel: { fontSize: 10, color: '#475569', fontWeight: '600' },
+
+  // Main card
+  popupCard: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    padding: 18,
+    borderWidth: 2.5,
+    borderColor: '#22C55E',
+    marginLeft: 12,
+    marginRight: 12,
+    marginBottom: 20,
+  },
+  popupGoToRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+    backgroundColor: '#F1F5F9', alignSelf: 'flex-start',
+    paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, marginBottom: 14,
+  },
+  popupGoToText: { fontSize: 13, fontWeight: '700', color: '#475569' },
+  popupServiceRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
+  popupVehicleIcon: {},
+  popupServiceLabel: { flex: 1, fontSize: 16, fontWeight: '700', color: '#0F172A' },
+  popupDistanceBadge: { backgroundColor: '#EFF6FF', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20 },
+  popupDistanceText: { fontSize: 11, fontWeight: '700', color: '#3B82F6' },
+  popupPriceRow: { flexDirection: 'row', alignItems: 'baseline', marginBottom: 14 },
+  popupPriceMain: { fontSize: 26, fontWeight: '800', color: '#1A0FA3' },
+  popupPricePlus: { fontSize: 20, fontWeight: '700', color: '#1A0FA3' },
+  popupPriceExtra: { fontSize: 22, fontWeight: '800', color: '#22C55E' },
+  popupCardDivider: { height: 1, backgroundColor: '#F1F5F9', marginVertical: 10 },
+  popupRouteRow: { flexDirection: 'row', gap: 12, marginBottom: 16 },
+  popupRouteLine: { width: 18, alignItems: 'center', paddingTop: 3 },
+  popupDotBlue: { width: 12, height: 12, borderRadius: 6, backgroundColor: '#334155' },
+  popupRouteDash: { width: 2, height: 44, backgroundColor: '#CBD5E1', marginVertical: 2 },
+  popupDotRed: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#EF4444' },
+  popupRouteDetails: { flex: 1 },
+  popupRouteStop: {},
+  popupRouteKm: { fontSize: 13, fontWeight: '700', color: '#1A0FA3', marginBottom: 2 },
+  popupRouteAddr: { fontSize: 12, color: '#475569', lineHeight: 18 },
+  popupActionsRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  popupRejectBtn: {
+    width: 54, height: 54, borderRadius: 27,
+    borderWidth: 2, borderColor: '#EF4444',
+    justifyContent: 'center', alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+  },
+  popupAcceptBtn: {
+    flex: 1, height: 54,
+    backgroundColor: 'rgba(26, 15, 163, 1.00)',
+    borderRadius: 14,
+    justifyContent: 'center', alignItems: 'center',
+  },
+  popupAcceptText: { fontSize: 16, fontWeight: '700', color: '#FFFFFF' },
+  popupListHeading: { fontSize: 13, fontWeight: '800', color: '#0F172A', marginBottom: 12 },
+  popupEmptyText: { fontSize: 12, color: '#94A3B8', textAlign: 'center', marginTop: 8 },
+  popupListItem: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
+  popupListItemLeft: { flex: 1 },
+  popupListItemName: { fontSize: 13, fontWeight: '700', color: '#0F172A' },
+  popupListItemSub: { fontSize: 11, color: '#64748B', marginTop: 2 },
+  popupListItemPrice: { fontSize: 14, fontWeight: '800', color: '#1A0FA3' },
 
   // Filter modal
   modalOverlay: { flex: 1, backgroundColor: 'rgba(15, 23, 42, 0.4)', justifyContent: 'flex-end' },

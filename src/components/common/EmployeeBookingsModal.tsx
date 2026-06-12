@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, ScrollView, Platform, Pressable, Keyboard } from 'react-native';
 import { Employee } from '@/types';
-import { CloseIcon, RightArrowIcon, ChevronDownIcon, DownloadExcelIcon, EnvelopeIcon, HeadphoneIcon, ReceiptIcon } from '@/components/ui/Icons';
+import { CloseIcon, RightArrowIcon, ChevronDownIcon, EnvelopeIcon, HeadphoneIcon, ReceiptIcon } from '@/components/ui/Icons';
 import { Button } from '@/components/ui/Button';
 
 interface EmployeeBookingsModalProps {
@@ -16,14 +16,37 @@ const DUMMY_ORDERS = [
   { id: '2', title: 'Jar gas filling', date: 'Oct 15, 2023', status: 'Completed', amount: '₹500' },
   { id: '3', title: 'Ac pump Change', date: 'Oct 12, 2023', status: 'Completed', amount: '₹300' },
   { id: '4', title: 'Jar Air Filter Change', date: 'Oct 12, 2023', status: 'Completed', amount: '₹300' },
+  { id: '5', title: 'Plumbing Repair', date: 'Oct 10, 2023', status: 'Cancelled', amount: '₹450' },
+  { id: '6', title: 'Electrical Wiring', date: 'Oct 09, 2023', status: 'Cancelled', amount: '₹800' },
+  { id: '7', title: 'Water Heater Fix', date: 'Oct 08, 2023', status: 'Missed', amount: '₹650' },
+  { id: '8', title: 'Fan Installation', date: 'Oct 07, 2023', status: 'Missed', amount: '₹200' },
 ];
 
 export function EmployeeBookingsModal({ visible, onClose, employee }: EmployeeBookingsModalProps) {
-  const [viewMode, setViewMode] = useState<'list' | 'details'>('list');
+  const [viewMode, setViewMode] = useState<'list' | 'allOrders' | 'details'>('list');
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   
   const [timeFilter, setTimeFilter] = useState<'Day' | 'Week' | 'Month'>('Day');
   const [statusFilter, setStatusFilter] = useState<'Completed' | 'Cancelled' | 'Missed'>('Completed');
+  const [selectedDateIndex, setSelectedDateIndex] = useState(2); // Wed 08 as default
+
+  const CALENDAR_DAYS = [
+    { label: 'Mon', num: '06' },
+    { label: 'Tue', num: '07' },
+    { label: 'Wed', num: '08' },
+    { label: 'Thu', num: '09' },
+    { label: 'Fri', num: '10' },
+    { label: 'Sat', num: '11' },
+    { label: 'Sun', num: '12' },
+  ];
+
+  const visibleDays = useMemo(() => {
+    const start = Math.max(0, selectedDateIndex - 1);
+    return CALENDAR_DAYS.slice(start, start + 3);
+  }, [selectedDateIndex]);
+
+  const goBack = () => setSelectedDateIndex(prev => Math.max(0, prev - 1));
+  const goNext = () => setSelectedDateIndex(prev => Math.min(CALENDAR_DAYS.length - 1, prev + 1));
 
   const handleClose = () => {
     setViewMode('list');
@@ -36,16 +59,21 @@ export function EmployeeBookingsModal({ visible, onClose, employee }: EmployeeBo
     setViewMode('details');
   };
 
+  const allOrdersFiltered = useMemo(() => {
+    return DUMMY_ORDERS.filter(o => o.status === statusFilter);
+  }, [statusFilter]);
+
   const renderList = () => (
     <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
       
       {/* Time Toggle */}
       <View style={styles.timeToggleContainer}>
-        {['Day', 'Week', 'Month'].map(tab => (
-          <TouchableOpacity 
-            key={tab} 
+        {(['Day', 'Week', 'Month'] as const).map(tab => (
+          <TouchableOpacity
+            key={tab}
+            activeOpacity={1}
             style={[styles.timeToggleTab, timeFilter === tab && styles.timeToggleActive]}
-            onPress={() => setTimeFilter(tab as any)}
+            onPress={() => setTimeFilter(tab)}
           >
             <Text style={[styles.timeToggleText, timeFilter === tab && styles.timeToggleActiveText]}>{tab}</Text>
           </TouchableOpacity>
@@ -54,11 +82,25 @@ export function EmployeeBookingsModal({ visible, onClose, employee }: EmployeeBo
 
       {/* Date Carousel */}
       <View style={styles.dateCarousel}>
-        <TouchableOpacity style={styles.arrowBtn}><Text style={styles.arrowText}>←</Text></TouchableOpacity>
-        <View style={styles.dateItem}><Text style={styles.dateItemText}>Mon{'\n'}06</Text></View>
-        <View style={styles.dateItem}><Text style={styles.dateItemText}>Tue{'\n'}07</Text></View>
-        <View style={[styles.dateItem, styles.dateItemActive]}><Text style={styles.dateItemActiveText}>Wed{'\n'}08</Text></View>
-        <TouchableOpacity style={styles.arrowBtn}><Text style={styles.arrowText}>→</Text></TouchableOpacity>
+        <TouchableOpacity activeOpacity={0.7} style={[styles.arrowBtn, selectedDateIndex === 0 && styles.arrowBtnDisabled]} onPress={goBack}>
+          <Text style={styles.arrowText}>←</Text>
+        </TouchableOpacity>
+        {visibleDays.map((day) => {
+          const isActive = CALENDAR_DAYS[selectedDateIndex].num === day.num;
+          return (
+            <TouchableOpacity
+              key={day.num}
+              activeOpacity={0.8}
+              style={[styles.dateItem, isActive && styles.dateItemActive]}
+              onPress={() => setSelectedDateIndex(CALENDAR_DAYS.findIndex(d => d.num === day.num))}
+            >
+              <Text style={isActive ? styles.dateItemActiveText : styles.dateItemText}>{day.label}{'\n'}{day.num}</Text>
+            </TouchableOpacity>
+          );
+        })}
+        <TouchableOpacity activeOpacity={0.7} style={[styles.arrowBtn, selectedDateIndex === CALENDAR_DAYS.length - 1 && styles.arrowBtnDisabled]} onPress={goNext}>
+          <Text style={styles.arrowText}>→</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Stats */}
@@ -75,7 +117,7 @@ export function EmployeeBookingsModal({ visible, onClose, employee }: EmployeeBo
       </View>
 
       {/* Action Links */}
-      <TouchableOpacity style={styles.actionLink}>
+      <TouchableOpacity style={styles.actionLink} onPress={() => setViewMode('allOrders')}>
         <View style={styles.actionLinkIconBox}><ReceiptIcon size={16} color="#3B82F6" /></View>
         <View style={{ flex: 1, marginLeft: 12 }}>
           <Text style={styles.actionLinkTitle}>All Orders</Text>
@@ -95,19 +137,16 @@ export function EmployeeBookingsModal({ visible, onClose, employee }: EmployeeBo
       {/* Order History Header */}
       <View style={styles.historyHeader}>
         <Text style={styles.historyTitle}>Order History</Text>
-        <TouchableOpacity style={styles.excelBtn}>
-          <DownloadExcelIcon size={14} color="#3B82F6" />
-          <Text style={styles.excelBtnText}>Excel</Text>
-        </TouchableOpacity>
       </View>
 
       {/* Status Tabs */}
       <View style={styles.statusTabsRow}>
-        {['Completed', 'Cancelled', 'Missed'].map(tab => (
-          <TouchableOpacity 
-            key={tab} 
+        {(['Completed', 'Cancelled', 'Missed'] as const).map(tab => (
+          <TouchableOpacity
+            key={tab}
+            activeOpacity={1}
             style={[styles.statusTab, statusFilter === tab && styles.statusTabActive]}
-            onPress={() => setStatusFilter(tab as any)}
+            onPress={() => setStatusFilter(tab)}
           >
             <Text style={[styles.statusTabText, statusFilter === tab && styles.statusTabActiveText]}>{tab}</Text>
           </TouchableOpacity>
@@ -116,14 +155,18 @@ export function EmployeeBookingsModal({ visible, onClose, employee }: EmployeeBo
 
       {/* Orders List */}
       <View style={styles.ordersList}>
-        {DUMMY_ORDERS.map(order => (
+        {DUMMY_ORDERS.filter(o => o.status === statusFilter).map(order => (
           <View key={order.id} style={styles.orderCard}>
             <View style={{ flex: 1 }}>
               <Text style={styles.orderTitle}>{order.title}</Text>
               <View style={styles.orderMeta}>
                 <Text style={styles.orderDate}>{order.date}</Text>
                 <Text style={styles.orderDot}> • </Text>
-                <Text style={styles.orderStatusCompleted}>{order.status}</Text>
+                <Text style={[
+                  styles.orderStatusCompleted,
+                  order.status === 'Cancelled' && { color: '#EF4444' },
+                  order.status === 'Missed' && { color: '#F59E0B' },
+                ]}>{order.status}</Text>
               </View>
             </View>
             <Text style={styles.orderAmount}>{order.amount}</Text>
@@ -136,12 +179,45 @@ export function EmployeeBookingsModal({ visible, onClose, employee }: EmployeeBo
     </ScrollView>
   );
 
+  const renderAllOrders = () => (
+    <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+      {/* Back Button */}
+      <TouchableOpacity onPress={() => setViewMode('list')} style={styles.detailsBackBtn}>
+        <Text style={styles.detailsBackText}>← Back</Text>
+      </TouchableOpacity>
+
+      {/* Orders */}
+      <View style={styles.ordersList}>
+        {DUMMY_ORDERS.map(order => (
+          <View key={order.id} style={styles.orderCard}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.orderTitle}>{order.title}</Text>
+              <View style={styles.orderMeta}>
+                <Text style={styles.orderDate}>{order.date}</Text>
+                <Text style={styles.orderDot}> • </Text>
+                <Text style={[
+                  styles.orderStatusCompleted,
+                  order.status === 'Cancelled' && { color: '#EF4444' },
+                  order.status === 'Missed' && { color: '#F59E0B' },
+                ]}>{order.status}</Text>
+              </View>
+            </View>
+            <Text style={styles.orderAmount}>{order.amount}</Text>
+            <TouchableOpacity style={styles.viewBtn} onPress={() => handleViewOrder({ ...order, _fromAllOrders: true })}>
+              <Text style={styles.viewBtnText}>View</Text>
+            </TouchableOpacity>
+          </View>
+        ))}
+      </View>
+    </ScrollView>
+  );
+
   const renderDetails = () => (
     <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
       
       {/* Back Button inside modal */}
-      <TouchableOpacity onPress={() => setViewMode('list')} style={styles.detailsBackBtn}>
-        <Text style={styles.detailsBackText}>← Back to List</Text>
+      <TouchableOpacity onPress={() => setViewMode(selectedOrder?._fromAllOrders ? 'allOrders' : 'list')} style={styles.detailsBackBtn}>
+        <Text style={styles.detailsBackText}>← Back</Text>
       </TouchableOpacity>
 
       <View style={styles.addressCard}>
@@ -247,11 +323,11 @@ export function EmployeeBookingsModal({ visible, onClose, employee }: EmployeeBo
             
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>
-                {viewMode === 'list' ? 'Order History & Earnings' : 'Order Details'}
+                {viewMode === 'list' ? 'Order History & Earnings' : viewMode === 'allOrders' ? 'All Orders' : 'Order Details'}
               </Text>
             </View>
 
-            {viewMode === 'list' ? renderList() : renderDetails()}
+            {viewMode === 'list' ? renderList() : viewMode === 'allOrders' ? renderAllOrders() : renderDetails()}
             
           </View>
         </View>
@@ -312,6 +388,7 @@ const styles = StyleSheet.create({
 
   dateCarousel: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 },
   arrowBtn: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#EEF2FF', justifyContent: 'center', alignItems: 'center' },
+  arrowBtnDisabled: { opacity: 0.3 },
   arrowText: { color: '#3B82F6', fontWeight: 'bold' },
   dateItem: { paddingVertical: 8, paddingHorizontal: 16, backgroundColor: '#F1F5F9', borderRadius: 16, alignItems: 'center' },
   dateItemActive: { backgroundColor: 'rgba(26, 15, 163, 1.00)' },
@@ -338,10 +415,11 @@ const styles = StyleSheet.create({
 
   statusTabsRow: { flexDirection: 'row', gap: 8, marginBottom: 16 },
   statusTab: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: '#F1F5F9' },
-  statusTabActive: { backgroundColor: '#DBEAFE' },
+  statusTabActive: { backgroundColor: 'rgba(26, 15, 163, 1.00)' },
   statusTabText: { fontSize: 12, color: '#64748B', fontWeight: '500' },
-  statusTabActiveText: { color: '#1E3A8A', fontWeight: '700' },
+  statusTabActiveText: { color: '#FFFFFF', fontWeight: '700' },
 
+  emptyOrders: { textAlign: 'center', color: '#94A3B8', fontSize: 13, marginTop: 40 },
   ordersList: { gap: 12 },
   orderCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#F1F5F9' },
   orderTitle: { fontSize: 13, fontWeight: '700', color: '#0F172A', marginBottom: 4 },

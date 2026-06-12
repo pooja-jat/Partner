@@ -7,6 +7,7 @@ import { useDocStore } from '@/store/docStore';
 import { useFlowStore } from '@/store/flowStore';
 import { useServicesStore } from '@/store/servicesStore';
 import { useEmployeeStore } from '@/store/employeeStore';
+import { useServiceAreaStore } from '@/store/serviceAreaStore';
 import { useAndroidBack } from '@/hooks/useAndroidBack';
 import { StorageService } from '@/services/storage.service';
 import { UserSession } from '@/types/storage.types';
@@ -18,7 +19,8 @@ export default function IndexScreen() {
   const { initialize: initFlow } = useFlowStore();
   const { initialize: initEmployees } = useEmployeeStore();
   const { loadServices } = useServicesStore();
-  
+  const { loadAreas } = useServiceAreaStore();
+
   const [isInitialized, setIsInitialized] = useState(false);
   const [session, setSession] = useState<UserSession | null>(null);
 
@@ -26,10 +28,12 @@ export default function IndexScreen() {
     const init = async () => {
       // Still init existing stores for backwards compatibility if they are used elsewhere
       await Promise.all([
-        initAuth(), 
+        initAuth(),
         initDocs(),
         initFlow(),
         initEmployees(),
+        loadServices(),
+        loadAreas(),
         new Promise(resolve => setTimeout(resolve, 2500))
       ]);
       

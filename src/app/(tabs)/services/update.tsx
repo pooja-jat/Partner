@@ -80,7 +80,7 @@ export default function UpdateServicesModal() {
                     <View style={styles.experienceWrapper}>
                       <Text style={styles.expLabel}>Total Years of Experience</Text>
                       <Input 
-                        placeholder="e.g. 5" 
+                        placeholder="Enter years"
                         value={sub.yearsOfExperience} 
                         onChangeText={(t) => updateExperience(sub.id, t)} 
                         keyboardType="numeric" 

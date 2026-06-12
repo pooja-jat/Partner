@@ -293,7 +293,7 @@ const styles = StyleSheet.create({
     borderBottomColor: 'transparent',
   },
   activeTabItem: {
-    borderBottomColor: '#4F46E5',
+    borderBottomColor: 'rgba(26, 15, 163, 1.00)',
     backgroundColor: '#F8FAFC'
   },
   tabText: {
@@ -302,7 +302,7 @@ const styles = StyleSheet.create({
     color: '#64748B',
   },
   activeTabText: {
-    color: '#4F46E5',
+    color: 'rgba(26, 15, 163, 1.00)',
   },
 
   content: { padding: 20, gap: 16 },
@@ -351,7 +351,7 @@ const styles = StyleSheet.create({
   actionBtnRow: { flexDirection: 'row', gap: 12 },
   rejectBtn: { flex: 1, height: 44, borderWidth: 1, borderColor: '#CBD5E1', borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
   rejectBtnText: { color: '#64748B', fontSize: 13, fontWeight: '700' },
-  acceptBtn: { flex: 1.5, height: 44, backgroundColor: '#4F46E5', borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+  acceptBtn: { flex: 1.5, height: 44, backgroundColor: 'rgba(26, 15, 163, 1.00)', borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
   acceptBtnText: { color: '#FFFFFF', fontSize: 13, fontWeight: '700' },
 
   emptyText: { textAlign: 'center', color: '#64748B', marginTop: 40, fontSize: 13 }

@@ -128,23 +128,40 @@ export default function BookingHistoryScreen() {
               <Text style={styles.emptyText}>No {historyTab} bookings</Text>
             </View>
           ) : (
-            filtered.map(b => {
-              const col = STATUS_COLOR[b.status as HistoryTab];
-              return (
-                <View key={b.id} style={styles.card}>
-                  <View style={styles.cardLeft}>
-                    <Text style={styles.cardService}>{b.service}</Text>
-                    <Text style={styles.cardDate}>{b.date}</Text>
-                  </View>
-                  <View style={styles.cardRight}>
-                    <Text style={styles.cardAmount}>{b.amount}</Text>
-                    <View style={[styles.statusBadge, { backgroundColor: col.bg }]}>
-                      <Text style={[styles.statusText, { color: col.text }]}>{b.status}</Text>
+            <View style={styles.card}>
+              {filtered.map((b, idx) => {
+                const col = STATUS_COLOR[b.status as HistoryTab];
+                return (
+                  <View key={b.id}>
+                    {idx > 0 && <View style={styles.itemDivider} />}
+                    {/* Top: booking ID + service name + date */}
+                    <View style={styles.cardTop}>
+                      <Text style={styles.cardId}>{b.id}</Text>
+                      <Text style={styles.cardService}>{b.service}</Text>
+                      <Text style={styles.cardDate}>{b.date}</Text>
+                    </View>
+
+                    <View style={styles.cardDivider} />
+
+                    {/* Bottom: amount + status + view button */}
+                    <View style={styles.cardBottom}>
+                      <Text style={styles.cardAmount}>{b.amount}</Text>
+                      <View style={styles.cardBottomRight}>
+                        <View style={[styles.statusBadge, { backgroundColor: col.bg }]}>
+                          <Text style={[styles.statusText, { color: col.text }]}>{b.status}</Text>
+                        </View>
+                        <TouchableOpacity
+                          style={styles.viewBtn}
+                          onPress={() => router.push(`/(dashboard)/bookings/${b.id}` as any)}
+                        >
+                          <Text style={styles.viewBtnText}>View</Text>
+                        </TouchableOpacity>
+                      </View>
                     </View>
                   </View>
-                </View>
-              );
-            })
+                );
+              })}
+            </View>
           )}
 
         </ScrollView>
@@ -182,20 +199,37 @@ const styles = StyleSheet.create({
   tabTextActive: { color: '#FFFFFF' },
 
   card: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    backgroundColor: '#FFFFFF', borderRadius: 14, padding: 14, marginBottom: 10,
-    borderWidth: 1, borderColor: '#F1F5F9', elevation: 1,
+    backgroundColor: '#FFFFFF', borderRadius: 20, marginBottom: 12,
+    borderWidth: 1, borderColor: '#F1F5F9', elevation: 2, overflow: 'hidden',
   },
-  cardLeft:    { flex: 1 },
-  cardService: { fontSize: 13, fontWeight: '600', color: '#0F172A', marginBottom: 4 },
-  cardDate:    { fontSize: 11, color: '#94A3B8' },
-  cardRight:   { alignItems: 'flex-end', gap: 6 },
-  cardAmount:  { fontSize: 14, fontWeight: '700', color: PRIMARY },
-  statusBadge: { paddingHorizontal: 10, paddingVertical: 3, borderRadius: 20 },
+  itemDivider: { height: 8, backgroundColor: '#F1F5F9' },
+  cardTop:     { padding: 16, paddingBottom: 14 },
+  cardId:      { fontSize: 10, fontWeight: '700', color: '#94A3B8', letterSpacing: 0.5, marginBottom: 4 },
+  cardService: { fontSize: 14, fontWeight: '700', color: '#0F172A', marginBottom: 4 },
+  cardDate:    { fontSize: 11, color: '#94A3B8', fontWeight: '500' },
+  cardDivider: { height: 1, backgroundColor: '#F1F5F9' },
+  cardBottom:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 14 },
+  cardAmount:  { fontSize: 16, fontWeight: '800', color: PRIMARY },
+  cardBottomRight: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
   statusText:  { fontSize: 10, fontWeight: '700' },
 
   emptyBox:  { paddingVertical: 40, alignItems: 'center' },
   emptyText: { fontSize: 13, color: '#94A3B8' },
+
+  viewBtn: {
+    backgroundColor: PRIMARY,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 7,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  viewBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
 });
 
 const dd = StyleSheet.create({

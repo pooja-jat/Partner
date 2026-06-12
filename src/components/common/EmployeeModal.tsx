@@ -35,9 +35,10 @@ export function EmployeeModal({ visible, onClose, mode, initialData, onSubmit }:
             </TouchableOpacity>
             
             <View style={styles.formContainer}>
-              <EmployeeForm 
+              <EmployeeForm
                 mode={mode}
                 initialData={initialData}
+                visible={visible}
                 onSubmit={(data) => {
                   onSubmit(data);
                   onClose();

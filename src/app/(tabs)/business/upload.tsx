@@ -8,7 +8,16 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Alert,
+  Modal,
 } from "react-native";
+import Svg, { Path, Circle } from "react-native-svg";
+
+const SuccessIcon = () => (
+  <Svg width={56} height={56} viewBox="0 0 24 24" fill="none">
+    <Circle cx="12" cy="12" r="10" fill="#DCFCE7" />
+    <Path d="M8 12l3 3 5-5" stroke="#22C55E" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+);
 import * as ImagePicker from "expo-image-picker";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useSafeRouter } from "@/hooks/useSafeRouter";
@@ -27,7 +36,7 @@ import { useAndroidBack } from "@/hooks/useAndroidBack";
 import { StorageService } from "@/services/storage.service";
 import { SelectOptionsModal } from "@/components/common/SelectOptionsModal";
 import { RoleAccessGuard } from "@/components/common/RoleAccessGuard";
-import { completeStepAndNavigate } from "@/utils/onboarding";
+
 
 const BIZ_DOCUMENT_TYPES = [
   { label: "Business License", value: "Business License" },
@@ -71,6 +80,7 @@ export default function BusinessVerificationUpload() {
   const [docModalVisible, setDocModalVisible] = useState(false);
   const [uploadedFront, setUploadedFront] = useState<string | null>(null);
   const [uploadedBack, setUploadedBack] = useState<string | null>(null);
+  const [showSuccess, setShowSuccess] = useState(false);
 
   const handleDocumentImagePick = async (side: "front" | "back") => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -93,18 +103,14 @@ export default function BusinessVerificationUpload() {
   };
 
   const handleSubmit = async () => {
-    if (isApproved) {
-      updateDocStatus("businessVerification", "Pending");
-      router.back();
-    } else {
-      // Update store state to simulate submission
-      updateDocStatus("businessVerification", "Pending");
-      await completeStepAndNavigate(
-        "businessDocumentUpload",
-        router,
-        "reviewing",
-      );
-    }
+    updateDocStatus("businessVerification", "Pending");
+    setShowSuccess(true);
+  };
+
+  const handleSuccessDone = async () => {
+    setShowSuccess(false);
+    await StorageService.updateMandatoryFlowStep("businessDocumentUpload", "reviewing");
+    router.replace("/(tabs)" as any);
   };
 
   return (
@@ -222,6 +228,23 @@ export default function BusinessVerificationUpload() {
               options={BIZ_DOCUMENT_TYPES}
               onSelect={(value) => setDocType(value)}
             />
+
+            {/* Success Modal */}
+            <Modal visible={showSuccess} transparent animationType="fade">
+              <View style={styles.modalOverlay}>
+                <View style={styles.modalCard}>
+                  <SuccessIcon />
+                  <Text style={styles.modalTitle}>Documents Submitted!</Text>
+                  <Text style={styles.modalDesc}>
+                    Your business documents have been submitted successfully. Our team will verify them shortly.
+                  </Text>
+                  <TouchableOpacity style={styles.modalBtn} onPress={handleSuccessDone} activeOpacity={0.85}>
+                    <Text style={styles.modalBtnText}>Done</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </Modal>
+
           </KeyboardAvoidingView>
         </SafeAreaView>
       </GradientBackground>
@@ -319,5 +342,50 @@ const styles = StyleSheet.create({
   },
   submitBtn: {
     marginTop: 12,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 32,
+  },
+  modalCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: 28,
+    alignItems: 'center',
+    width: '100%',
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#0F172A',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  modalDesc: {
+    fontSize: 13,
+    color: '#64748B',
+    textAlign: 'center',
+    lineHeight: 19,
+    marginBottom: 24,
+  },
+  modalBtn: {
+    backgroundColor: '#1A0FA3',
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 48,
+    alignItems: 'center',
+  },
+  modalBtnText: {
+    color: '#FFFFFF',
+    fontSize: 15,
+    fontWeight: '700',
   },
 });

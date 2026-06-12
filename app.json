@@ -51,6 +51,13 @@
           "photosPermission": "Allow $(PRODUCT_NAME) to access your gallery for document upload.",
           "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera for selfie and video KYC."
         }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location to set your service area.",
+          "locationWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location to set your service area."
+        }
       ]
     ],
     "experiments": {

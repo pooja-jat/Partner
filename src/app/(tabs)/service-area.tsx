@@ -9,6 +9,8 @@ import { DefineOperationalAreaModal } from '@/components/common/DefineOperationa
 import { useAndroidBack } from '@/hooks/useAndroidBack';
 import { StorageService } from '@/services/storage.service';
 import { completeStepAndNavigate } from '@/utils/onboarding';
+import { useServiceAreaStore, ServiceArea } from '@/store/serviceAreaStore';
+import { useBranchStore } from '@/store/branchStore';
 import Svg, { Path, Circle } from 'react-native-svg';
 
 const TrashIcon = ({ size = 18, color = '#EF4444' }) => (
@@ -55,30 +57,34 @@ const EmptyIllustration = () => (
   </View>
 );
 
-const INITIAL_AREAS: any[] = [
-  { id: '1', branchName: 'Downtown Branch', status: 'Active', distance: '15 km', placeName: 'City Center', country: 'India', state: 'Maharashtra', locationType: 'Urban', district: 'Pune', city: 'Pune' },
-  { id: '2', branchName: 'North Zone', status: 'Inactive', distance: '10 km', placeName: 'North Area', country: 'India', state: 'Maharashtra', locationType: 'Urban', district: 'Nashik', city: 'Nashik' },
-];
-
 export default function ServiceAreaScreen() {
   const router = useSafeRouter();
+  const { areas, loadAreas, addArea, updateArea, removeArea } = useServiceAreaStore();
+  const { branches } = useBranchStore();
+
   const [filter, setFilter] = useState<'All' | 'Active' | 'Inactive'>('All');
-  const [areas, setAreas] = useState<any[]>(INITIAL_AREAS);
   const [modalVisible, setModalVisible] = useState(false);
   const [modalMode, setModalMode] = useState<'create' | 'update'>('create');
-  const [selectedArea, setSelectedArea] = useState<any>(null);
+  const [selectedArea, setSelectedArea] = useState<ServiceArea | null>(null);
   const [isApproved, setIsApproved] = useState(false);
   const [role, setRole] = useState<string | null>(null);
-  const [viewArea, setViewArea] = useState<any>(null);
-  const [deleteTarget, setDeleteTarget] = useState<any>(null);
+  const [providerName, setProviderName] = useState<string | undefined>(undefined);
+  const [viewArea, setViewArea] = useState<ServiceArea | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<ServiceArea | null>(null);
 
   useEffect(() => {
-    const checkApproval = async () => {
+    const init = async () => {
       const session = await StorageService.getUserSession();
       if (session?.isApproved) setIsApproved(true);
       if (session?.role) setRole(session.role);
+      if (session?.role === 'ISP') {
+        const profile = await StorageService.getPartnerProfile();
+        const name = ((profile?.firstName || '') + ' ' + (profile?.lastName || '')).trim();
+        if (name) setProviderName(name);
+      }
     };
-    checkApproval();
+    init();
+    loadAreas();
   }, []);
 
   useAndroidBack(() => {
@@ -91,7 +97,7 @@ export default function ServiceAreaScreen() {
     else router.replace('/(tabs)');
   };
 
-  const handleEdit = (area: any) => {
+  const handleEdit = (area: ServiceArea) => {
     setSelectedArea(area);
     setModalMode('update');
     setModalVisible(true);
@@ -103,9 +109,9 @@ export default function ServiceAreaScreen() {
     setModalVisible(true);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (deleteTarget) {
-      setAreas(prev => prev.filter(a => a.id !== deleteTarget.id));
+      await removeArea(deleteTarget.id);
       setDeleteTarget(null);
     }
   };
@@ -118,17 +124,7 @@ export default function ServiceAreaScreen() {
 
   const isEmpty = areas.length === 0;
   const isISP = role === 'ISP';
-
-  const VIEW_FIELDS: [string, string][] = [
-    ...(!isISP ? [['Branch Name', 'branchName'] as [string, string]] : []),
-    ['Service Distance', 'distance'],
-    ['Place Name', 'placeName'],
-    ['Country', 'country'],
-    ['State', 'state'],
-    ['Location Type', 'locationType'],
-    ['District', 'district'],
-    ['City', 'city'],
-  ];
+  const isBSP = role === 'BSP';
 
   return (
     <GradientBackground style={styles.container}>
@@ -177,28 +173,24 @@ export default function ServiceAreaScreen() {
               {filteredAreas.map((area) => (
                 <View key={area.id} style={styles.card}>
                   <View style={styles.cardHeaderRow}>
-                    {!isISP && <Text style={styles.branchName}>{area.branchName}</Text>}
-                    <Text style={[styles.statusText, area.status === 'Active' ? styles.statusActive : styles.statusInactive]}>
-                      {area.status}
-                    </Text>
+                    <Text style={styles.cardTitle} numberOfLines={1}>{area.placeName || area.city || 'Service Area'}</Text>
+                    <View style={[styles.statusBadge, area.status === 'Active' ? styles.statusBadgeActive : styles.statusBadgeInactive]}>
+                      <Text style={[styles.statusText, area.status === 'Active' ? styles.statusActive : styles.statusInactive]}>
+                        {area.status}
+                      </Text>
+                    </View>
                   </View>
-                  <View style={styles.cardBody}>
-                    {[
-                      ...(!isISP ? [['Branch Name', area.branchName]] : []),
-                      ['Service Distance', area.distance],
-                      ['Place Name', area.placeName],
-                      ['Country', area.country],
-                      ['State', area.state],
-                      ['Location Type', area.locationType],
-                      ['District', area.district],
-                      ['City', area.city],
-                    ].map(([label, value]) => (
-                      <View key={label} style={styles.detailRow}>
-                        <View style={styles.bullet} />
-                        <Text style={styles.detailText}>{label}: {value}</Text>
-                      </View>
-                    ))}
-                  </View>
+
+                  {isISP && area.providerName ? (
+                    <Text style={styles.metaText}>Provider: {area.providerName}</Text>
+                  ) : null}
+                  {isBSP && area.branchName ? (
+                    <Text style={styles.metaText}>Branch: {area.branchName}</Text>
+                  ) : null}
+                  {area.dateAdded ? (
+                    <Text style={styles.createdDate}>Created: {area.dateAdded}</Text>
+                  ) : null}
+
                   <View style={styles.cardActions}>
                     <TouchableOpacity style={styles.iconBtn} onPress={() => setViewArea(area)}>
                       <EyeIcon size={18} color="#4338CA" />
@@ -242,7 +234,32 @@ export default function ServiceAreaScreen() {
         initialData={selectedArea}
         hideBranch={isISP}
         onSubmit={(data) => {
-          console.log('Saved area:', data);
+          const today = new Date();
+          const dateAdded = today.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+
+          const branchName = isBSP ? (data.branch || branches[0]?.name || undefined) : undefined;
+
+          const mapped: ServiceArea = {
+            id: selectedArea?.id || Date.now().toString(),
+            branchName,
+            providerName: isISP ? providerName : undefined,
+            distance: data.radius ? `${data.radius} km` : '',
+            placeName: data.placeName || '',
+            country: data.country || '',
+            state: data.state || '',
+            district: data.district || '',
+            city: data.city || '',
+            locationType: data.locationType || 'Urban',
+            status: data.isActive ? 'Active' : 'Inactive',
+            dateAdded: selectedArea?.dateAdded || dateAdded,
+          };
+
+          if (modalMode === 'create') {
+            addArea(mapped);
+          } else if (selectedArea) {
+            updateArea(selectedArea.id, mapped);
+          }
+          setModalVisible(false);
         }}
       />
 
@@ -259,10 +276,31 @@ export default function ServiceAreaScreen() {
             </View>
             {viewArea && (
               <View style={styles.viewRows}>
-                {VIEW_FIELDS.map(([label, key]) => (
-                  <View key={key} style={styles.viewRow}>
+                {isISP && viewArea.providerName ? (
+                  <View style={styles.viewRow}>
+                    <Text style={styles.viewLabel}>Provider Name</Text>
+                    <Text style={styles.viewValue}>{viewArea.providerName}</Text>
+                  </View>
+                ) : null}
+                {isBSP && viewArea.branchName ? (
+                  <View style={styles.viewRow}>
+                    <Text style={styles.viewLabel}>Branch Name</Text>
+                    <Text style={styles.viewValue}>{viewArea.branchName}</Text>
+                  </View>
+                ) : null}
+                {([
+                  ['Service Distance', viewArea.distance],
+                  ['Place Name', viewArea.placeName],
+                  ['Location Type', viewArea.locationType],
+                  ['City', viewArea.city],
+                  ['District', viewArea.district],
+                  ['State', viewArea.state],
+                  ['Country', viewArea.country],
+                  ['Created', viewArea.dateAdded],
+                ] as [string, string][]).map(([label, value]) => (
+                  <View key={label} style={styles.viewRow}>
                     <Text style={styles.viewLabel}>{label}</Text>
-                    <Text style={styles.viewValue}>{viewArea[key]}</Text>
+                    <Text style={styles.viewValue}>{value}</Text>
                   </View>
                 ))}
                 <View style={styles.viewRow}>
@@ -289,7 +327,7 @@ export default function ServiceAreaScreen() {
               </TouchableOpacity>
             </View>
             <Text style={styles.deleteMsg}>
-              Are you sure you want to delete <Text style={{ fontWeight: '700' }}>{deleteTarget?.branchName}</Text>? This action cannot be undone.
+              Are you sure you want to delete <Text style={{ fontWeight: '700' }}>{deleteTarget?.placeName || deleteTarget?.branchName}</Text>? This action cannot be undone.
             </Text>
             <View style={styles.deleteActions}>
               <TouchableOpacity style={styles.cancelBtn} onPress={() => setDeleteTarget(null)}>
@@ -324,12 +362,17 @@ const styles = StyleSheet.create({
 
   listContainer: { paddingHorizontal: 20, paddingBottom: 20, gap: 12 },
   card: { backgroundColor: '#FFFFFF', borderRadius: 20, padding: 16 },
-  cardHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
-  branchName: { fontSize: 14, fontWeight: '700', color: '#0F172A', flex: 1 },
+  cardHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 },
+  cardTitle: { fontSize: 14, fontWeight: '700', color: '#0F172A', flex: 1, marginRight: 8 },
+  statusBadge: { paddingHorizontal: 10, paddingVertical: 3, borderRadius: 20 },
+  statusBadgeActive: { backgroundColor: '#DCFCE7' },
+  statusBadgeInactive: { backgroundColor: '#FEE2E2' },
   statusText: { fontSize: 11, fontWeight: '700' },
-  statusActive: { color: '#22C55E' },
+  statusActive: { color: '#16A34A' },
   statusInactive: { color: '#EF4444' },
-  cardBody: { gap: 4, marginBottom: 12 },
+  metaText: { fontSize: 11, color: '#64748B', marginTop: 2, fontWeight: '500' },
+  createdDate: { fontSize: 11, color: '#94A3B8', marginTop: 2, marginBottom: 8 },
+  cardBody: { gap: 4, marginBottom: 12, marginTop: 4 },
   detailRow: { flexDirection: 'row', alignItems: 'center' },
   bullet: { width: 4, height: 4, borderRadius: 2, backgroundColor: '#94A3B8', marginRight: 8 },
   detailText: { fontSize: 12, color: '#475569' },
@@ -348,7 +391,7 @@ const styles = StyleSheet.create({
   viewRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
   viewLabel: { fontSize: 13, color: '#64748B', fontWeight: '500' },
   viewValue: { fontSize: 13, color: '#0F172A', fontWeight: '600', maxWidth: '55%', textAlign: 'right' },
-  activeColor: { color: '#22C55E' },
+  activeColor: { color: '#16A34A' },
   inactiveColor: { color: '#EF4444' },
   deleteMsg: { fontSize: 14, color: '#475569', lineHeight: 22, marginBottom: 24 },
   deleteActions: { flexDirection: 'row', gap: 12 },

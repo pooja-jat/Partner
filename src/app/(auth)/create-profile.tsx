@@ -8,11 +8,17 @@ import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { BackArrowIcon, UploadIcon, PlusIcon, ChevronDownIcon } from '@/components/ui/Icons';
+
+const COUNTRIES = ['India', 'United States', 'United Kingdom', 'Canada', 'Australia', 'Germany', 'France', 'UAE', 'Singapore', 'Nepal', 'Bangladesh', 'Sri Lanka'];
+const ALL_STATES = ['Andhra Pradesh', 'Assam', 'Bihar', 'Chhattisgarh', 'Delhi', 'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jharkhand', 'Karnataka', 'Kerala', 'Madhya Pradesh', 'Maharashtra', 'Manipur', 'Meghalaya', 'Mizoram', 'Nagaland', 'Odisha', 'Punjab', 'Rajasthan', 'Sikkim', 'Tamil Nadu', 'Telangana', 'Tripura', 'Uttar Pradesh', 'Uttarakhand', 'West Bengal'];
+const ALL_DISTRICTS = ['Agra', 'Aligarh', 'Allahabad', 'Ambedkar Nagar', 'Amethi', 'Amroha', 'Aurangabad', 'Azamgarh', 'Baghpat', 'Bahraich', 'Ballia', 'Balrampur', 'Banda', 'Barabanki', 'Bareilly', 'Basti', 'Bijnor', 'Budaun', 'Bulandshahr', 'Chandauli', 'Chitrakoot', 'Deoria', 'Etah', 'Etawah', 'Faizabad', 'Farrukhabad', 'Fatehpur', 'Firozabad', 'Gautam Buddha Nagar', 'Ghaziabad', 'Ghazipur', 'Gonda', 'Gorakhpur', 'Hamirpur', 'Hapur', 'Hardoi', 'Hathras', 'Jalaun', 'Jaunpur', 'Jhansi', 'Kannauj', 'Kanpur Dehat', 'Kanpur Nagar', 'Kasganj', 'Kaushambi', 'Kushinagar', 'Lakhimpur Kheri', 'Lalitpur', 'Lucknow', 'Maharajganj', 'Mahoba', 'Mainpuri', 'Mathura', 'Mau', 'Meerut', 'Mirzapur', 'Moradabad', 'Muzaffarnagar', 'Pilibhit', 'Pratapgarh', 'Raebareli', 'Rampur', 'Saharanpur', 'Sambhal', 'Sant Kabir Nagar', 'Shahjahanpur', 'Shamli', 'Shravasti', 'Siddharthnagar', 'Sitapur', 'Sonbhadra', 'Sultanpur', 'Unnao', 'Varanasi', 'Ahmednagar', 'Akola', 'Amravati', 'Beed', 'Bhandara', 'Buldhana', 'Chandrapur', 'Dhule', 'Gadchiroli', 'Gondia', 'Hingoli', 'Jalgaon', 'Jalna', 'Kolhapur', 'Latur', 'Mumbai City', 'Mumbai Suburban', 'Nagpur', 'Nanded', 'Nandurbar', 'Nashik', 'Osmanabad', 'Palghar', 'Parbhani', 'Pune', 'Raigad', 'Ratnagiri', 'Sangli', 'Satara', 'Sindhudurg', 'Solapur', 'Thane', 'Wardha', 'Washim', 'Yavatmal', 'Ahmedabad', 'Amreli', 'Anand', 'Aravalli', 'Banaskantha', 'Bharuch', 'Bhavnagar', 'Botad', 'Chhota Udaipur', 'Dahod', 'Dang', 'Gandhinagar', 'Gir Somnath', 'Jamnagar', 'Junagadh', 'Kutch', 'Kheda', 'Mahisagar', 'Mehsana', 'Morbi', 'Narmada', 'Navsari', 'Panchmahal', 'Patan', 'Porbandar', 'Rajkot', 'Sabarkantha', 'Surat', 'Surendranagar', 'Tapi', 'Vadodara', 'Valsad', 'Ajmer', 'Alwar', 'Banswara', 'Baran', 'Barmer', 'Bharatpur', 'Bhilwara', 'Bikaner', 'Bundi', 'Chittorgarh', 'Churu', 'Dausa', 'Dholpur', 'Dungarpur', 'Hanumangarh', 'Jaipur', 'Jaisalmer', 'Jalore', 'Jhalawar', 'Jhunjhunu', 'Jodhpur', 'Karauli', 'Kota', 'Nagaur', 'Pali', 'Rajsamand', 'Sawai Madhopur', 'Sikar', 'Sirohi', 'Sri Ganganagar', 'Tonk', 'Udaipur', 'Bagalkot', 'Ballari', 'Belagavi', 'Bengaluru Rural', 'Bengaluru Urban', 'Bidar', 'Chamarajanagar', 'Chikballapur', 'Chikkamagaluru', 'Chitradurga', 'Dakshina Kannada', 'Davangere', 'Dharwad', 'Gadag', 'Hassan', 'Haveri', 'Kalaburagi', 'Kodagu', 'Kolar', 'Koppal', 'Mandya', 'Mysuru', 'Raichur', 'Ramanagara', 'Shivamogga', 'Tumakuru', 'Udupi', 'Uttara Kannada', 'Vijayapura', 'Yadgir', 'Ariyalur', 'Chengalpattu', 'Chennai', 'Coimbatore', 'Cuddalore', 'Dharmapuri', 'Dindigul', 'Erode', 'Kallakurichi', 'Kanchipuram', 'Kanyakumari', 'Karur', 'Krishnagiri', 'Madurai', 'Mayiladuthurai', 'Nagapattinam', 'Namakkal', 'Nilgiris', 'Perambalur', 'Pudukkottai', 'Ramanathapuram', 'Ranipet', 'Salem', 'Sivaganga', 'Tenkasi', 'Thanjavur', 'Theni', 'Thoothukudi', 'Tiruchirappalli', 'Tirunelveli', 'Tirupathur', 'Tiruppur', 'Tiruvallur', 'Tiruvannamalai', 'Tiruvarur', 'Vellore', 'Viluppuram', 'Virudhunagar', 'Central Delhi', 'East Delhi', 'New Delhi', 'North Delhi', 'North East Delhi', 'North West Delhi', 'Shahdara', 'South Delhi', 'South East Delhi', 'South West Delhi', 'West Delhi'];
+const ALL_CITIES = ['Lucknow', 'Agra', 'Varanasi', 'Kanpur', 'Allahabad', 'Meerut', 'Bareilly', 'Gorakhpur', 'Ghaziabad', 'Mathura', 'Noida', 'Firozabad', 'Moradabad', 'Saharanpur', 'Mumbai', 'Pune', 'Nagpur', 'Nashik', 'Aurangabad', 'Solapur', 'Kolhapur', 'Thane', 'Navi Mumbai', 'Ahmedabad', 'Surat', 'Vadodara', 'Rajkot', 'Bhavnagar', 'Jamnagar', 'Gandhinagar', 'Jaipur', 'Jodhpur', 'Kota', 'Bikaner', 'Ajmer', 'Udaipur', 'Bengaluru', 'Mysuru', 'Hubli', 'Dharwad', 'Mangaluru', 'Belagavi', 'Davangere', 'Chennai', 'Coimbatore', 'Madurai', 'Tiruchirappalli', 'Salem', 'Tirunelveli', 'Erode', 'Vellore', 'Delhi', 'New Delhi', 'Dwarka', 'Rohini', 'Pitampura', 'Lajpat Nagar', 'Saket', 'Connaught Place', 'Hyderabad', 'Secunderabad', 'Warangal', 'Nizamabad', 'Karimnagar', 'Khammam', 'Kolkata', 'Howrah', 'Durgapur', 'Asansol', 'Siliguri', 'Patna', 'Gaya', 'Bhagalpur', 'Muzaffarpur', 'Bhopal', 'Indore', 'Gwalior', 'Jabalpur', 'Ujjain', 'Raipur', 'Bilaspur', 'Durg', 'Bhilai', 'Chandigarh', 'Mohali', 'Panchkula', 'Amritsar', 'Ludhiana', 'Jalandhar', 'Faridabad', 'Gurugram', 'Ambala', 'Rohtak', 'Panipat', 'Dehradun', 'Haridwar', 'Rishikesh', 'Haldwani', 'Roorkee', 'Ranchi', 'Jamshedpur', 'Dhanbad', 'Bokaro', 'Bhubaneswar', 'Cuttack', 'Rourkela', 'Berhampur', 'Guwahati', 'Dibrugarh', 'Silchar', 'Thiruvananthapuram', 'Kochi', 'Kozhikode', 'Thrissur', 'Kollam', 'Visakhapatnam', 'Vijayawada', 'Guntur', 'Nellore', 'Kurnool'];
 import { COLORS } from '@/constants';
 import { useAndroidBack } from '@/hooks/useAndroidBack';
 import { StorageService } from '@/services/storage.service';
 import { SelectOptionsModal } from '@/components/common/SelectOptionsModal';
 import { DatePickerModal } from '@/components/ui/DatePickerModal';
+import { SearchableDropdown } from '@/components/common/SearchableDropdown';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function CreateProfileScreen() {
@@ -102,7 +108,7 @@ export default function CreateProfileScreen() {
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images'],
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.8,
@@ -113,9 +119,7 @@ export default function CreateProfileScreen() {
   };
 
   const handleBack = () => {
-    if (isApproved) {
-      router.back();
-    } else if (router.canGoBack()) {
+    if (router.canGoBack()) {
       router.back();
     } else {
       router.replace('/(auth)/role-selection');
@@ -124,11 +128,10 @@ export default function CreateProfileScreen() {
 
   const handleSave = async () => {
     await StorageService.setPartnerProfile(form);
-    if (isApproved) {
+    if (isApproved && !!mode) {
       router.back();
     } else {
-      const { completeStepAndNavigate } = require('@/utils/onboarding');
-      await completeStepAndNavigate('partnerProfile', router, 'reviewing');
+      router.push('/(tabs)/kyc' as any);
     }
   };
 
@@ -154,6 +157,7 @@ export default function CreateProfileScreen() {
               showsVerticalScrollIndicator={false}
               contentContainerStyle={styles.scrollContent}
               keyboardShouldPersistTaps="handled"
+              nestedScrollEnabled
             >
               {/* Upload Photo Section */}
               <View style={styles.uploadSection}>
@@ -297,54 +301,42 @@ export default function CreateProfileScreen() {
                 onChangeText={(t) => updateForm("address", t)}
               />
 
-              <View style={styles.row}>
-                <View style={styles.flex1}>
-                  <Input
-                    label="Country"
-                    value={form.country}
-                    placeholder="Enter country"
-                    editable={!isReadOnly}
-                    pointerEvents={isReadOnly ? "none" : "auto"}
-                    onChangeText={(t) => updateForm("country", t)}
-                    style={{ marginBottom: 12 }}
-                  />
-                </View>
-                <View style={styles.flex1}>
-                  <Input
-                    label="State"
-                    value={form.state}
-                    placeholder="Enter state"
-                    editable={!isReadOnly}
-                    pointerEvents={isReadOnly ? "none" : "auto"}
-                    onChangeText={(t) => updateForm("state", t)}
-                    style={{ marginBottom: 12 }}
-                  />
-                </View>
+              <View style={[styles.row, { zIndex: 20 }]}>
+                <SearchableDropdown
+                  label="Country"
+                  placeholder="Type to search country"
+                  value={form.country}
+                  options={COUNTRIES}
+                  onChange={(t) => { updateForm("country", t); updateForm("state", ""); updateForm("district", ""); updateForm("city", ""); }}
+                  disabled={isReadOnly}
+                />
+                <SearchableDropdown
+                  label="State"
+                  placeholder="Type to search state"
+                  value={form.state}
+                  options={ALL_STATES}
+                  onChange={(t) => { updateForm("state", t); updateForm("district", ""); updateForm("city", ""); }}
+                  disabled={isReadOnly}
+                />
               </View>
 
-              <View style={styles.row}>
-                <View style={styles.flex1}>
-                  <Input
-                    label="District"
-                    value={form.district}
-                    placeholder="Enter district"
-                    editable={!isReadOnly}
-                    pointerEvents={isReadOnly ? "none" : "auto"}
-                    onChangeText={(t) => updateForm("district", t)}
-                    style={{ marginBottom: 12 }}
-                  />
-                </View>
-                <View style={styles.flex1}>
-                  <Input
-                    label="City"
-                    value={form.city}
-                    placeholder="Enter city"
-                    editable={!isReadOnly}
-                    pointerEvents={isReadOnly ? "none" : "auto"}
-                    onChangeText={(t) => updateForm("city", t)}
-                    style={{ marginBottom: 12 }}
-                  />
-                </View>
+              <View style={[styles.row, { zIndex: 10 }]}>
+                <SearchableDropdown
+                  label="District"
+                  placeholder="Type to search district"
+                  value={form.district}
+                  options={ALL_DISTRICTS}
+                  onChange={(t) => { updateForm("district", t); updateForm("city", ""); }}
+                  disabled={isReadOnly}
+                />
+                <SearchableDropdown
+                  label="City"
+                  placeholder="Type to search city"
+                  value={form.city}
+                  options={ALL_CITIES}
+                  onChange={(t) => updateForm("city", t)}
+                  disabled={isReadOnly}
+                />
               </View>
 
               <Input
@@ -425,12 +417,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 24,
     marginBottom: 16,
+    padding: 0,
     boxShadow: '0px -2px 8px rgba(0, 0, 0, 0.08)',
     elevation: 2,
-    overflow: 'hidden',
   },
   scrollContent: {
-    paddingBottom: 0,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 32,
   },
   uploadSection: {
     alignItems: 'center',

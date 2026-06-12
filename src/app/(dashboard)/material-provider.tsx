@@ -224,7 +224,7 @@ const styles = StyleSheet.create({
     paddingBottom: Platform.OS === 'ios' ? 24 : 12
   },
   continueBtn: { 
-    backgroundColor: '#1E1B4B', 
+    backgroundColor: 'rgba(26, 15, 163, 1.00)',
     height: 48, 
     borderRadius: 12, 
     flexDirection: 'row',

@@ -21,6 +21,20 @@ const TrashIcon = ({ size = 18, color = '#EF4444' }) => (
   </Svg>
 );
 
+const EditIcon = ({ size = 18, color = '#64748B' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <Path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+);
+
+const EyeIcon = ({ size = 18, color = '#64748B' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <Path d="M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+);
+
 const CloseXIcon = ({ size = 22, color = '#0F172A' }) => (
   <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <Path d="M18 6L6 18M6 6L18 18" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -29,7 +43,7 @@ const CloseXIcon = ({ size = 22, color = '#0F172A' }) => (
 
 export default function ServicesListScreen() {
   const router = useSafeRouter();
-  const { services, removeService } = useServicesStore();
+  const { services, removeService, loadServices } = useServicesStore();
   const [filter, setFilter] = useState<'All' | 'Active' | 'Inactive'>('All');
   const [isApproved, setIsApproved] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
@@ -45,6 +59,7 @@ export default function ServicesListScreen() {
       setUserRole(session?.role || null);
     };
     checkApproval();
+    loadServices();
   }, []);
 
   useAndroidBack(() => {
@@ -113,23 +128,28 @@ export default function ServicesListScreen() {
                         {service.active ? 'Active' : 'Inactive'}
                       </Text>
                     </View>
+                    {userRole === 'ISP' && service.providerName ? (
+                      <Text style={styles.metaText}>Provider: {service.providerName}</Text>
+                    ) : null}
+                    {userRole === 'BSP' && service.branchName ? (
+                      <Text style={styles.metaText}>Branch: {service.branchName}</Text>
+                    ) : null}
+                    {service.dateAdded ? (
+                      <Text style={styles.createdDate}>Created: {service.dateAdded}</Text>
+                    ) : null}
                   </View>
-                  <TouchableOpacity onPress={() => router.push(`/(tabs)/services/update?id=${service.id}`)}>
-                    <Text style={styles.editText}>Edit</Text>
-                  </TouchableOpacity>
+                  <View style={styles.iconActions}>
+                    <TouchableOpacity style={styles.iconBtn} onPress={() => setViewService(service)} activeOpacity={0.7}>
+                      <EyeIcon size={18} color="#475569" />
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.iconBtn} onPress={() => router.push(`/(tabs)/services/update?id=${service.id}`)} activeOpacity={0.7}>
+                      <EditIcon size={18} color="#475569" />
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.iconBtn} onPress={() => setDeleteTarget(service)} activeOpacity={0.7}>
+                      <TrashIcon size={18} color="#EF4444" />
+                    </TouchableOpacity>
+                  </View>
                 </View>
-
-                {service.subServices.length > 0 && (
-                  <View style={styles.subServicesList}>
-                    {service.subServices.map(sub => (
-                      <View key={sub.id} style={styles.subRow}>
-                        <Text style={styles.subDot}>•</Text>
-                        <Text style={styles.subName}>{sub.name}</Text>
-                        <Text style={styles.subExp}>{sub.yearsOfExperience} years</Text>
-                      </View>
-                    ))}
-                  </View>
-                )}
               </View>
             ))}
             {filteredServices.length === 0 && (
@@ -257,13 +277,10 @@ const styles = StyleSheet.create({
   cardTitle: { fontSize: 15, fontWeight: '700', color: '#0F172A' },
   statusBadge: { fontSize: 11, fontWeight: '600', color: '#22C55E' },
   statusBadgeInactive: { color: '#F59E0B' },
-  editText: { fontSize: 13, fontWeight: '600', color: '#0F172A' },
-
-  subServicesList: { marginTop: 10, borderTopWidth: 1, borderTopColor: '#F1F5F9', paddingTop: 10, gap: 6 },
-  subRow: { flexDirection: 'row', alignItems: 'center' },
-  subDot: { fontSize: 14, color: '#64748B', marginRight: 8 },
-  subName: { flex: 1, fontSize: 13, color: '#475569' },
-  subExp: { fontSize: 12, color: '#94A3B8' },
+  metaText: { fontSize: 11, color: '#64748B', marginTop: 3, fontWeight: '500' },
+  createdDate: { fontSize: 11, color: '#94A3B8', marginTop: 2 },
+  iconActions: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  iconBtn: { padding: 8, borderRadius: 8, backgroundColor: '#F8FAFC' },
 
   emptyState: { flex: 1, minHeight: 200 },
   footer: { paddingHorizontal: 20, paddingBottom: 40, paddingTop: 16 },

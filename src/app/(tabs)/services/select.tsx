@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, KeyboardAvoidingView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSafeRouter } from '@/hooks/useSafeRouter';
 import { Button } from '@/components/ui/Button';
@@ -10,6 +10,8 @@ import { ChevronDownIcon, ChevronUpIcon, CloseIcon } from '@/components/ui/Icons
 import { useServicesStore } from '@/store/servicesStore';
 import { useAndroidBack } from '@/hooks/useAndroidBack';
 import { StorageService } from '@/services/storage.service';
+import { useBranchStore } from '@/store/branchStore';
+import { useAuthStore } from '@/store/authStore';
 
 // static mock list for selection
 const AVAILABLE_CATEGORIES = [
@@ -41,7 +43,9 @@ export default function SelectServicesModal() {
   useAndroidBack();
   const router = useSafeRouter();
   const { addService } = useServicesStore();
-  
+  const { branches } = useBranchStore();
+  const role = useAuthStore(state => state.role);
+
   const [expanded, setExpanded] = useState<string | null>('plumbing');
   const [selectedSubs, setSelectedSubs] = useState<Record<string, boolean>>({});
   const [experience, setExperience] = useState<string>('');
@@ -54,7 +58,7 @@ export default function SelectServicesModal() {
     setSelectedSubs(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const selectedCategory = AVAILABLE_CATEGORIES.find(c => c.id === expanded);
     if (selectedCategory) {
       const subs = selectedCategory.subServices
@@ -67,20 +71,29 @@ export default function SelectServicesModal() {
         }));
       
       if (subs.length > 0) {
+        const today = new Date();
+        const dateAdded = today.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+        let providerName: string | undefined;
+        let branchName: string | undefined;
+        if (role === 'ISP') {
+          const profile = await StorageService.getPartnerProfile();
+          const first = profile?.firstName || '';
+          const last = profile?.lastName || '';
+          providerName = (first + ' ' + last).trim() || undefined;
+        } else if (role === 'BSP') {
+          branchName = branches[0]?.name || undefined;
+        }
         addService({
           id: selectedCategory.id + Date.now(),
           name: selectedCategory.name,
           active: true,
-          dateAdded: 'Oct 14, 2023', // hardcoded mock date
-          subServices: subs
+          dateAdded,
+          subServices: subs,
+          ...(providerName ? { providerName } : {}),
+          ...(branchName ? { branchName } : {}),
         });
-        StorageService.updateMandatoryFlowStep('partnerServiceSelection', 'reviewing').then(async () => {
-          const session = await StorageService.getUserSession();
-          if (session?.isApproved) {
-            router.back();
-          } else {
-            router.replace('/(tabs)/services/list');
-          }
+        StorageService.updateMandatoryFlowStep('partnerServiceSelection', 'reviewing').then(() => {
+          router.back();
         });
       }
     }
@@ -91,7 +104,10 @@ export default function SelectServicesModal() {
       <SafeAreaView style={styles.safeArea}>
         <TouchableOpacity style={styles.modalBackdrop} activeOpacity={1} onPress={() => router.back()} />
         
-        <View style={styles.modalContent}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.modalContent}
+        >
           <View style={styles.modalWhiteBg}>
             {Platform.OS !== 'web' && <View style={styles.dragHandle} />}
             <TouchableOpacity style={styles.closeButton} onPress={() => router.back()}>
@@ -102,7 +118,11 @@ export default function SelectServicesModal() {
               <Text style={styles.subtitle}>Choose the service categories and sub-services you will provide.</Text>
             </View>
 
-            <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
+            <ScrollView
+              style={styles.scroll}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+            >
             {AVAILABLE_CATEGORIES.map(cat => {
               const isExpanded = expanded === cat.id;
               return (
@@ -134,7 +154,7 @@ export default function SelectServicesModal() {
               <Text style={styles.expSubtitle}>This helps us allocate better bookings to you.</Text>
               <Input 
                 label="Total Years of Experience" 
-                placeholder="e.g. 5" 
+                placeholder="Enter years"
                 value={experience} 
                 onChangeText={setExperience} 
                 keyboardType="numeric" 
@@ -147,7 +167,7 @@ export default function SelectServicesModal() {
             <Button title="Save Services" onPress={handleSave} variant="primary" />
           </View>
         </View>
-        </View>
+        </KeyboardAvoidingView>
       </SafeAreaView>
     </GradientBackground>
   );

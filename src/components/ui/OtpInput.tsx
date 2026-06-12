@@ -1,70 +1,72 @@
-import React, { useRef, useState } from 'react';
-import { View, TextInput, StyleSheet, Pressable, Text } from 'react-native';
+import React, { useRef, useState, useEffect } from 'react';
+import { View, TextInput, StyleSheet, TouchableOpacity, Text, Platform } from 'react-native';
 import { COLORS } from '../../constants';
 
 interface OtpInputProps {
   value: string;
   onChange: (value: string) => void;
   length?: number;
+  autoFocus?: boolean;
+  focusDelay?: number;
+  triggerFocus?: boolean;
 }
 
-export function OtpInput({ value, onChange, length = 6 }: OtpInputProps) {
+export function OtpInput({ value, onChange, length = 6, autoFocus = true, focusDelay = 0 }: OtpInputProps) {
   const inputRef = useRef<TextInput>(null);
   const [isFocused, setIsFocused] = useState(false);
 
-  const handlePress = () => {
-    inputRef.current?.focus();
-  };
+  useEffect(() => {
+    const delay = Platform.OS === 'android' ? Math.max(focusDelay, 400) : focusDelay;
+    const timer = setTimeout(() => {
+      if (autoFocus) inputRef.current?.focus();
+    }, delay);
+    return () => clearTimeout(timer);
+  }, [autoFocus, focusDelay]);
 
-  const renderCells = () => {
-    const cells = [];
-    for (let i = 0; i < length; i++) {
-      const char = value[i] || '';
-      const isCurrentActive = isFocused && value.length === i;
-      // If we're at the end and focused, make the last box active
-      const isLastActive = isFocused && i === length - 1 && value.length === length;
-      const active = isCurrentActive || isLastActive;
-      const isFilled = char !== '';
-      
-      const isBox = active || isFilled;
-
-      cells.push(
-        <View 
-          key={i} 
-          style={[
-            styles.cell,
-            isBox ? styles.cellBox : styles.cellLine,
-            active && styles.cellActive
-          ]}
-        >
-          <Text style={styles.cellText}>{char}</Text>
-        </View>
-      );
-    }
-    return cells;
-  };
+  const focus = () => inputRef.current?.focus();
 
   return (
-    <View style={styles.container}>
-      <Pressable onPress={handlePress} style={styles.cellsContainer}>
-        {renderCells()}
-      </Pressable>
+    <TouchableOpacity activeOpacity={1} onPress={focus} style={styles.container}>
+      {/* Visible cells */}
+      <View style={styles.cellsRow} pointerEvents="none">
+        {Array.from({ length }).map((_, i) => {
+          const char = value[i] || '';
+          const isActive = isFocused && (value.length === i || (i === length - 1 && value.length === length));
+          const isFilled = char !== '';
+          return (
+            <View
+              key={i}
+              style={[
+                styles.cell,
+                (isActive || isFilled) ? styles.cellBox : styles.cellLine,
+                isActive && styles.cellActive,
+              ]}
+            >
+              <Text style={styles.cellText}>{char}</Text>
+            </View>
+          );
+        })}
+      </View>
+
+      {/* Invisible input stretched over cells — always in the render tree */}
       <TextInput
         ref={inputRef}
         value={value}
         onChangeText={(text) => {
-          const cleaned = text.replace(/[^0-9a-zA-Z]/g, '').slice(0, length);
-          onChange(cleaned);
+          onChange(text.replace(/[^0-9]/g, '').slice(0, length));
         }}
-        keyboardType="default"
-        textContentType="oneTimeCode"
-        maxLength={length}
-        style={styles.hiddenInput}
         onFocus={() => setIsFocused(true)}
         onBlur={() => setIsFocused(false)}
-        autoFocus
+        keyboardType="number-pad"
+        textContentType="oneTimeCode"
+        autoComplete="one-time-code"
+        maxLength={length}
+        caretHidden
+        showSoftInputOnFocus
+        style={styles.ghostInput}
+        importantForAccessibility="no"
       />
-    </View>
+    </TouchableOpacity>
   );
 }
 
@@ -73,7 +75,7 @@ const styles = StyleSheet.create({
     marginVertical: 16,
     width: '100%',
   },
-  cellsContainer: {
+  cellsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     width: '100%',
@@ -97,17 +99,19 @@ const styles = StyleSheet.create({
     borderColor: COLORS.primary,
     borderWidth: 2,
     borderRadius: 8,
-    borderBottomWidth: 2,
   },
   cellText: {
     fontSize: 22,
     fontWeight: '600',
     color: '#0F172A',
   },
-  hiddenInput: {
-    ...StyleSheet.absoluteFillObject,
+  ghostInput: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 55,
     opacity: 0.01,
     color: 'transparent',
-    backgroundColor: 'transparent',
   },
 });

@@ -10,4 +10,7 @@ export interface Employee {
   email?: string;
   address?: string;
   isActive: boolean;
+  createdAt?: string;
+  totalEarning?: string;
+  remainingEarning?: string;
 }

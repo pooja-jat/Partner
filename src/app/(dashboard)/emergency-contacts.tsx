@@ -32,10 +32,30 @@ const ChevronRight = ({ color = 'rgba(26, 15, 163, 1.00)' }) => (
   </Svg>
 );
 
+type Contact = { id: string; name: string; phone: string; avatar: string };
+
+const DEFAULT_CONTACTS: Contact[] = [
+  { id: '1', name: 'A D Packaging Oil', phone: '9099022114', avatar: 'https://i.pravatar.cc/150?u=a1' },
+  { id: '2', name: 'AJio Delivery', phone: '9110792602', avatar: 'https://i.pravatar.cc/150?u=a2' },
+  { id: '3', name: '8003281009', phone: '8003281009', avatar: 'https://i.pravatar.cc/150?u=a3' },
+];
+
 export default function EmergencyContactsScreen() {
-  useAndroidBack(() => router.push('/(dashboard)/profile'));
   const router = useSafeRouter();
+  useAndroidBack(() => router.push('/(dashboard)/profile'));
   const [modalVisible, setModalVisible] = useState(false);
+  const [contacts, setContacts] = useState<Contact[]>(DEFAULT_CONTACTS);
+
+  const deleteContact = (id: string) => {
+    setContacts(prev => prev.filter(c => c.id !== id));
+  };
+
+  const addContacts = (newContacts: { id: string; name: string; phone: string }[]) => {
+    setContacts(prev => [
+      ...prev,
+      ...newContacts.map(c => ({ ...c, avatar: `https://i.pravatar.cc/150?u=${c.id}` })),
+    ]);
+  };
 
   return (
     <GradientBackground style={styles.container}>
@@ -50,54 +70,36 @@ export default function EmergencyContactsScreen() {
         </View>
 
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-          
+
           <View style={styles.card}>
-            
-            <TouchableOpacity style={styles.searchFakeInput} onPress={() => setModalVisible(true)}>
+
+            <TouchableOpacity activeOpacity={0.7} style={styles.searchFakeInput} onPress={() => setModalVisible(true)}>
               <SearchIcon color="#0F172A" />
               <Text style={styles.searchText}>Search contacts</Text>
             </TouchableOpacity>
 
             <Text style={styles.limitText}>You can add upto 4 contacts only</Text>
 
-            <View style={styles.contactRow}>
-              <Image source={{ uri: 'https://i.pravatar.cc/150?u=a1' }} style={styles.avatarImage} />
-              <View style={styles.contactInfo}>
-                <Text style={styles.contactName}>A D Packaging Oil</Text>
-                <Text style={styles.contactPhone}>9099022114</Text>
+            {contacts.map(contact => (
+              <View key={contact.id} style={styles.contactRow}>
+                <Image source={{ uri: contact.avatar }} style={styles.avatarImage} />
+                <View style={styles.contactInfo}>
+                  <Text style={styles.contactName}>{contact.name}</Text>
+                  <Text style={styles.contactPhone}>{contact.phone}</Text>
+                </View>
+                <TouchableOpacity activeOpacity={0.7} style={styles.deleteBtn} onPress={() => deleteContact(contact.id)}>
+                  <TrashIcon />
+                </TouchableOpacity>
               </View>
-              <TouchableOpacity style={styles.deleteBtn}>
-                <TrashIcon />
-              </TouchableOpacity>
-            </View>
+            ))}
 
-            <View style={styles.contactRow}>
-              <Image source={{ uri: 'https://i.pravatar.cc/150?u=a2' }} style={styles.avatarImage} />
-              <View style={styles.contactInfo}>
-                <Text style={styles.contactName}>AJio Delevery</Text>
-                <Text style={styles.contactPhone}>9110792602</Text>
-              </View>
-              <TouchableOpacity style={styles.deleteBtn}>
-                <TrashIcon />
+            {contacts.length < 4 && (
+              <TouchableOpacity activeOpacity={0.7} style={styles.addMoreBtn} onPress={() => setModalVisible(true)}>
+                <PlusIcon />
+                <Text style={styles.addMoreText}>Add More</Text>
+                <ChevronRight />
               </TouchableOpacity>
-            </View>
-
-            <View style={styles.contactRow}>
-              <Image source={{ uri: 'https://i.pravatar.cc/150?u=a3' }} style={styles.avatarImage} />
-              <View style={styles.contactInfo}>
-                <Text style={styles.contactName}>8003281009</Text>
-                <Text style={styles.contactPhone}>8003281009</Text>
-              </View>
-              <TouchableOpacity style={styles.deleteBtn}>
-                <TrashIcon />
-              </TouchableOpacity>
-            </View>
-
-            <TouchableOpacity style={styles.addMoreBtn} onPress={() => setModalVisible(true)}>
-              <PlusIcon />
-              <Text style={styles.addMoreText}>Add More</Text>
-              <ChevronRight />
-            </TouchableOpacity>
+            )}
 
           </View>
 
@@ -105,9 +107,11 @@ export default function EmergencyContactsScreen() {
         </KeyboardAvoidingView>
       </SafeAreaView>
 
-      <SearchContactsModal 
+      <SearchContactsModal
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
+        onAdd={addContacts}
+        existingIds={contacts.map(c => c.id)}
       />
     </GradientBackground>
   );

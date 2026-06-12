@@ -27,7 +27,7 @@ export function ReferralModal({ visible, onApply, onSkip }: ReferralModalProps) 
             <Text style={styles.subtitle}>Enter it to unlock rewards (optional)</Text>
           </View>
 
-          <OtpInput value={code} onChange={setCode} length={6} />
+          <OtpInput value={code} onChange={setCode} length={6} focusDelay={500} />
 
           <View style={styles.actions}>
             <Button 

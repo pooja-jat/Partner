@@ -1,6 +1,12 @@
 import { useSafeRouter } from '@/hooks/useSafeRouter';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useColorScheme, Platform, BackHandler, View, Text, TouchableOpacity } from 'react-native';
+
+// Global fix: prevent TouchableOpacity dim/blur on press across the whole app
+(TouchableOpacity as any).defaultProps = {
+  ...((TouchableOpacity as any).defaultProps || {}),
+  activeOpacity: 0.85,
+};
 import { Stack,  usePathname, ErrorBoundaryProps } from 'expo-router';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { useEffect } from 'react';

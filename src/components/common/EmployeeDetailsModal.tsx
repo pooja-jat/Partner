@@ -46,6 +46,7 @@ export function EmployeeDetailsModal({ visible, onClose, employee }: EmployeeDet
                   value={employee.isActive ? 'Active' : 'Inactive'} 
                   valueStyle={employee.isActive ? styles.activeStatus : styles.inactiveStatus} 
                 />
+                <DetailRow label="Created Date" value={employee.createdAt || '08 May 2024'} />
                 <DetailRow label="Branch Name" value={employee.branchName || 'enter branch name'} />
                 <DetailRow label="Partner Services" value={employee.mainService || 'Enter partner services'} />
                 <DetailRow label="Sub Service" value={employee.subService || 'Enter partner sub services'} />

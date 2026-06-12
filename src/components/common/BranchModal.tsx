@@ -36,9 +36,10 @@ export function BranchModal({ visible, onClose, mode, initialData, onSubmit }: B
             </TouchableOpacity>
             
             <View style={styles.formContainer}>
-              <BranchForm 
+              <BranchForm
                 mode={mode}
                 initialData={initialData}
+                visible={visible}
                 onSubmit={(data) => {
                   onSubmit(data);
                   onClose();

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, Platform } from 'react-native';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -11,9 +11,10 @@ interface EmployeeFormProps {
   mode: 'create' | 'update';
   initialData?: Employee;
   onSubmit: (data: any) => void;
+  visible?: boolean;
 }
 
-export function EmployeeForm({ mode, initialData, onSubmit }: EmployeeFormProps) {
+export function EmployeeForm({ mode, initialData, onSubmit, visible }: EmployeeFormProps) {
   const [formData, setFormData] = useState({
     name: initialData?.name || '',
     branchName: initialData?.branchName || '',
@@ -26,6 +27,20 @@ export function EmployeeForm({ mode, initialData, onSubmit }: EmployeeFormProps)
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    setFormData({
+      name: initialData?.name || '',
+      branchName: initialData?.branchName || '',
+      role: initialData?.role || '',
+      mainService: initialData?.mainService || '',
+      subService: initialData?.subService || '',
+      experience: initialData?.experience || '',
+      mobileNumber: initialData?.mobileNumber || '',
+      isActive: initialData?.isActive ?? true,
+    });
+    setErrors({});
+  }, [visible, initialData]);
 
   const handleSubmit = () => {
     const newErrors: Record<string, string> = {};

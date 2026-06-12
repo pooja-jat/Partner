@@ -30,9 +30,10 @@ const CloseXIcon = ({ size = 22, color = '#0F172A' }) => (
 const DUMMY_MAPPINGS = [
   {
     id: '1',
-    branchName: 'Name',
+    branchName: 'Main Branch',
     category: 'Cleaning',
     status: 'Active',
+    createdDate: '12 Jan 2024',
     services: [
       { name: 'House cleaning', experience: '1.5 years' },
       { name: 'Office cleaning', experience: '1.5 years' },
@@ -42,9 +43,10 @@ const DUMMY_MAPPINGS = [
   },
   {
     id: '2',
-    branchName: 'Name',
+    branchName: 'South Branch',
     category: 'Cleaning',
     status: 'Active',
+    createdDate: '20 Feb 2024',
     services: [
       { name: 'House cleaning', experience: '1.5 years' },
       { name: 'Office cleaning', experience: '1.5 years' },
@@ -54,9 +56,10 @@ const DUMMY_MAPPINGS = [
   },
   {
     id: '3',
-    branchName: 'Name',
+    branchName: 'East Branch',
     category: 'Cleaning',
     status: 'Active',
+    createdDate: '05 Mar 2024',
     services: [
       { name: 'House cleaning', experience: '1.5 years' },
       { name: 'Office cleaning', experience: '1.5 years' },
@@ -175,29 +178,18 @@ export default function MappingScreen() {
           )}
           {filteredMappings.map((mapping) => (
             <View key={mapping.id} style={styles.card}>
-              <View style={styles.cardHeader}>
-                <View style={styles.cardHeaderLeft}>
-                  <Text style={styles.branchName}>Branch name : {mapping.branchName}</Text>
-                  <Text style={[styles.statusText, mapping.status === 'Active' ? styles.statusActive : styles.statusInactive]}>
+              {/* Card header row: Branch name + Active badge */}
+              <View style={styles.cardHeaderRow}>
+                <Text style={styles.branchName}>Branch name : {mapping.branchName}</Text>
+                <View style={[styles.statusBadge, mapping.status === 'Active' ? styles.statusBadgeActive : styles.statusBadgeInactive]}>
+                  <Text style={[styles.statusBadgeText, mapping.status === 'Active' ? styles.statusActive : styles.statusInactive]}>
                     {mapping.status}
                   </Text>
                 </View>
               </View>
 
-              <View style={styles.cardBody}>
-                <Text style={styles.categoryTitle}>{mapping.category}</Text>
-                <View style={styles.servicesList}>
-                  {mapping.services.map((svc, index) => (
-                    <View key={index} style={styles.serviceRow}>
-                      <View style={styles.serviceLeft}>
-                        <View style={styles.bullet} />
-                        <Text style={styles.serviceName}>{svc.name}</Text>
-                      </View>
-                      <Text style={styles.serviceExp}>{svc.experience}</Text>
-                    </View>
-                  ))}
-                </View>
-              </View>
+              {/* Created date */}
+              <Text style={styles.createdDateText}>Created: {mapping.createdDate}</Text>
 
               <View style={styles.cardActions}>
                 <TouchableOpacity style={styles.iconActionBtn} onPress={() => setViewTarget(mapping)}>
@@ -256,24 +248,40 @@ export default function MappingScreen() {
               </TouchableOpacity>
             </View>
             {viewTarget && (
-              <View style={styles.viewRows}>
-                <View style={styles.viewRow}>
-                  <Text style={styles.viewLabel}>Branch Name</Text>
-                  <Text style={styles.viewValue}>{viewTarget.branchName}</Text>
+              <ScrollView showsVerticalScrollIndicator={false}>
+                <View style={styles.viewRows}>
+                  <View style={styles.viewRow}>
+                    <Text style={styles.viewLabel}>Branch Name</Text>
+                    <Text style={styles.viewValue}>{viewTarget.branchName}</Text>
+                  </View>
+                  <View style={styles.viewRow}>
+                    <Text style={styles.viewLabel}>Category</Text>
+                    <Text style={styles.viewValue}>{viewTarget.category}</Text>
+                  </View>
+                  <View style={styles.viewRow}>
+                    <Text style={styles.viewLabel}>Status</Text>
+                    <View style={[styles.statusBadge, viewTarget.status === 'Active' ? styles.statusBadgeActive : styles.statusBadgeInactive]}>
+                      <Text style={[styles.statusBadgeText, viewTarget.status === 'Active' ? styles.statusActive : styles.statusInactive]}>{viewTarget.status}</Text>
+                    </View>
+                  </View>
+                  <View style={styles.viewRow}>
+                    <Text style={styles.viewLabel}>Created Date</Text>
+                    <Text style={styles.viewValue}>{viewTarget.createdDate}</Text>
+                  </View>
+                  <View style={styles.viewRow}>
+                    <Text style={styles.viewLabel}>Total Services</Text>
+                    <Text style={styles.viewValue}>{viewTarget.services?.length || 0}</Text>
+                  </View>
                 </View>
-                <View style={styles.viewRow}>
-                  <Text style={styles.viewLabel}>Category</Text>
-                  <Text style={styles.viewValue}>{viewTarget.category}</Text>
-                </View>
-                <View style={styles.viewRow}>
-                  <Text style={styles.viewLabel}>Status</Text>
-                  <Text style={[styles.viewValue, viewTarget.status === 'Active' ? styles.statusActive : styles.statusInactive]}>{viewTarget.status}</Text>
-                </View>
-                <View style={styles.viewRow}>
-                  <Text style={styles.viewLabel}>Services</Text>
-                  <Text style={styles.viewValue}>{viewTarget.services?.length || 0} services</Text>
-                </View>
-              </View>
+                <Text style={styles.viewServicesHeading}>Services</Text>
+                {viewTarget.services?.map((svc: any, i: number) => (
+                  <View key={i} style={styles.viewServiceItem}>
+                    <View style={styles.bullet} />
+                    <Text style={styles.viewServiceName}>{svc.name}</Text>
+                    <Text style={styles.viewServiceExp}>{svc.experience}</Text>
+                  </View>
+                ))}
+              </ScrollView>
             )}
           </View>
         </View>
@@ -326,12 +334,23 @@ const styles = StyleSheet.create({
   listContainer: { paddingHorizontal: 20, paddingBottom: 40 },
   
   card: { position: 'relative', backgroundColor: '#FFFFFF', borderRadius: 24, padding: 20, marginBottom: 12, boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.05)', elevation: 2 },
+  cardHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 },
   cardHeader: { marginBottom: 8 },
   cardHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  branchName: { fontSize: 13, fontWeight: '600', color: '#0F172A' },
+  cardDivider: { height: 1, backgroundColor: '#F1F5F9', marginVertical: 10 },
+  branchName: { fontSize: 13, fontWeight: '700', color: '#0F172A', flex: 1 },
+  createdDateText: { fontSize: 11, color: '#94A3B8', fontWeight: '500', marginBottom: 2 },
+  statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
+  statusBadgeActive: { backgroundColor: '#F0FDF4' },
+  statusBadgeInactive: { backgroundColor: '#FEF2F2' },
+  statusBadgeText: { fontSize: 11, fontWeight: '700' },
   statusText: { fontSize: 10, fontWeight: '700' },
   statusActive: { color: '#22C55E' },
   statusInactive: { color: '#EF4444' },
+  viewServicesHeading: { fontSize: 12, fontWeight: '700', color: '#94A3B8', marginTop: 16, marginBottom: 8 },
+  viewServiceItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
+  viewServiceName: { flex: 1, fontSize: 13, color: '#0F172A', fontWeight: '500', marginLeft: 8 },
+  viewServiceExp: { fontSize: 12, color: '#64748B' },
   
   cardBody: {},
   categoryTitle: { fontSize: 13, fontWeight: '600', color: '#0F172A', marginBottom: 8 },
@@ -342,7 +361,7 @@ const styles = StyleSheet.create({
   serviceName: { fontSize: 11, color: '#64748B' },
   serviceExp: { fontSize: 10, color: '#64748B', width: 60, textAlign: 'right' },
   
-  cardActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 8, marginTop: 8, borderTopWidth: 1, borderTopColor: '#F1F5F9', paddingTop: 10 },
+  cardActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 8, marginTop: 8 },
   iconActionBtn: { width: 34, height: 34, borderRadius: 8, backgroundColor: '#EEF2FF', justifyContent: 'center', alignItems: 'center' },
   iconActionBtnDelete: { backgroundColor: '#FEE2E2' },
   deleteBtn: { width: 32, height: 32, borderRadius: 8, backgroundColor: '#FEE2E2', justifyContent: 'center', alignItems: 'center' },

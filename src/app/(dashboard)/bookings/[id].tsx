@@ -209,7 +209,7 @@ export default function BookingDetailsScreen() {
     if (!booking) return;
     if (booking.paymentStatus === 'paid') {
       setOtpType('complete');
-      setOtpLength(6);
+      setOtpLength(4);
       setOtpModalVisible(true);
     } else {
       processOnlinePayment();
@@ -225,7 +225,7 @@ export default function BookingDetailsScreen() {
       await StorageService.saveBooking(updated);
       setBooking(updated);
       setOtpType('complete');
-      setOtpLength(6);
+      setOtpLength(4);
       setOtpModalVisible(true);
     }, 2000);
   };
@@ -391,17 +391,11 @@ export default function BookingDetailsScreen() {
                 <Text style={styles.idValueText}>{booking.bookingId}</Text>
               </View>
               
-              {booking.status !== 'pending' && (
-                <View style={[styles.statusBadge, {
-                  borderColor: (booking.status === 'accepted' || booking.status === 'on_the_way') ? '#2563EB' : '#22C55E',
-                  backgroundColor: (booking.status === 'accepted' || booking.status === 'on_the_way') ? '#EFF6FF' : '#F0FDF4'
-                }]}>
-                  <View style={[styles.statusDot, { backgroundColor: (booking.status === 'accepted' || booking.status === 'on_the_way') ? '#2563EB' : '#22C55E' }]} />
-                  <Text style={[styles.statusBadgeText, { color: (booking.status === 'accepted' || booking.status === 'on_the_way') ? '#1D4ED8' : '#15803D' }]}>
-                    {(booking.status === 'accepted' || booking.status === 'on_the_way') ? 'ON THE WAY' : booking.status.toUpperCase()}
-                  </Text>
-                </View>
-              )}
+              <View style={[styles.statusBadge, { borderColor: '#3B82F6', backgroundColor: '#EFF6FF' }]}>
+                <Text style={[styles.statusBadgeText, { color: '#3B82F6' }]}>
+                  Distance: {(booking.serviceRadius ?? 0).toFixed(1)}KM
+                </Text>
+              </View>
             </View>
 
             <Text style={styles.bookedOnText}>Booked on 2 May 2024, 09:20 AM</Text>
@@ -423,6 +417,7 @@ export default function BookingDetailsScreen() {
                   <Text style={styles.priceLabelSub}>ONLINE PAYMENT</Text>
                 </View>
               </View>
+
             </View>
 
             {/* Customer Details Card */}
@@ -980,15 +975,9 @@ export default function BookingDetailsScreen() {
             )}
           </View>
 
-          {booking.status === 'accepted' && role !== 'ISP' && (
+          {booking.status === 'accepted' && role !== 'ISP' && role !== 'BSP' && (
             <>
-              {role === 'BSP' ? (
-                !booking.employeeId ? (
-                  <TouchableOpacity style={styles.footerPrimaryBtn} onPress={handleAssignPress}>
-                    <Text style={styles.footerPrimaryBtnText}>Assign Professional</Text>
-                  </TouchableOpacity>
-                ) : null
-              ) : role === 'Professional' ? (
+              {role === 'Professional' ? (
                 !profAccepted ? (
                   <View style={styles.actionBtnGroupInline}>
                     <TouchableOpacity style={styles.primaryActionButton} onPress={handleAcceptAssignment}>
@@ -1013,7 +1002,7 @@ export default function BookingDetailsScreen() {
             </>
           )}
 
-          {booking.status === 'checked_in' && role !== 'ISP' && (
+          {booking.status === 'checked_in' && role !== 'ISP' && role !== 'BSP' && (
             <TouchableOpacity style={styles.footerPrimaryBtn} onPress={handleComplete}>
               <Text style={styles.footerPrimaryBtnText}>Complete Service</Text>
             </TouchableOpacity>
@@ -1236,7 +1225,12 @@ const styles = StyleSheet.create({
   idValueText: { fontSize: 14, fontWeight: '700', color: '#0F172A' },
   statusBadge: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
   statusDot: { width: 6, height: 6, borderRadius: 3, marginRight: 6 },
-  statusBadgeText: { fontSize: 9, fontWeight: '700' },
+  statusBadgeText: { fontSize: 11, fontWeight: '700' },
+  goToBikeRow: { flexDirection: 'row', alignItems: 'center', marginTop: 12, gap: 12 },
+  goToPill: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: '#F1F5F9', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
+  goToPillText: { fontSize: 13, fontWeight: '700', color: '#475569' },
+  bikeRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  bikeLabel: { fontSize: 15, fontWeight: '700', color: '#0F172A' },
   bookedOnText: { fontSize: 11, color: '#94A3B8', marginTop: 8, marginBottom: 16, fontWeight: '500' },
 
   // Generic card styling

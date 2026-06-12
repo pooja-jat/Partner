@@ -1,8 +1,8 @@
 import { useSafeRouter } from '@/hooks/useSafeRouter';
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Platform, TouchableOpacity, KeyboardAvoidingView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Platform, TouchableOpacity, KeyboardAvoidingView, Alert, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import {  useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { GradientBackground } from '@/components/ui/GradientBackground';
 import { Input } from '@/components/ui/Input';
 import { SelectInput } from '@/components/ui/SelectInput';
@@ -14,6 +14,29 @@ import { useDocStore } from '@/store/docStore';
 import { useAndroidBack } from '@/hooks/useAndroidBack';
 import { StorageService } from '@/services/storage.service';
 import { SelectOptionsModal } from '@/components/common/SelectOptionsModal';
+import * as ImagePicker from 'expo-image-picker';
+import Svg, { Path, Circle } from 'react-native-svg';
+
+const CameraIcon = ({ size = 32, color = '#4338CA' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <Circle cx="12" cy="13" r="4" stroke={color} strokeWidth="2" />
+  </Svg>
+);
+
+const VideoIcon = ({ size = 32, color = '#4338CA' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Path d="M15 10l4.553-2.277A1 1 0 0 1 21 8.624v6.752a1 1 0 0 1-1.447.9L15 14v-4z" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <Path d="M3 8a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8z" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+);
+
+const CheckCircleIcon = ({ size = 20, color = '#22C55E' }) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <Circle cx="12" cy="12" r="10" stroke={color} strokeWidth="2" />
+    <Path d="M8 12l3 3 5-5" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+  </Svg>
+);
 
 const DOCUMENT_TYPES = [
   { label: 'Aadhaar Card', value: 'Aadhaar Card' },
@@ -32,52 +55,131 @@ const BIZ_DOCUMENT_TYPES = [
 
 export default function DocumentUploadScreen() {
   const router = useSafeRouter();
-  const { flow, readonly, error } = useLocalSearchParams<{ flow: string, readonly?: string, error?: string }>();
+  const { flow, readonly, error, doc, type } = useLocalSearchParams<{
+    flow: string;
+    readonly?: string;
+    error?: string;
+    doc?: string;
+    type?: 'selfie' | 'video';
+  }>();
   const isReadonly = readonly === 'true';
-  const { updateDocStatus } = useDocStore();
+  const { updateDocStatus, updateDocUri, selfieStatus, videoKycStatus } = useDocStore();
   const [isApproved, setIsApproved] = useState(false);
+  const [cameraLoading, setCameraLoading] = useState(false);
+
+  const isSelfie = type === 'selfie';
+  const isVideo = type === 'video';
+  const isBiometric = isSelfie || isVideo;
+  const isBusiness = flow === 'business';
+
+  const currentBiometricStatus = isSelfie ? selfieStatus : videoKycStatus;
+  const isAlreadyCaptured = isBiometric && currentBiometricStatus.toUpperCase() !== 'NOT UPLOADED';
 
   useEffect(() => {
     const checkApproval = async () => {
       const session = await StorageService.getUserSession();
-      if (session?.isApproved) {
-        setIsApproved(true);
-      }
+      if (session?.isApproved) setIsApproved(true);
     };
     checkApproval();
   }, []);
 
-  useAndroidBack(() => {
-    router.back();
-  });
+  useAndroidBack(() => { router.back(); });
 
-  const isBusiness = flow === 'business';
-
-  const [docType, setDocType] = useState(isBusiness ? 'Business License' : 'National ID Card');
+  const [docType, setDocType] = useState(doc || (isBusiness ? 'Business License' : 'National ID Card'));
   const [docNumber, setDocNumber] = useState('');
-  const [bizName, setBizName] = useState(isBusiness ? 'e.g. Acme Corp' : '');
+  const [bizName, setBizName] = useState('');
   const [docModalVisible, setDocModalVisible] = useState(false);
-  const [uploadedFront, setUploadedFront] = useState(false);
-  const [uploadedBack, setUploadedBack] = useState(false);
+  const [uploadedFront, setUploadedFront] = useState<string | null>(null);
+  const [uploadedBack, setUploadedBack] = useState<string | null>(null);
+
+  const requestCameraPermission = async () => {
+    const { status, canAskAgain } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      if (!canAskAgain) {
+        Alert.alert(
+          'Camera Access Required',
+          'Please enable camera access in your device Settings.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Open Settings', onPress: () => Linking.openSettings() },
+          ]
+        );
+      } else {
+        Alert.alert('Permission Required', 'Please allow camera access.');
+      }
+      return false;
+    }
+    return true;
+  };
+
+  const handleCameraCapture = async () => {
+    const granted = await requestCameraPermission();
+    if (!granted) return;
+    setCameraLoading(true);
+    try {
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: isVideo ? ['videos'] : ['images'],
+        allowsEditing: true,
+        quality: 0.8,
+        cameraType: isSelfie ? ImagePicker.CameraType.front : ImagePicker.CameraType.back,
+      });
+      if (!result.canceled && result.assets[0]) {
+        const uri = result.assets[0].uri;
+        const key = isSelfie ? 'selfie' : 'videoKyc';
+        updateDocUri(key, uri);
+        updateDocStatus(key, 'Pending');
+        router.back();
+      }
+    } finally {
+      setCameraLoading(false);
+    }
+  };
+
+  const handleImagePick = async (side: 'front' | 'back') => {
+    const { status, canAskAgain } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      if (!canAskAgain) {
+        Alert.alert(
+          'Gallery Access Required',
+          'Please enable gallery access in your device Settings to upload documents.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Open Settings', onPress: () => Linking.openSettings() },
+          ]
+        );
+      } else {
+        Alert.alert('Permission Required', 'Please allow gallery access to upload document.');
+      }
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      quality: 0.8,
+    });
+    if (!result.canceled) {
+      if (side === 'front') setUploadedFront(result.assets[0].uri);
+      else setUploadedBack(result.assets[0].uri);
+    }
+  };
 
   const handleSubmit = async () => {
     let key = 'otherDocs';
     if (isBusiness) {
       key = 'businessVerification';
     } else {
-      if (docType === 'National ID Card' || docType === 'Aadhaar Card') {
-        key = 'aadhaar';
-      } else if (docType === 'PAN Card') {
-        key = 'pan';
-      } else if (docType === 'Driving License') {
-        key = 'drivingLicense';
-      } else if (docType === 'Police Clearance') {
-        key = 'policeClearance';
-      }
+      if (docType === 'National ID Card' || docType === 'Aadhaar Card') key = 'aadhaar';
+      else if (docType === 'PAN Card') key = 'pan';
+      else if (docType === 'Driving License') key = 'drivingLicense';
+      else if (docType === 'Police Clearance') key = 'policeClearance';
     }
     updateDocStatus(key, 'Pending');
+    if (uploadedFront) updateDocUri(key, uploadedFront);
 
-    if (isApproved) {
+    if (flow === 'kyc') {
+      await StorageService.updateMandatoryFlowStep('kycUpload', 'reviewing');
+      router.replace('/(tabs)/kyc' as any);
+    } else if (isApproved) {
       router.back();
     } else {
       const { completeStepAndNavigate } = require('@/utils/onboarding');
@@ -89,6 +191,94 @@ export default function DocumentUploadScreen() {
     }
   };
 
+  // ── Biometric (Selfie / Video KYC) UI ──────────────────────────────────────
+  if (isBiometric) {
+    return (
+      <GradientBackground style={styles.container}>
+        <SafeAreaView style={styles.safeArea}>
+          <View style={styles.header}>
+            <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+              <BackArrowIcon size={24} color="#0F172A" />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>
+              {isSelfie ? 'Selfie Verification' : 'Video KYC'}
+            </Text>
+          </View>
+
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+            <View style={styles.card}>
+              {/* Top section */}
+              <View style={styles.topSection}>
+                <View style={styles.iconWrapper}>
+                  {isSelfie
+                    ? <CameraIcon size={28} color="#4338CA" />
+                    : <VideoIcon size={28} color="#4338CA" />}
+                </View>
+                <Text style={styles.verifyTitle}>
+                  {isSelfie ? 'Take a Selfie' : 'Record Video KYC'}
+                </Text>
+                <Text style={styles.verifyDesc}>
+                  {isSelfie
+                    ? 'Please take a clear selfie in good lighting. Make sure your face is clearly visible.'
+                    : 'Record a short video saying your name and date of birth for identity verification.'}
+                </Text>
+                <View style={styles.pendingPill}>
+                  <ClockCircleIcon size={14} color="#4338CA" />
+                  <Text style={styles.pendingPillText}>Pending Verification</Text>
+                </View>
+              </View>
+
+              {/* Tips */}
+              <Text style={styles.sectionTitle}>
+                {isSelfie ? 'SELFIE TIPS' : 'VIDEO TIPS'}
+              </Text>
+              <View style={styles.tipsBox}>
+                {isSelfie ? (
+                  <>
+                    <Text style={styles.tip}>• Face the camera directly</Text>
+                    <Text style={styles.tip}>• Ensure good lighting</Text>
+                    <Text style={styles.tip}>• Remove glasses or hat</Text>
+                    <Text style={styles.tip}>• Plain background preferred</Text>
+                  </>
+                ) : (
+                  <>
+                    <Text style={styles.tip}>• Speak clearly and slowly</Text>
+                    <Text style={styles.tip}>• Say your full name and date of birth</Text>
+                    <Text style={styles.tip}>• Keep video under 30 seconds</Text>
+                    <Text style={styles.tip}>• Ensure good lighting</Text>
+                  </>
+                )}
+              </View>
+
+              {isAlreadyCaptured && (
+                <View style={styles.capturedRow}>
+                  <CheckCircleIcon size={20} color="#22C55E" />
+                  <Text style={styles.capturedText}>
+                    {isSelfie ? 'Selfie captured' : 'Video recorded'} — Pending verification
+                  </Text>
+                </View>
+              )}
+
+              <Button
+                title={
+                  cameraLoading
+                    ? 'Opening Camera...'
+                    : isAlreadyCaptured
+                      ? (isSelfie ? 'Retake Selfie' : 'Re-record Video')
+                      : (isSelfie ? 'Open Camera' : 'Start Recording')
+                }
+                onPress={handleCameraCapture}
+                variant="primary"
+                style={styles.submitBtn}
+              />
+            </View>
+          </ScrollView>
+        </SafeAreaView>
+      </GradientBackground>
+    );
+  }
+
+  // ── Standard Document Upload UI ────────────────────────────────────────────
   return (
     <GradientBackground style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
@@ -97,10 +287,7 @@ export default function DocumentUploadScreen() {
           style={{ flex: 1 }}
         >
           <View style={styles.header}>
-            <TouchableOpacity
-              onPress={() => router.back()}
-              style={styles.backButton}
-            >
+            <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
               <BackArrowIcon size={24} color="#0F172A" />
             </TouchableOpacity>
             <Text style={styles.headerTitle}>
@@ -108,24 +295,16 @@ export default function DocumentUploadScreen() {
             </Text>
           </View>
 
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.scrollContent}
-          >
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
             <View style={styles.card}>
-              {/* Top Info Section */}
               <View style={styles.topSection}>
                 <View style={styles.iconWrapper}>
-                  {isBusiness ? (
-                    <BuildingIcon size={24} color="#4338CA" />
-                  ) : (
-                    <ShieldCheckIcon size={24} color="#4338CA" />
-                  )}
+                  {isBusiness
+                    ? <BuildingIcon size={24} color="#4338CA" />
+                    : <ShieldCheckIcon size={24} color="#4338CA" />}
                 </View>
                 <Text style={styles.verifyTitle}>
-                  {isBusiness
-                    ? "Business Verification"
-                    : "Verify Your Identity"}
+                  {isBusiness ? "Business Verification" : "Verify Your Identity"}
                 </Text>
                 <Text style={styles.verifyDesc}>
                   {isBusiness
@@ -134,9 +313,7 @@ export default function DocumentUploadScreen() {
                 </Text>
                 <View style={styles.pendingPill}>
                   <ClockCircleIcon size={14} color="#4338CA" />
-                  <Text style={styles.pendingPillText}>
-                    Pending Verification
-                  </Text>
+                  <Text style={styles.pendingPillText}>Pending Verification</Text>
                 </View>
               </View>
 
@@ -146,7 +323,6 @@ export default function DocumentUploadScreen() {
                 </View>
               )}
 
-              {/* Document Info */}
               <Text style={styles.sectionTitle}>
                 {isBusiness ? "BUSINESS DETAILS" : "DOCUMENT INFO"}
               </Text>
@@ -171,61 +347,42 @@ export default function DocumentUploadScreen() {
 
               <Input
                 label="Document Number *"
-                placeholder={
-                  isBusiness ? "Enter Document Number" : "Enter Document Number"
-                }
+                placeholder="Enter Document Number"
                 value={docNumber}
                 onChangeText={setDocNumber}
                 editable={!isReadonly}
               />
 
-              {/* Document Images */}
-              <Text style={[styles.sectionTitle, { marginTop: 8 }]}>
-                DOCUMENT IMAGES
-              </Text>
+              <Text style={[styles.sectionTitle, { marginTop: 8 }]}>DOCUMENT IMAGES</Text>
               <Text style={styles.sectionDesc}>
                 {isBusiness
                   ? "Please provide clear images of your official business documents."
                   : "Ensure all text is clearly visible and there is no glare."}
               </Text>
 
-              <Text style={styles.uploadLabel}>
-                {isBusiness ? "Front Image" : "Front Side"}
-              </Text>
+              <Text style={styles.uploadLabel}>{isBusiness ? "Front Image" : "Front Side"}</Text>
               <ImageUploadCard
                 label="Tap to upload"
                 subLabel="PNG, JPG up to 5MB"
-                uploaded={isReadonly || uploadedFront}
-                dummyImage={require("@/assets/dummy/aadhaar-front.png")}
-                onPress={() => {
-                  if (!isReadonly) setUploadedFront((v) => !v);
-                }}
+                uploaded={isReadonly || !!uploadedFront}
+                uploadedUri={uploadedFront ?? undefined}
+                onPress={() => { if (!isReadonly) handleImagePick('front'); }}
                 style={styles.uploadCard}
               />
 
-              <Text style={styles.uploadLabel}>
-                {isBusiness ? "Back Image" : "Back Side"}
-              </Text>
+              <Text style={styles.uploadLabel}>{isBusiness ? "Back Image" : "Back Side"}</Text>
               <ImageUploadCard
                 label="Tap to upload"
                 subLabel="PNG, JPG up to 5MB"
-                uploaded={isReadonly || uploadedBack}
-                dummyImage={require("@/assets/dummy/aadhaar-back.png")}
-                onPress={() => {
-                  if (!isReadonly) setUploadedBack((v) => !v);
-                }}
+                uploaded={isReadonly || !!uploadedBack}
+                uploadedUri={uploadedBack ?? undefined}
+                onPress={() => { if (!isReadonly) handleImagePick('back'); }}
                 style={styles.uploadCard}
               />
 
               {!isReadonly && (
                 <Button
-                  title={
-                    isApproved
-                      ? "Save Changes"
-                      : isBusiness
-                        ? "Submit Documents"
-                        : "Submit for Verification"
-                  }
+                  title={isApproved ? "Save Changes" : isBusiness ? "Submit Documents" : "Submit for Verification"}
                   onPress={handleSubmit}
                   variant="primary"
                   style={styles.submitBtn}
@@ -233,6 +390,7 @@ export default function DocumentUploadScreen() {
               )}
             </View>
           </ScrollView>
+
           <SelectOptionsModal
             visible={docModalVisible}
             onClose={() => setDocModalVisible(false)}
@@ -247,14 +405,8 @@ export default function DocumentUploadScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  safeArea: {
-    flex: 1,
-    backgroundColor: 'transparent',
-    
-  },
+  container: { flex: 1 },
+  safeArea: { flex: 1, backgroundColor: 'transparent' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -262,13 +414,11 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: 8,
   },
-  backButton: {
-    marginRight: 12,
-  },
+  backButton: { marginRight: 12 },
   headerTitle: {
     fontSize: 20,
     fontWeight: '700',
-    color: '#0F172A', // Changed to dark color for contrast against gradient
+    color: '#0F172A',
   },
   scrollContent: {
     paddingHorizontal: 20,
@@ -288,7 +438,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#EEF2FF', // light indigo
+    backgroundColor: '#EEF2FF',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 16,
@@ -340,10 +490,38 @@ const styles = StyleSheet.create({
     color: '#0F172A',
     marginBottom: 8,
   },
-  uploadCard: {
+  uploadCard: { marginBottom: 20 },
+  submitBtn: { marginTop: 12 },
+  tipsBox: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: 12,
+    padding: 16,
     marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    width: '100%',
   },
-  submitBtn: {
-    marginTop: 12,
+  tip: {
+    fontSize: 13,
+    color: '#475569',
+    marginBottom: 6,
+    lineHeight: 18,
+  },
+  capturedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 16,
+    backgroundColor: '#F0FDF4',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 10,
+    width: '100%',
+  },
+  capturedText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#16A34A',
+    flex: 1,
   },
 });

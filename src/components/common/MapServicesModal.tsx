@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, TextInput } from 'react-native';
 import { Button } from '@/components/ui/Button';
 import { Checkbox } from '@/components/ui/Checkbox';
 import { Switch } from '@/components/ui/Switch';
 import { CloseIcon, ChevronDownIcon } from '@/components/ui/Icons';
 import Svg, { Path } from 'react-native-svg';
+
+const BRANCH_OPTIONS = ['Main Branch', 'South Branch', 'East Branch', 'North Branch', 'West Branch'];
 
 interface ServiceOption {
   id: string;
@@ -60,9 +62,30 @@ const INITIAL_SERVICES: ServiceCategory[] = [
 ];
 
 export const MapServicesModal: React.FC<MapServicesModalProps> = ({ visible, onClose, mode, initialData, onSubmit }) => {
-  const [branch, setBranch] = useState(initialData?.branch || 'Downtown Branch');
-  const [services, setServices] = useState<ServiceCategory[]>(INITIAL_SERVICES);
+  const [branch, setBranch] = useState(initialData?.branchName || initialData?.branch || '');
+  const [branchDropdownOpen, setBranchDropdownOpen] = useState(false);
   const [isActive, setIsActive] = useState<boolean>(initialData ? initialData.status === 'Active' : true);
+
+  const buildServices = (data: any) => {
+    if (!data?.services) return INITIAL_SERVICES;
+    return INITIAL_SERVICES.map(cat => ({
+      ...cat,
+      options: cat.options.map(opt => {
+        const existing = data.services.find((s: any) => s.name?.toLowerCase() === opt.name.toLowerCase());
+        return existing ? { ...opt, selected: true, experience: existing.experience || '' } : opt;
+      }),
+    }));
+  };
+
+  const [services, setServices] = useState<ServiceCategory[]>(buildServices(initialData));
+
+  useEffect(() => {
+    if (visible) {
+      setBranch(initialData?.branchName || initialData?.branch || '');
+      setIsActive(initialData ? initialData.status === 'Active' : true);
+      setServices(buildServices(initialData));
+    }
+  }, [visible, initialData]);
 
   const toggleCategory = (categoryId: string) => {
     setServices(prev => prev.map(c => c.id === categoryId ? { ...c, isExpanded: !c.isExpanded } : c));
@@ -113,15 +136,37 @@ export const MapServicesModal: React.FC<MapServicesModalProps> = ({ visible, onC
               <Text style={styles.subtitle}>Select a branch and assign the services they will handle.</Text>
             </View>
 
-            <View style={styles.section}>
+            <View style={[styles.section, { zIndex: 100 }]}>
               <Text style={styles.sectionTitle}>Select Branch</Text>
-              <TextInput
-                style={styles.inputBox}
-                value={branch}
-                onChangeText={setBranch}
-                placeholder="Enter branch name"
-                placeholderTextColor="#94A3B8"
-              />
+              <TouchableOpacity
+                style={styles.dropdownTrigger}
+                onPress={() => setBranchDropdownOpen(o => !o)}
+                activeOpacity={0.8}
+              >
+                <Text style={[styles.dropdownTriggerText, !branch && styles.dropdownPlaceholder]}>
+                  {branch || 'Select branch'}
+                </Text>
+              </TouchableOpacity>
+              {branchDropdownOpen && (
+                <View style={styles.dropdownMenu}>
+                  {BRANCH_OPTIONS.map((opt) => (
+                    <TouchableOpacity
+                      key={opt}
+                      style={[styles.dropdownOption, branch === opt && styles.dropdownOptionActive]}
+                      onPress={() => { setBranch(opt); setBranchDropdownOpen(false); }}
+                    >
+                      <Text style={[styles.dropdownOptionText, branch === opt && styles.dropdownOptionTextActive]}>
+                        {opt}
+                      </Text>
+                      {branch === opt && (
+                        <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
+                          <Path d="M5 13L9 17L19 7" stroke="rgba(26,15,163,1)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                        </Svg>
+                      )}
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
             </View>
 
             <View style={styles.section}>
@@ -156,7 +201,7 @@ export const MapServicesModal: React.FC<MapServicesModalProps> = ({ visible, onC
                                 <View style={styles.expInputBox}>
                                   <TextInput 
                                     style={styles.expInput} 
-                                    placeholder="e.g. 5" 
+                                    placeholder="Enter years"
                                     keyboardType="numeric"
                                     value={opt.experience || ''}
                                     onChangeText={(val) => updateExperience(cat.id, opt.id, val)}
@@ -214,6 +259,14 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 14, fontWeight: '700', color: '#0F172A', marginBottom: 12 },
   
   inputBox: { borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 12, paddingHorizontal: 16, height: 48, backgroundColor: '#FFFFFF', fontSize: 14, color: '#0F172A' },
+  dropdownTrigger: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 12, paddingHorizontal: 16, height: 48, backgroundColor: '#FFFFFF' },
+  dropdownTriggerText: { fontSize: 14, color: '#0F172A', fontWeight: '500', flex: 1 },
+  dropdownPlaceholder: { color: '#94A3B8', fontWeight: '400' },
+  dropdownMenu: { position: 'absolute', top: 90, left: 0, right: 0, backgroundColor: '#FFFFFF', borderRadius: 12, borderWidth: 1, borderColor: '#E2E8F0', elevation: 10, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 8, zIndex: 200 },
+  dropdownOption: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#F8FAFC' },
+  dropdownOptionActive: { backgroundColor: 'rgba(26,15,163,0.05)' },
+  dropdownOptionText: { fontSize: 14, color: '#334155' },
+  dropdownOptionTextActive: { fontWeight: '700', color: 'rgba(26,15,163,1)' },
   dropdownBox: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 12, paddingHorizontal: 16, height: 48, backgroundColor: '#FFFFFF' },
   dropdownText: { fontSize: 14, color: '#0F172A', fontWeight: '500' },
   

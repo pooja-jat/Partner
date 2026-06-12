@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Platform, FlatList } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Platform, FlatList, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSafeRouter } from '@/hooks/useSafeRouter';
 import { GradientBackground } from '@/components/ui/GradientBackground';
@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/Button';
 import { useEmployeeStore } from '@/store/employeeStore';
 import { EmployeeModal } from '@/components/common/EmployeeModal';
 import { EmployeeDetailsModal } from '@/components/common/EmployeeDetailsModal';
-import { EmployeeBookingsModal } from '@/components/common/EmployeeBookingsModal';
 import Svg, { Path, Circle, Rect } from 'react-native-svg';
 
 const ViewIcon = () => (
@@ -25,13 +24,7 @@ const EditIcon = () => (
   </Svg>
 );
 
-const BookingIcon = () => (
-  <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
-    <Rect x="3" y="4" width="18" height="18" rx="2" stroke="#8B5CF6" strokeWidth="1.5"/>
-    <Path d="M16 2V6M8 2V6M3 10H21" stroke="#8B5CF6" strokeWidth="1.5" strokeLinecap="round"/>
-    <Path d="M8 14H16M8 18H12" stroke="#8B5CF6" strokeWidth="1.5" strokeLinecap="round"/>
-  </Svg>
-);
+
 
 const PayoutIcon = () => (
   <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
@@ -54,15 +47,15 @@ import { StorageService } from '@/services/storage.service';
 
 export default function EmployeeListScreen() {
   const router = useSafeRouter();
-  const { employees, initialize, updateEmployee, addEmployee } = useEmployeeStore();
+  const { employees, initialize, updateEmployee, addEmployee, deleteEmployee } = useEmployeeStore();
   const [filter, setFilter] = useState<'All' | 'Active' | 'Inactive'>('All');
   
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [modalMode, setModalMode] = useState<'create' | 'update'>('create');
   
   const [isDetailsVisible, setIsDetailsVisible] = useState(false);
-  const [isBookingsVisible, setIsBookingsVisible] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Employee | null>(null);
   const [isApproved, setIsApproved] = useState(false);
 
   const handleBack = () => {
@@ -103,15 +96,15 @@ export default function EmployeeListScreen() {
     setIsDetailsVisible(true);
   };
 
-  const handleBookings = (item: Employee) => {
-    setSelectedEmployee(item);
-    setIsBookingsVisible(true);
-  };
+
 
   const renderItem = ({ item }: { item: Employee }) => (
     <View style={styles.card}>
       <View style={styles.cardHeader}>
-        <Text style={styles.employeeName}>Employee Name : {item.name}</Text>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.employeeName}>Employee Name : {item.name}</Text>
+          <Text style={styles.createdDateText}>Created Date : {item.createdAt || '08 May 2024'}</Text>
+        </View>
         <Text style={[styles.statusText, !item.isActive && styles.statusInactive]}>
           {item.isActive ? 'Active' : 'Inactive'}
         </Text>
@@ -124,13 +117,16 @@ export default function EmployeeListScreen() {
         <TouchableOpacity style={styles.actionButton} onPress={() => handleEdit(item)}>
           <EditIcon />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.actionButton} onPress={() => handleBookings(item)}>
-          <BookingIcon />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.actionButton} onPress={() => router.push('/(tabs)/employee/payouts')}>
+        <TouchableOpacity 
+          style={styles.actionButton} 
+          onPress={() => router.push({
+            pathname: '/(tabs)/employee/payouts',
+            params: { employeeId: item.id }
+          })}
+        >
           <PayoutIcon />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.actionButton} onPress={() => {}}>
+        <TouchableOpacity style={styles.actionButton} onPress={() => setDeleteTarget(item)}>
           <DeleteIcon />
         </TouchableOpacity>
       </View>
@@ -138,6 +134,7 @@ export default function EmployeeListScreen() {
   );
 
   return (
+    <>
     <RoleAccessGuard allowedRoles={['BSP', 'BS']}>
       <GradientBackground style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
@@ -239,13 +236,38 @@ export default function EmployeeListScreen() {
         employee={selectedEmployee}
       />
 
-      <EmployeeBookingsModal
-        visible={isBookingsVisible}
-        onClose={() => setIsBookingsVisible(false)}
-        employee={selectedEmployee}
-      />
+
+
     </GradientBackground>
     </RoleAccessGuard>
+
+    <Modal visible={!!deleteTarget} transparent animationType="slide" onRequestClose={() => setDeleteTarget(null)}>
+      <View style={styles.modalOverlay}>
+        <TouchableOpacity style={StyleSheet.absoluteFillObject} activeOpacity={1} onPress={() => setDeleteTarget(null)} />
+        <View style={styles.modalSheet}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Delete Employee</Text>
+            <TouchableOpacity onPress={() => setDeleteTarget(null)} style={styles.closeBtn}>
+              <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
+                <Path d="M18 6L6 18M6 6L18 18" stroke="#0F172A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </Svg>
+            </TouchableOpacity>
+          </View>
+          <Text style={styles.deleteMsg}>
+            Are you sure you want to delete <Text style={{ fontWeight: '700' }}>{deleteTarget?.name}</Text>? This action cannot be undone.
+          </Text>
+          <View style={styles.deleteActions}>
+            <TouchableOpacity style={styles.cancelBtn} onPress={() => setDeleteTarget(null)}>
+              <Text style={styles.cancelBtnText}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.deleteBtn} onPress={() => { if (deleteTarget) { deleteEmployee(deleteTarget.id); setDeleteTarget(null); } }}>
+              <Text style={styles.deleteBtnText}>Delete</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+    </>
   );
 }
 
@@ -267,6 +289,7 @@ const styles = StyleSheet.create({
   card: { backgroundColor: '#FFFFFF', borderRadius: 24, padding: 20 },
   cardHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 16, gap: 8 },
   employeeName: { fontSize: 14, fontWeight: '600', color: '#334155' },
+  createdDateText: { fontSize: 11, color: '#64748B', marginTop: 4, fontWeight: '500' },
   statusText: { fontSize: 11, fontWeight: '700', color: '#22C55E' },
   statusInactive: { color: '#EF4444' },
   actionsRow: { flexDirection: 'row', justifyContent: 'space-between', gap: 8 },
@@ -278,6 +301,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     flex: 1,
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 4,
   },
   actionButtonText: { fontSize: 10, color: '#0F172A', fontWeight: '500' },
@@ -289,5 +313,17 @@ const styles = StyleSheet.create({
   emptyTitle: { fontSize: 20, fontWeight: '700', color: '#0F172A', textAlign: 'center', marginBottom: 12 },
   emptySubtitle: { fontSize: 13, color: '#94A3B8', textAlign: 'center', lineHeight: 20 },
 
-  footer: { paddingHorizontal: 20, paddingBottom: 40, paddingTop: 16 }
+  footer: { paddingHorizontal: 20, paddingBottom: 40, paddingTop: 16 },
+
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(15,23,42,0.45)', justifyContent: 'flex-end' },
+  modalSheet: { backgroundColor: '#FFFFFF', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 24 },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+  modalTitle: { fontSize: 17, fontWeight: '700', color: '#0F172A' },
+  closeBtn: { padding: 4 },
+  deleteMsg: { fontSize: 14, color: '#475569', lineHeight: 22, marginBottom: 24 },
+  deleteActions: { flexDirection: 'row', gap: 12 },
+  cancelBtn: { flex: 1, paddingVertical: 14, borderRadius: 12, borderWidth: 1, borderColor: '#E2E8F0', alignItems: 'center' },
+  cancelBtnText: { fontSize: 14, fontWeight: '600', color: '#64748B' },
+  deleteBtn: { flex: 1, paddingVertical: 14, borderRadius: 12, backgroundColor: 'rgba(26, 15, 163, 1.00)', alignItems: 'center' },
+  deleteBtnText: { fontSize: 14, fontWeight: '700', color: '#FFFFFF' },
 });

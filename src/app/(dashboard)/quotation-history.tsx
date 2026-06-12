@@ -125,23 +125,29 @@ export default function QuotationHistoryScreen() {
               <Text style={styles.emptyText}>No {activeTab} quotations</Text>
             </View>
           ) : (
-            filtered.map(q => {
-              const col = STATUS_COLOR[q.status as HistoryTab];
-              return (
-                <View key={q.id} style={styles.card}>
-                  <View style={styles.cardLeft}>
-                    <Text style={styles.cardService}>{q.service}</Text>
-                    <Text style={styles.cardDate}>{q.date}</Text>
-                  </View>
-                  <View style={styles.cardRight}>
-                    <Text style={styles.cardAmount}>{q.amount}</Text>
-                    <View style={[styles.statusBadge, { backgroundColor: col.bg }]}>
-                      <Text style={[styles.statusText, { color: col.text }]}>{q.status}</Text>
+            <View style={styles.card}>
+              {filtered.map((q, idx) => {
+                const col = STATUS_COLOR[q.status as HistoryTab];
+                return (
+                  <View key={q.id}>
+                    {idx > 0 && <View style={styles.cardDivider} />}
+                    <View style={styles.cardRow}>
+                      <View style={styles.cardLeft}>
+                        <Text style={styles.cardId}>{q.id}</Text>
+                        <Text style={styles.cardService}>{q.service}</Text>
+                        <Text style={styles.cardDate}>{q.date}</Text>
+                      </View>
+                      <View style={styles.cardRight}>
+                        <Text style={styles.cardAmount}>{q.amount}</Text>
+                        <View style={[styles.statusBadge, { backgroundColor: col.bg }]}>
+                          <Text style={[styles.statusText, { color: col.text }]}>{q.status}</Text>
+                        </View>
+                      </View>
                     </View>
                   </View>
-                </View>
-              );
-            })
+                );
+              })}
+            </View>
           )}
 
         </ScrollView>
@@ -180,11 +186,13 @@ const styles = StyleSheet.create({
   tabTextActive: { color: '#FFFFFF' },
 
   card: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    backgroundColor: '#FFFFFF', borderRadius: 14, padding: 14, marginBottom: 10,
-    borderWidth: 1, borderColor: '#F1F5F9', elevation: 1,
+    backgroundColor: '#FFFFFF', borderRadius: 20,
+    borderWidth: 1, borderColor: '#F1F5F9', elevation: 2, overflow: 'hidden', marginBottom: 10,
   },
+  cardRow:     { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16 },
+  cardDivider: { height: 1, backgroundColor: '#F1F5F9' },
   cardLeft:    { flex: 1 },
+  cardId:      { fontSize: 10, fontWeight: '700', color: '#94A3B8', letterSpacing: 0.5, marginBottom: 3 },
   cardService: { fontSize: 13, fontWeight: '600', color: '#0F172A', marginBottom: 4 },
   cardDate:    { fontSize: 11, color: '#94A3B8' },
   cardRight:   { alignItems: 'flex-end', gap: 6 },
