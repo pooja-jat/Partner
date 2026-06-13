@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, Keyboard, Pressable, KeyboardAvoidingView, ScrollView, Platform, BackHandler } from 'react-native';
 import { useSafeRouter } from '@/hooks/useSafeRouter';
 import { Image } from 'expo-image';
@@ -19,16 +19,10 @@ export default function LoginScreen() {
     BackHandler.exitApp();
   });
   const router = useSafeRouter();
-  const { sendOtp, isLoading, error, clearError, otpSent } = useAuthStore();
+  const { sendOtp, isLoading, error, clearError } = useAuthStore();
 
   const [phone, setPhone] = useState('');
   const [showHelp, setShowHelp] = useState(false);
-
-  useEffect(() => {
-    if (otpSent) {
-      router.replace('/(auth)/otp');
-    }
-  }, [otpSent]);
 
   const handleSend = async () => {
     clearError();
@@ -41,7 +35,10 @@ export default function LoginScreen() {
       useAuthStore.setState({ error: 'Please enter a valid 10‑digit mobile number' });
       return;
     }
-    await sendOtp(phone);
+    const success = await sendOtp(phone);
+    if (success) {
+      router.replace('/(auth)/otp');
+    }
   };
 
   return (

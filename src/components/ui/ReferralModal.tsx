@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, Text, Modal, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, Text, Modal, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
 import { COLORS } from '../../constants';
 import { Button } from './Button';
 import { OtpInput } from './OtpInput';
@@ -20,6 +20,10 @@ export function ReferralModal({ visible, onApply, onSkip }: ReferralModalProps) 
       animationType="fade"
       visible={visible}
     >
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: 1 }}
+      >
       <View style={styles.container}>
         <View style={styles.card}>
           <View style={styles.header}>
@@ -27,7 +31,7 @@ export function ReferralModal({ visible, onApply, onSkip }: ReferralModalProps) 
             <Text style={styles.subtitle}>Enter it to unlock rewards (optional)</Text>
           </View>
 
-          <OtpInput value={code} onChange={setCode} length={6} focusDelay={500} />
+          <OtpInput value={code} onChange={setCode} length={6} />
 
           <View style={styles.actions}>
             <Button 
@@ -44,6 +48,7 @@ export function ReferralModal({ visible, onApply, onSkip }: ReferralModalProps) 
           </View>
         </View>
       </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }

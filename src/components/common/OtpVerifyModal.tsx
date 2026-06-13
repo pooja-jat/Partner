@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, Modal, TouchableOpacity,
-  KeyboardAvoidingView, Platform, ScrollView, Pressable, Keyboard,
+  KeyboardAvoidingView, ScrollView,
 } from 'react-native';
 import { OtpInput } from '@/components/ui/OtpInput';
 import { Button } from '@/components/ui/Button';
@@ -32,7 +32,6 @@ export function OtpVerifyModal({ visible, mobileNumber, isLoading, error, onVeri
   return (
     <Modal visible={visible} animationType="slide" transparent statusBarTranslucent>
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.overlay}>
-        <Pressable onPress={Keyboard.dismiss} style={StyleSheet.absoluteFill} />
         <View style={styles.sheet}>
           {/* Handle bar */}
           <View style={styles.handle} />
@@ -48,7 +47,7 @@ export function OtpVerifyModal({ visible, mobileNumber, isLoading, error, onVeri
               <Text style={styles.phone}>{mobileNumber}</Text>
             </Text>
 
-            <OtpInput value={otp} onChange={setOtp} length={6} autoFocus />
+            <OtpInput value={otp} onChange={setOtp} length={6} />
 
             {error ? <Text style={styles.errorText}>{error}</Text> : null}
 

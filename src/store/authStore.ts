@@ -22,7 +22,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         set({
           isAuthenticated: persisted.isAuthenticated ?? false,
           mobileNumber: persisted.mobileNumber ?? '',
-          otpSent: persisted.otpSent ?? false,
+          // otpSent is intentionally not restored: a stale true value would
+          // skip the login screen and land directly on the OTP page.
           role: persisted.role ?? null,
         });
       }
@@ -39,7 +40,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         JSON.stringify({
           isAuthenticated: state.isAuthenticated,
           mobileNumber: state.mobileNumber,
-          otpSent: state.otpSent,
           role: state.role,
         })
       );

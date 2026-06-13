@@ -57,9 +57,9 @@ export const OTPModal: React.FC<OTPModalProps> = ({ visible, onClose, onVerified
   return (
     <Modal visible={visible} animationType="fade" transparent statusBarTranslucent>
       <KeyboardAvoidingView
-        behavior="padding"
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.overlay}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 40 : 0}
       >
         <ScrollView
           contentContainerStyle={styles.scrollContainer}
@@ -98,7 +98,6 @@ export const OTPModal: React.FC<OTPModalProps> = ({ visible, onClose, onVerified
                 value={otpValue}
                 onChange={handleOtpChange}
                 length={length}
-                focusDelay={600}
               />
             )}
 
