@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, Text, TouchableOpacity, Platform, KeyboardAvoidingView, ScrollView, Keyboard, Pressable } from 'react-native';
+import { View, StyleSheet, Keyboard, Pressable, Text, TouchableOpacity, Platform, KeyboardAvoidingView, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSafeRouter } from '@/hooks/useSafeRouter';
 import { useAuthStore } from '@/store/authStore';
@@ -83,18 +83,18 @@ export default function OtpScreen() {
 
   return (
     <Pressable onPress={Keyboard.dismiss} accessible={false} style={{ flex: 1 }}>
-    <GradientBackground style={styles.container}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={{ flex: 1 }}
-      >
-        <SafeAreaView style={styles.safeArea}>
-          <ScrollView
-            contentContainerStyle={styles.scrollContainer}
-            bounces={false}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
-          >
+      <GradientBackground style={styles.container}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={{ flex: 1 }}
+        >
+          <SafeAreaView style={styles.safeArea}>
+            <ScrollView
+              contentContainerStyle={styles.scrollContainer}
+              bounces={false}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+            >
               <View style={styles.topSection}>
                 <View style={styles.headerRow}>
                   <View style={styles.headerLeft}>
@@ -146,12 +146,12 @@ export default function OtpScreen() {
                   By tapping on "Send via WhatsApp", you agree to receive important communications such as OTP and payment details, over Whatsapp
                 </Text>
               </Card>
-          </ScrollView>
-        </SafeAreaView>
-      </KeyboardAvoidingView>
-      <Loader visible={isLoading} message="Please wait few seconds" subMessage="We are verifying your number" />
-
-      <ReferralModal
+            </ScrollView>
+          </SafeAreaView>
+        </KeyboardAvoidingView>
+        <Loader visible={isLoading} message="Please wait few seconds" subMessage="We are verifying your number" />
+        
+        <ReferralModal
           visible={showReferral}
           onApply={(code) => {
             setShowReferral(false);
@@ -163,17 +163,17 @@ export default function OtpScreen() {
           }}
         />
 
-      <RoleSelectionModal
-        visible={showRoleSelection}
-        onSelect={async (roleId) => {
-          setShowRoleSelection(false);
-          setRole(roleId as any);
-          await StorageService.updateUserSession({ role: roleId as any });
-          router.replace('/(auth)/create-profile');
-        }}
-        onClose={() => setShowRoleSelection(false)}
-      />
-    </GradientBackground>
+        <RoleSelectionModal
+          visible={showRoleSelection}
+          onSelect={async (roleId) => {
+            setShowRoleSelection(false);
+            setRole(roleId as any);
+            await StorageService.updateUserSession({ role: roleId as any });
+            router.replace('/(auth)/create-profile');
+          }}
+          onClose={() => setShowRoleSelection(false)}
+        />
+      </GradientBackground>
     </Pressable>
   );
 }
